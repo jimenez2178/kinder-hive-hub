@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { GraduationCap, Plus, Trash2 } from "lucide-react";
-import { dataStore, type TeacherNote, generateId } from "@/lib/dataStore";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import type { Tables } from "@/integrations/supabase/types";
 
-const CATEGORIES: { value: TeacherNote["category"]; label: string; emoji: string }[] = [
+const CATEGORIES = [
   { value: "lectura", label: "Lectura", emoji: "📖" },
   { value: "atencion", label: "Atención", emoji: "👁️" },
   { value: "conducta", label: "Conducta", emoji: "🤝" },
@@ -18,31 +20,68 @@ const CATEGORIES: { value: TeacherNote["category"]; label: string; emoji: string
   { value: "general", label: "General", emoji: "📝" },
 ];
 
+type NotaConEstudiante = Tables<"notas_maestras"> & { estudiante_nombre?: string };
+
 export default function TeacherNotesPage() {
   const { hasPermission, user } = useAuth();
-  const [notes, setNotes] = useState<TeacherNote[]>(dataStore.getTeacherNotes());
+  const { toast } = useToast();
+  const [notes, setNotes] = useState<NotaConEstudiante[]>([]);
+  const [students, setStudents] = useState<{ id: string; nombre: string }[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [studentName, setStudentName] = useState("");
-  const [category, setCategory] = useState<TeacherNote["category"]>("general");
+  const [studentId, setStudentId] = useState("");
+  const [category, setCategory] = useState("general");
   const [note, setNote] = useState("");
-  const [filterCat, setFilterCat] = useState<string>("all");
+  const [filterCat, setFilterCat] = useState("all");
   const [search, setSearch] = useState("");
   const canAdd = hasPermission("teacher-notes");
 
-  const save = (updated: TeacherNote[]) => { setNotes(updated); dataStore.saveTeacherNotes(updated); };
+  useEffect(() => {
+    fetchNotes();
+    fetchStudents();
+  }, []);
 
-  const handleAdd = () => {
-    if (!studentName.trim() || !note.trim()) return;
-    save([{
-      id: generateId(), studentName: studentName.trim(), category, note: note.trim(),
-      teacher: user?.displayName || "", date: new Date().toLocaleDateString("es"),
-    }, ...notes]);
-    setStudentName(""); setNote(""); setShowForm(false);
+  const fetchNotes = async () => {
+    const { data } = await supabase
+      .from("notas_maestras")
+      .select("*, estudiantes(nombre)")
+      .order("created_at", { ascending: false });
+    if (data) {
+      setNotes(data.map((n: any) => ({ ...n, estudiante_nombre: n.estudiantes?.nombre })));
+    }
+  };
+
+  const fetchStudents = async () => {
+    const { data } = await supabase.from("estudiantes").select("id, nombre").eq("activo", true).order("nombre");
+    if (data) setStudents(data);
+  };
+
+  const handleAdd = async () => {
+    if (!studentId || !note.trim()) return;
+    const { error } = await supabase.from("notas_maestras").insert({
+      estudiante_id: studentId,
+      categoria: category,
+      contenido: note.trim(),
+      maestro_id: user?.id || null,
+      maestro_nombre: user?.displayName || null,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "✅ Nota guardada" });
+    setStudentId(""); setNote(""); setShowForm(false);
+    fetchNotes();
+  };
+
+  const handleDelete = async (id: string) => {
+    await supabase.from("notas_maestras").delete().eq("id", id);
+    toast({ title: "Nota eliminada" });
+    fetchNotes();
   };
 
   const filtered = notes.filter(n => {
-    if (filterCat !== "all" && n.category !== filterCat) return false;
-    if (search && !n.studentName.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterCat !== "all" && n.categoria !== filterCat) return false;
+    if (search && !(n.estudiante_nombre || "").toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -78,8 +117,13 @@ export default function TeacherNotesPage() {
       {showForm && canAdd && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
           className="bg-card rounded-xl p-5 border border-border shadow-card space-y-4">
-          <Input placeholder="Nombre del estudiante" value={studentName} onChange={e => setStudentName(e.target.value)} />
-          <Select value={category} onValueChange={v => setCategory(v as TeacherNote["category"])}>
+          <Select value={studentId} onValueChange={setStudentId}>
+            <SelectTrigger><SelectValue placeholder="Selecciona estudiante" /></SelectTrigger>
+            <SelectContent>
+              {students.map(s => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={category} onValueChange={setCategory}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.emoji} {c.label}</SelectItem>)}
@@ -99,16 +143,16 @@ export default function TeacherNotesPage() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-bold text-foreground">{n.studentName}</h3>
+                  <h3 className="font-bold text-foreground">{n.estudiante_nombre || "Estudiante"}</h3>
                   <Badge variant="secondary" className="text-xs">
-                    {catInfo(n.category)?.emoji} {catInfo(n.category)?.label}
+                    {catInfo(n.categoria)?.emoji} {catInfo(n.categoria)?.label}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{n.note}</p>
-                <p className="text-xs text-muted-foreground mt-2">{n.teacher} — {n.date}</p>
+                <p className="text-sm text-muted-foreground">{n.contenido}</p>
+                <p className="text-xs text-muted-foreground mt-2">{n.maestro_nombre || "Maestra"} — {n.fecha}</p>
               </div>
               {canAdd && (
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => save(notes.filter(x => x.id !== n.id))}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(n.id)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               )}
