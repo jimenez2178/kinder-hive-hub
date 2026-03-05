@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-export type UserRole = "directora" | "maestro";
+export type UserRole = "directora" | "maestro" | "padre" | "pendiente";
 
 export interface User {
   id: string;
@@ -15,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  signup: (email: string, password: string, displayName: string, role: UserRole) => Promise<{ error?: string }>;
+  signup: (email: string, password: string, displayName: string, role?: UserRole) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   hasPermission: (action: string) => boolean;
@@ -34,6 +34,7 @@ const PERMISSIONS: Record<string, UserRole[]> = {
   "edit-delete-payments": ["directora"],
   "manage-thanks": ["directora"],
   "manage-students": ["directora"],
+  "view-parent-portal": ["padre"],
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -89,15 +90,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {};
   }, []);
 
-  const signup = useCallback(async (email: string, password: string, displayName: string, role: UserRole) => {
+  const signup = useCallback(async (email: string, password: string, displayName: string, role?: UserRole) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
     if (data.user) {
-      // Use RPC to create profile + role (SECURITY DEFINER bypasses RLS)
+      // Pass role only for staff; for parents/general signup, let the function auto-detect
       const { error: fnError } = await (supabase.rpc as any)("handle_new_user_registration", {
         _user_id: data.user.id,
         _display_name: displayName,
-        _role: role,
+        ...(role && ["directora", "maestro"].includes(role) ? { _role: role } : {}),
       });
       if (fnError) return { error: fnError.message };
     }
