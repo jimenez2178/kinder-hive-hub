@@ -101,7 +101,10 @@ export default function PaymentsPage() {
   const pendientes = estudiantes.filter(s => getStudentStatus(s.id) === "pendiente").length;
 
   const now = new Date();
-  const thisMonthPayments = pagos.filter(p => {
+  // Only count payments belonging to active students
+  const activeStudentIds = new Set(estudiantes.map(s => s.id));
+  const activePagos = pagos.filter(p => activeStudentIds.has(p.estudiante_id));
+  const thisMonthPayments = activePagos.filter(p => {
     const d = new Date(p.fecha);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && p.estado === "saldado";
   });
