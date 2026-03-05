@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   DollarSign, Plus, Trash2, Edit2, Upload, FileText, Search,
-  TrendingUp, Users, AlertTriangle, CheckCircle, Download, Eye, X
+  TrendingUp, Users, AlertTriangle, CheckCircle, Download, Eye, X, Printer
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -177,6 +177,59 @@ export default function PaymentsPage() {
 
   const getStudentPayments = (id: string) => pagos.filter(p => p.estudiante_id === id);
   const getStudentTotalPaid = (id: string) => getStudentPayments(id).filter(p => p.estado === "saldado").reduce((s, p) => s + Number(p.monto), 0);
+
+  const printStudentReport = async (student: Estudiante) => {
+    const studentPagos = getStudentPayments(student.id);
+    const totalPaid = getStudentTotalPaid(student.id);
+    const status = getStudentStatus(student.id);
+    const { data: notasData } = await supabase
+      .from("notas_maestras")
+      .select("*, estudiantes(nombre)")
+      .eq("estudiante_id", student.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    const notasHtml = (notasData || []).map((n: any) =>
+      `<tr><td>${n.fecha}</td><td>${n.categoria}</td><td>${n.contenido}</td><td>${n.maestro_nombre || "—"}</td></tr>`
+    ).join("");
+
+    const pagosHtml = studentPagos.map(p =>
+      `<tr><td>${p.fecha}</td><td>RD$ ${Number(p.monto).toLocaleString()}</td><td>${p.metodo_pago}</td><td>${p.estado === "saldado" ? "✅ Saldado" : "⏳ Pendiente"}</td></tr>`
+    ).join("");
+
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head><title>Reporte - ${student.nombre}</title>
+      <style>body{font-family:Nunito,sans-serif;padding:2rem;color:#333}
+      h1{color:#c2410c;margin-bottom:0.25rem}h2{margin-top:1.5rem;color:#555}
+      table{width:100%;border-collapse:collapse;margin-top:0.5rem}
+      th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px}
+      th{background:#f5f5f5}
+      .header{display:flex;justify-content:space-between;align-items:center}
+      .status{padding:4px 12px;border-radius:12px;font-weight:bold;font-size:12px}
+      .al-dia{background:#dcfce7;color:#16a34a}.pendiente{background:#fef3c7;color:#d97706}
+      .moroso{background:#fee2e2;color:#dc2626}
+      @media print{body{padding:1rem}}</style></head><body>
+      <div class="header"><div>
+        <h1>Pre-escolar Psicopedagógico de la Sagrada Familia</h1>
+        <p style="color:#888">Ficha del Estudiante — ${new Date().toLocaleDateString("es")}</p>
+      </div></div>
+      <h2>📋 Datos del Estudiante</h2>
+      <table><tr><th>Nombre</th><td>${student.nombre}</td></tr>
+      <tr><th>Grado</th><td>${student.grado}${student.seccion ? ` — ${student.seccion}` : ""}</td></tr>
+      <tr><th>Cuota Mensual</th><td>RD$ ${Number(student.cuota_mensual).toLocaleString()}</td></tr>
+      <tr><th>Padre/Madre</th><td>${student.padre_nombre || "—"}</td></tr>
+      <tr><th>Teléfono</th><td>${student.padre_telefono || "—"}</td></tr>
+      <tr><th>Estado</th><td><span class="status ${status}">${statusConfig[status]?.label || status}</span></td></tr>
+      <tr><th>Total Pagado</th><td style="font-weight:bold;color:#16a34a">RD$ ${totalPaid.toLocaleString()}</td></tr></table>
+      <h2>💰 Historial de Pagos</h2>
+      ${pagosHtml ? `<table><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Estado</th></tr>${pagosHtml}</table>` : "<p>Sin pagos registrados</p>"}
+      <h2>📝 Últimas Notas</h2>
+      ${notasHtml ? `<table><tr><th>Fecha</th><th>Categoría</th><th>Contenido</th><th>Maestra</th></tr>${notasHtml}</table>` : "<p>Sin notas registradas</p>"}
+      </body></html>`);
+    win.document.close();
+    win.print();
+  };
 
   const filtered = estudiantes.filter(s => {
     if (search && !s.nombre.toLowerCase().includes(search.toLowerCase())) return false;
@@ -355,6 +408,12 @@ export default function PaymentsPage() {
                     }}>
                       <DollarSign className="w-3 h-3 mr-1" /> Pagar
                     </Button>
+                    <Button variant="outline" size="sm" onClick={(e) => {
+                      e.stopPropagation();
+                      printStudentReport(s);
+                    }}>
+                      <Printer className="w-3 h-3 mr-1" /> Reporte
+                    </Button>
                     {canEditDelete && (
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
                         onClick={(e) => { e.stopPropagation(); deleteStudent(s.id); }}>
@@ -455,15 +514,18 @@ export default function PaymentsPage() {
             </div>
             {pMethod !== "efectivo" && (
               <div>
-                <Label>Comprobante (imagen)</Label>
+                <Label>Comprobante (imagen) *</Label>
                 <Input type="file" accept="image/*" onChange={e => setPFile(e.target.files?.[0] || null)} className="mt-1" />
+                {!pFile && pMethod !== "efectivo" && (
+                  <p className="text-xs text-destructive mt-1">Debes adjuntar un comprobante para pagos no efectivos</p>
+                )}
               </div>
             )}
             <div>
               <Label>Nota (opcional)</Label>
               <Textarea value={pNote} onChange={e => setPNote(e.target.value)} placeholder="Observación del pago..." rows={2} />
             </div>
-            <Button onClick={registerPayment} disabled={uploading} className="w-full gradient-warm text-primary-foreground border-0">
+            <Button onClick={registerPayment} disabled={uploading || (pMethod !== "efectivo" && !pFile)} className="w-full gradient-warm text-primary-foreground border-0">
               {uploading ? "Subiendo..." : "Registrar Pago"}
             </Button>
           </div>

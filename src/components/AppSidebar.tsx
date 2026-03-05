@@ -50,8 +50,8 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h2 className="font-display font-bold text-sm text-sidebar-foreground truncate">EduConnect</h2>
-              <p className="text-xs text-sidebar-foreground/60">Centro Educativo</p>
+              <h2 className="font-display font-bold text-sm text-sidebar-foreground truncate">Sagrada Familia</h2>
+              <p className="text-xs text-sidebar-foreground/60">Pre-escolar Psicopedagógico</p>
             </div>
           )}
           {!collapsed && (

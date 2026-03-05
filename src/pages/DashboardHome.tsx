@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Calendar, FileText, Image, Cake, Bell, MessageSquare, Sparkles, Clock, MapPin, Users, DollarSign, UserCheck, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,9 @@ export default function DashboardHome() {
   const [fotos, setFotos] = useState<Tables<"galeria">[]>([]);
   const [agradecimientos, setAgradecimientos] = useState<Tables<"agradecimientos">[]>([]);
 
+  // Dynamic counts
+  const [counts, setCounts] = useState({ eventos: 0, comunicados: 0, fotos: 0, cumpleanos: 0, alertas: 0, notas: 0 });
+
   // Directora pending tasks
   const [pendingPayments, setPendingPayments] = useState(0);
   const [pendingUsers, setPendingUsers] = useState(0);
@@ -29,12 +32,51 @@ export default function DashboardHome() {
   // Welcome modal
   const [showWelcome, setShowWelcome] = useState(false);
 
+  const fetchCounts = useCallback(async () => {
+    const [evC, comC, fotC, cumC, alC, notC] = await Promise.all([
+      supabase.from("eventos").select("id", { count: "exact", head: true }),
+      supabase.from("comunicados").select("id", { count: "exact", head: true }),
+      supabase.from("galeria").select("id", { count: "exact", head: true }),
+      supabase.from("cumpleanos").select("id", { count: "exact", head: true }),
+      supabase.from("alertas").select("id", { count: "exact", head: true }).eq("activa", true),
+      supabase.from("notas_maestras").select("id", { count: "exact", head: true }),
+    ]);
+    setCounts({
+      eventos: evC.count || 0,
+      comunicados: comC.count || 0,
+      fotos: fotC.count || 0,
+      cumpleanos: cumC.count || 0,
+      alertas: alC.count || 0,
+      notas: notC.count || 0,
+    });
+  }, []);
+
   useEffect(() => {
     fetchData();
     fetchMessage();
     checkFirstVisit();
+    fetchCounts();
     if (user?.role === "directora") fetchPendingTasks();
   }, [user]);
+
+  // Realtime subscriptions
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "comunicados" }, () => { fetchData(); fetchCounts(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notas_maestras" }, () => { fetchData(); fetchCounts(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "galeria" }, () => { fetchData(); fetchCounts(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "cumpleanos" }, () => { fetchData(); fetchCounts(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "alertas" }, () => { fetchData(); fetchCounts(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "eventos" }, () => { fetchData(); fetchCounts(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "agradecimientos" }, () => { fetchData(); fetchCounts(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "pagos" }, () => {
+        if (user?.role === "directora") fetchPendingTasks();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.role]);
 
   const checkFirstVisit = () => {
     if (!user) return;
@@ -103,19 +145,21 @@ export default function DashboardHome() {
   const birthdaysThisMonth = cumpleanos.filter(c => new Date(c.fecha).getMonth() + 1 === currentMonth);
 
   const kpis = [
-    { label: "Eventos", value: eventos.length, icon: Calendar, color: "bg-accent text-accent-foreground" },
-    { label: "Comunicados", value: comunicados.length, icon: FileText, color: "bg-success text-success-foreground" },
-    { label: "Fotos", value: fotos.length, icon: Image, color: "bg-warning text-warning-foreground" },
-    { label: "Cumpleaños", value: birthdaysThisMonth.length, icon: Cake, color: "bg-info text-info-foreground" },
-    { label: "Avisos", value: alertas.length, icon: Bell, color: "bg-urgent text-urgent-foreground" },
-    { label: "Notas", value: notas.length, icon: MessageSquare, color: "bg-primary text-primary-foreground" },
+    { label: "Eventos", value: counts.eventos, icon: Calendar, color: "bg-accent text-accent-foreground" },
+    { label: "Comunicados", value: counts.comunicados, icon: FileText, color: "bg-success text-success-foreground" },
+    { label: "Fotos", value: counts.fotos, icon: Image, color: "bg-warning text-warning-foreground" },
+    { label: "Cumpleaños", value: counts.cumpleanos, icon: Cake, color: "bg-info text-info-foreground" },
+    { label: "Avisos", value: counts.alertas, icon: Bell, color: "bg-urgent text-urgent-foreground" },
+    { label: "Notas", value: counts.notas, icon: MessageSquare, color: "bg-primary text-primary-foreground" },
   ];
 
   const hasPendingTasks = pendingPayments > 0 || pendingUsers > 0;
 
+  // Check for urgent comunicados
+  const hasUrgentAlerts = alertas.some(a => a.prioridad === "urgent" && a.activa);
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Staff Welcome Modal */}
       {showWelcome && user && (
         <WelcomeModal
           name={user.displayName}
@@ -136,12 +180,28 @@ export default function DashboardHome() {
             <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
               ¡Buen día, {user?.displayName}! 👋
             </h1>
-            <p className="text-muted-foreground mt-1 text-lg">
-              Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Pre-escolar Sagrada Familia</span>
+            <p className="text-muted-foreground mt-1 text-lg font-body">
+              Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Pre-escolar Psicopedagógico de la Sagrada Familia</span>
             </p>
           </div>
         </div>
       </motion.div>
+
+      {/* Urgent Alert Pulse */}
+      {hasUrgentAlerts && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="rounded-xl p-4 border-2 border-destructive animate-pulse bg-destructive/5">
+          <div className="flex items-center gap-3">
+            <Bell className="w-5 h-5 text-destructive" />
+            <div>
+              <p className="font-display font-bold text-destructive">⚠️ Avisos Urgentes Activos</p>
+              <p className="text-sm text-muted-foreground">
+                {alertas.filter(a => a.prioridad === "urgent" && a.activa).map(a => a.titulo).join(" • ")}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Directora: Pending Tasks */}
       {user?.role === "directora" && hasPendingTasks && (
@@ -190,7 +250,7 @@ export default function DashboardHome() {
             {loadingMessage ? (
               <div className="h-5 w-64 bg-primary-foreground/20 rounded animate-pulse" />
             ) : (
-              <p className="text-lg font-medium leading-relaxed">{messageOfDay}</p>
+              <p className="text-lg font-medium leading-relaxed font-body">{messageOfDay}</p>
             )}
           </div>
         </div>
@@ -206,7 +266,7 @@ export default function DashboardHome() {
               <kpi.icon className="w-5 h-5" />
             </div>
             <p className="text-2xl font-display font-bold text-foreground">{kpi.value}</p>
-            <p className="text-xs text-muted-foreground">{kpi.label}</p>
+            <p className="text-xs text-muted-foreground font-body">{kpi.label}</p>
           </motion.div>
         ))}
       </div>
@@ -220,7 +280,7 @@ export default function DashboardHome() {
             <h3 className="font-display font-bold text-foreground">Eventos Recientes</h3>
           </div>
           {eventos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay eventos aún</p>
+            <p className="text-sm text-muted-foreground font-body">No hay eventos aún</p>
           ) : (
             <ul className="space-y-2">
               {eventos.slice(0, 4).map(ev => (
@@ -245,7 +305,7 @@ export default function DashboardHome() {
             <h3 className="font-display font-bold text-foreground">Notas Recientes</h3>
           </div>
           {notas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay notas aún</p>
+            <p className="text-sm text-muted-foreground font-body">No hay notas aún</p>
           ) : (
             <ul className="space-y-2">
               {notas.slice(0, 4).map(n => (
@@ -272,7 +332,7 @@ export default function DashboardHome() {
             <h3 className="font-display font-bold text-foreground">Últimos Comunicados</h3>
           </div>
           {comunicados.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay comunicados aún</p>
+            <p className="text-sm text-muted-foreground font-body">No hay comunicados aún</p>
           ) : (
             <ul className="space-y-3">
               {comunicados.slice(0, 3).map(c => (
@@ -293,7 +353,7 @@ export default function DashboardHome() {
             <h3 className="font-display font-bold text-foreground">Agradecimientos</h3>
           </div>
           {agradecimientos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay agradecimientos aún</p>
+            <p className="text-sm text-muted-foreground font-body">No hay agradecimientos aún</p>
           ) : (
             <ul className="space-y-2">
               {agradecimientos.slice(0, 3).map(t => (
