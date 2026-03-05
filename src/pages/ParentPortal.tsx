@@ -164,8 +164,8 @@ export default function ParentPortal() {
                 <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
                   ¡Hola, {user?.displayName}! 👋
                 </h1>
-                <p className="text-muted-foreground mt-1">
-                  Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Sagrada Familia</span>
+                 <p className="text-muted-foreground mt-1 font-body">
+                   Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Pre-escolar Psicopedagógico de la Sagrada Familia</span>
                 </p>
               </div>
             </div>
@@ -240,8 +240,8 @@ export default function ParentPortal() {
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className={`p-4 rounded-xl border ${saldoPendiente > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}`}>
                 <p className="text-xs text-muted-foreground mb-1">Saldo Pendiente</p>
-                <p className={`text-2xl font-display font-bold ${saldoPendiente > 0 ? "text-destructive" : "text-success"}`}>
-                  L {saldoPendiente.toLocaleString()}
+                 <p className={`text-2xl font-display font-bold ${saldoPendiente > 0 ? "text-destructive" : "text-success"}`}>
+                   RD$ {saldoPendiente.toLocaleString()}
                 </p>
                 {saldoPendiente > 0 && (
                   <div className="flex items-center gap-1 mt-1">
@@ -252,8 +252,8 @@ export default function ParentPortal() {
               </div>
               <div className="p-4 rounded-xl border border-success/30 bg-success/5">
                 <p className="text-xs text-muted-foreground mb-1">Total Pagado</p>
-                <p className="text-2xl font-display font-bold text-success">
-                  L {totalPagado.toLocaleString()}
+                 <p className="text-2xl font-display font-bold text-success">
+                   RD$ {totalPagado.toLocaleString()}
                 </p>
                 {ultimoPago && (
                   <div className="flex items-center gap-1 mt-1">
@@ -273,7 +273,7 @@ export default function ParentPortal() {
                       <p className="text-xs text-muted-foreground">{p.fecha} — {p.metodo_pago}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-foreground">L {Number(p.monto).toLocaleString()}</p>
+                      <p className="font-bold text-foreground">RD$ {Number(p.monto).toLocaleString()}</p>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${
                         p.estado === "saldado" ? "bg-success/20 text-success" :
                         p.estado === "por_revisar" ? "bg-warning/20 text-warning" :

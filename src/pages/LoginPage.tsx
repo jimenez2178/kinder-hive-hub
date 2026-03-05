@@ -50,8 +50,8 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-warm mb-4">
             <GraduationCap className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-display font-bold text-foreground">EduConnect</h1>
-          <p className="text-muted-foreground mt-1">Pre-escolar Psicopedagógico de la Sagrada Familia</p>
+           <h1 className="text-2xl font-display font-bold text-foreground">Pre-escolar Psicopedagógico</h1>
+          <p className="text-muted-foreground mt-1 font-body">de la Sagrada Familia</p>
         </div>
 
         <div className="bg-card rounded-xl shadow-elevated p-8 border border-border">
