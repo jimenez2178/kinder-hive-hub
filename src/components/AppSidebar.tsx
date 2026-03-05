@@ -12,15 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Avisos", url: "/avisos", icon: Bell },
-  { title: "Calendario", url: "/calendario", icon: Calendar },
-  { title: "Comunicados", url: "/comunicados", icon: FileText },
-  { title: "Notas Maestros", url: "/notas", icon: GraduationCap },
-  { title: "Galería", url: "/galeria", icon: Image },
-  { title: "Pagos", url: "/pagos", icon: DollarSign },
-  { title: "Cumpleaños", url: "/cumpleanos", icon: Cake },
-  { title: "Agradecimientos", url: "/agradecimientos", icon: Heart },
+  { title: "Dashboard", url: "/", icon: Home, roles: ["directora", "maestro"] },
+  { title: "Avisos", url: "/avisos", icon: Bell, roles: ["directora", "maestro"] },
+  { title: "Calendario", url: "/calendario", icon: Calendar, roles: ["directora", "maestro"] },
+  { title: "Comunicados", url: "/comunicados", icon: FileText, roles: ["directora", "maestro"] },
+  { title: "Notas Maestros", url: "/notas", icon: GraduationCap, roles: ["directora", "maestro"] },
+  { title: "Galería", url: "/galeria", icon: Image, roles: ["directora", "maestro"] },
+  { title: "Pagos", url: "/pagos", icon: DollarSign, roles: ["directora"] },
+  { title: "Cumpleaños", url: "/cumpleanos", icon: Cake, roles: ["directora", "maestro"] },
+  { title: "Agradecimientos", url: "/agradecimientos", icon: Heart, roles: ["directora", "maestro"] },
 ];
 
 export function AppSidebar() {
@@ -28,12 +28,13 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
 
-  const roleEmoji = user?.role === "directora" ? "👑" : user?.role === "asistente" ? "⭐" : "🧑‍🏫";
+  const roleEmoji = user?.role === "directora" ? "👑" : "🧑‍🏫";
+
+  const visibleItems = NAV_ITEMS.filter(item => user?.role && item.roles.includes(user.role));
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarContent className="bg-sidebar">
-        {/* Header */}
         <div className="p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl gradient-warm flex items-center justify-center flex-shrink-0">
             <GraduationCap className="w-5 h-5 text-primary-foreground" />
@@ -51,7 +52,6 @@ export function AppSidebar() {
           )}
         </div>
 
-        {/* User badge */}
         {!collapsed && user && (
           <div className="mx-4 mb-3 p-2 rounded-lg bg-sidebar-accent">
             <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV_ITEMS.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -93,7 +93,7 @@ export function AppSidebar() {
       <SidebarFooter className="bg-sidebar p-3">
         <Button
           variant="ghost"
-          onClick={logout}
+          onClick={() => logout()}
           className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
         >
           <LogOut className="w-4 h-4 mr-2" />
