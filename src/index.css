@@ -57,6 +57,9 @@
     --info-foreground: 0 0% 100%;
     --urgent: 0 72% 51%;
     --urgent-foreground: 0 0% 100%;
+    --calendar-event: 217 91% 60%;
+    --calendar-event-foreground: 0 0% 100%;
+    --calendar-event-dot: 217 91% 75%;
 
     /* Gradient tokens */
     --gradient-warm: linear-gradient(135deg, hsl(32 95% 52%), hsl(16 85% 55%));

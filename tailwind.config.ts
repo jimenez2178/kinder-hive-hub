@@ -104,10 +104,15 @@ export default {
   				DEFAULT: 'hsl(var(--info))',
   				foreground: 'hsl(var(--info-foreground))'
   			},
-  			urgent: {
-  				DEFAULT: 'hsl(var(--urgent))',
-  				foreground: 'hsl(var(--urgent-foreground))'
-  			},
+			urgent: {
+				DEFAULT: 'hsl(var(--urgent))',
+				foreground: 'hsl(var(--urgent-foreground))'
+			},
+			'calendar-event': {
+				DEFAULT: 'hsl(var(--calendar-event))',
+				foreground: 'hsl(var(--calendar-event-foreground))',
+				dot: 'hsl(var(--calendar-event-dot))'
+			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',
