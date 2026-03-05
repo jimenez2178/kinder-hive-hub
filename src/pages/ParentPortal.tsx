@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, Image, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertBanner } from "@/components/AlertBanner";
+import { WelcomeModal } from "@/components/WelcomeModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,10 @@ export default function ParentPortal() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLDivElement>(null);
+  const financialRef = useRef<HTMLDivElement>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
+
   const [estudiantes, setEstudiantes] = useState<Tables<"estudiantes">[]>([]);
   const [eventos, setEventos] = useState<Tables<"eventos">[]>([]);
   const [comunicados, setComunicados] = useState<Tables<"comunicados">[]>([]);
@@ -23,6 +28,10 @@ export default function ParentPortal() {
   const [pagos, setPagos] = useState<(Tables<"pagos"> & { estudiante_nombre?: string })[]>([]);
   const [cumpleanos, setCumpleanos] = useState<Tables<"cumpleanos">[]>([]);
   const [messageOfDay, setMessageOfDay] = useState("¡Cada día es una nueva oportunidad para aprender! 🌟");
+
+  // Onboarding state
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
 
   // Payment upload state
   const [uploadDrawerOpen, setUploadDrawerOpen] = useState(false);
@@ -54,6 +63,41 @@ export default function ParentPortal() {
     fetchAll();
   }, []);
 
+  // Check first visit & profile completion
+  useEffect(() => {
+    if (!user) return;
+    const welcomeKey = `educonnect_welcome_${user.id}`;
+    if (!localStorage.getItem(welcomeKey)) {
+      setShowWelcome(true);
+      localStorage.setItem(welcomeKey, "true");
+    }
+    // Check if phone is missing
+    supabase.from("profiles").select("telefono").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (!data?.telefono) setProfileIncomplete(true);
+    });
+  }, [user]);
+
+  const handleWelcomeAction = (action: "gallery" | "notes" | "payments") => {
+    setTimeout(() => {
+      if (action === "gallery" && galleryRef.current) {
+        galleryRef.current.scrollIntoView({ behavior: "smooth" });
+      } else if (action === "notes" && notesRef.current) {
+        notesRef.current.scrollIntoView({ behavior: "smooth" });
+      } else if (action === "payments") {
+        setUploadDrawerOpen(true);
+      }
+    }, 350);
+  };
+
+  const handleSavePhone = async (phone: string) => {
+    if (!user || !phone.trim()) return;
+    const { error } = await supabase.from("profiles").update({ telefono: phone.trim() } as any).eq("user_id", user.id);
+    if (!error) {
+      setProfileIncomplete(false);
+      toast({ title: "✅ Teléfono guardado" });
+    }
+  };
+
   // Financial summary
   const totalPagado = pagos.filter(p => p.estado === "saldado").reduce((s, p) => s + Number(p.monto), 0);
   const cuotaTotal = estudiantes.reduce((s, e) => s + Number(e.cuota_mensual), 0);
@@ -74,9 +118,7 @@ export default function ParentPortal() {
       const path = `${user?.id}/${Date.now()}.${ext}`;
       const { error: storageError } = await supabase.storage.from("comprobantes").upload(path, uploadFile);
       if (storageError) throw storageError;
-
       const { data: urlData } = supabase.storage.from("comprobantes").getPublicUrl(path);
-
       const { error: insertError } = await supabase.from("pagos").insert({
         estudiante_id: selectedEstudiante,
         monto: parseFloat(uploadMonto),
@@ -86,13 +128,9 @@ export default function ParentPortal() {
         created_by: user?.id,
       });
       if (insertError) throw insertError;
-
       toast({ title: "✅ Comprobante enviado", description: "La dirección revisará tu pago pronto." });
       setUploadDrawerOpen(false);
-      setSelectedEstudiante("");
-      setUploadMonto("");
-      setUploadFile(null);
-      // Refresh payments
+      setSelectedEstudiante(""); setUploadMonto(""); setUploadFile(null);
       const { data } = await supabase.from("pagos").select("*, estudiantes(nombre)").order("fecha", { ascending: false }).limit(10);
       if (data) setPagos(data.map((p: any) => ({ ...p, estudiante_nombre: p.estudiantes?.nombre })));
     } catch (err: any) {
@@ -104,10 +142,19 @@ export default function ParentPortal() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* Welcome Modal (first visit only) */}
+      {showWelcome && (
+        <WelcomeModal
+          name={user?.displayName || ""}
+          onDismiss={() => setShowWelcome(false)}
+          onAction={handleWelcomeAction}
+        />
+      )}
+
       <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
         <AlertBanner />
 
-        {/* Header */}
+        {/* Personalized Header */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl p-6 bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-100 dark:from-amber-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 shadow-lg">
           <div className="flex items-center justify-between">
@@ -118,7 +165,7 @@ export default function ParentPortal() {
                   ¡Hola, {user?.displayName}! 👋
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Portal de Padres — <span className="font-bold text-foreground">Sagrada Familia</span>
+                  Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Sagrada Familia</span>
                 </p>
               </div>
             </div>
@@ -127,6 +174,11 @@ export default function ParentPortal() {
             </Button>
           </div>
         </motion.div>
+
+        {/* Profile completion alert */}
+        {profileIncomplete && (
+          <ProfileCompletionBanner onSave={handleSavePhone} />
+        )}
 
         {/* My Students */}
         {estudiantes.length > 0 && (
@@ -152,62 +204,62 @@ export default function ParentPortal() {
         )}
 
         {/* Financial Summary */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-          className="bg-card rounded-xl p-5 shadow-card border border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="w-5 h-5 text-success" />
-            <h2 className="font-display font-bold text-foreground text-lg">Resumen Financiero</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className={`p-4 rounded-xl border ${saldoPendiente > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}`}>
-              <p className="text-xs text-muted-foreground mb-1">Saldo Pendiente</p>
-              <p className={`text-2xl font-display font-bold ${saldoPendiente > 0 ? "text-destructive" : "text-success"}`}>
-                L {saldoPendiente.toLocaleString()}
-              </p>
-              {saldoPendiente > 0 && (
-                <div className="flex items-center gap-1 mt-1">
-                  <AlertCircle className="w-3 h-3 text-destructive" />
-                  <span className="text-[10px] text-destructive">Pendiente de pago</span>
-                </div>
-              )}
+        <div ref={financialRef}>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+            className="bg-card rounded-xl p-5 shadow-card border border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-5 h-5 text-success" />
+              <h2 className="font-display font-bold text-foreground text-lg">Resumen Financiero</h2>
             </div>
-            <div className="p-4 rounded-xl border border-success/30 bg-success/5">
-              <p className="text-xs text-muted-foreground mb-1">Total Pagado</p>
-              <p className="text-2xl font-display font-bold text-success">
-                L {totalPagado.toLocaleString()}
-              </p>
-              {ultimoPago && (
-                <div className="flex items-center gap-1 mt-1">
-                  <CheckCircle2 className="w-3 h-3 text-success" />
-                  <span className="text-[10px] text-muted-foreground">Último: {ultimoPago.fecha}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent payments */}
-          {pagos.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">Últimos Pagos</h3>
-              {pagos.slice(0, 5).map(p => (
-                <div key={p.id} className="p-3 rounded-lg bg-muted flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">{p.estudiante_nombre}</p>
-                    <p className="text-xs text-muted-foreground">{p.fecha} — {p.metodo_pago}</p>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className={`p-4 rounded-xl border ${saldoPendiente > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}`}>
+                <p className="text-xs text-muted-foreground mb-1">Saldo Pendiente</p>
+                <p className={`text-2xl font-display font-bold ${saldoPendiente > 0 ? "text-destructive" : "text-success"}`}>
+                  L {saldoPendiente.toLocaleString()}
+                </p>
+                {saldoPendiente > 0 && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3 text-destructive" />
+                    <span className="text-[10px] text-destructive">Pendiente de pago</span>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-foreground">L {Number(p.monto).toLocaleString()}</p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${
-                      p.estado === "saldado" ? "bg-success/20 text-success" :
-                      p.estado === "por_revisar" ? "bg-warning/20 text-warning" :
-                      "bg-destructive/20 text-destructive"
-                    }`}>{p.estado === "por_revisar" ? "En revisión" : p.estado}</span>
+                )}
+              </div>
+              <div className="p-4 rounded-xl border border-success/30 bg-success/5">
+                <p className="text-xs text-muted-foreground mb-1">Total Pagado</p>
+                <p className="text-2xl font-display font-bold text-success">
+                  L {totalPagado.toLocaleString()}
+                </p>
+                {ultimoPago && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <CheckCircle2 className="w-3 h-3 text-success" />
+                    <span className="text-[10px] text-muted-foreground">Último: {ultimoPago.fecha}</span>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
-          )}
-        </motion.div>
+            {pagos.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">Últimos Pagos</h3>
+                {pagos.slice(0, 5).map(p => (
+                  <div key={p.id} className="p-3 rounded-lg bg-muted flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">{p.estudiante_nombre}</p>
+                      <p className="text-xs text-muted-foreground">{p.fecha} — {p.metodo_pago}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-foreground">L {Number(p.monto).toLocaleString()}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${
+                        p.estado === "saldado" ? "bg-success/20 text-success" :
+                        p.estado === "por_revisar" ? "bg-warning/20 text-warning" :
+                        "bg-destructive/20 text-destructive"
+                      }`}>{p.estado === "por_revisar" ? "En revisión" : p.estado}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
 
         {/* Message of Day */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -267,50 +319,54 @@ export default function ParentPortal() {
             )}
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-            className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <div className="flex items-center gap-2 mb-3">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              <h2 className="font-display font-bold text-foreground">Notas de Maestros</h2>
-            </div>
-            {notas.length === 0 ? <p className="text-sm text-muted-foreground">No hay notas</p> : (
-              <ul className="space-y-2">
-                {notas.map(n => (
-                  <li key={n.id} className="p-3 rounded-lg bg-muted text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-foreground">{n.estudiante_nombre || "Estudiante"}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-accent-foreground capitalize">{n.categoria}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{n.contenido}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </motion.div>
+          <div ref={notesRef}>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+              className="bg-card rounded-xl p-5 shadow-card border border-border">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                <h2 className="font-display font-bold text-foreground">Notas de Maestros</h2>
+              </div>
+              {notas.length === 0 ? <p className="text-sm text-muted-foreground">No hay notas</p> : (
+                <ul className="space-y-2">
+                  {notas.map(n => (
+                    <li key={n.id} className="p-3 rounded-lg bg-muted text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground">{n.estudiante_nombre || "Estudiante"}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-accent-foreground capitalize">{n.categoria}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{n.contenido}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </motion.div>
+          </div>
         </div>
 
-        {/* Birthdays */}
-        {birthdaysThisMonth.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <div className="flex items-center gap-2 mb-3">
-              <Cake className="w-5 h-5 text-warning" />
-              <h2 className="font-display font-bold text-foreground">🎉 Cumpleañeros del Mes</h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {birthdaysThisMonth.map(b => (
-                <div key={b.id} className="text-center p-3 rounded-lg bg-muted">
-                  {b.foto_url ? (
-                    <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" loading="lazy" />
-                  ) : (
-                    <span className="text-3xl block mb-1">{b.emoji || "🎂"}</span>
-                  )}
-                  <p className="font-semibold text-foreground text-sm">{b.nombre}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+        {/* Birthdays / Gallery */}
+        <div ref={galleryRef}>
+          {birthdaysThisMonth.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+              className="bg-card rounded-xl p-5 shadow-card border border-border">
+              <div className="flex items-center gap-2 mb-3">
+                <Cake className="w-5 h-5 text-warning" />
+                <h2 className="font-display font-bold text-foreground">🎉 Cumpleañeros del Mes</h2>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {birthdaysThisMonth.map(b => (
+                  <div key={b.id} className="text-center p-3 rounded-lg bg-muted">
+                    {b.foto_url ? (
+                      <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" loading="lazy" />
+                    ) : (
+                      <span className="text-3xl block mb-1">{b.emoji || "🎂"}</span>
+                    )}
+                    <p className="font-semibold text-foreground text-sm">{b.nombre}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </div>
 
         <footer className="text-center text-xs text-muted-foreground py-4 border-t border-border">
           <p>Pre-escolar Psicopedagógico de la Sagrada Familia © {new Date().getFullYear()}</p>
@@ -377,5 +433,49 @@ export default function ParentPortal() {
         </Drawer>
       )}
     </div>
+  );
+}
+
+/* Profile Completion Banner */
+function ProfileCompletionBanner({ onSave }: { onSave: (phone: string) => void }) {
+  const [phone, setPhone] = useState("");
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="bg-warning/10 border border-warning/30 rounded-xl p-4">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-lg bg-warning/20 flex items-center justify-center flex-shrink-0">
+          <Phone className="w-4 h-4 text-warning" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-foreground">Completa tu perfil</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Agrega tu número de teléfono para que podamos contactarte en caso de emergencias.
+          </p>
+          {!expanded ? (
+            <Button variant="outline" size="sm" className="mt-2 min-h-[36px]" onClick={() => setExpanded(true)}>
+              <UserCircle className="w-4 h-4 mr-1" /> Agregar teléfono
+            </Button>
+          ) : (
+            <div className="flex gap-2 mt-2">
+              <Input
+                placeholder="Ej: 9999-9999"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                className="min-h-[44px] flex-1"
+              />
+              <Button
+                onClick={() => onSave(phone)}
+                disabled={!phone.trim()}
+                className="gradient-warm text-primary-foreground border-0 min-h-[44px]"
+              >
+                Guardar
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
