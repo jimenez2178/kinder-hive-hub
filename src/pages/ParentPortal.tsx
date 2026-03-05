@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,8 +19,8 @@ export default function ParentPortal() {
   const fileRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLDivElement>(null);
   const financialRef = useRef<HTMLDivElement>(null);
-   const galleryRef = useRef<HTMLDivElement>(null);
-   const [galeriaFotos, setGaleriaFotos] = useState<Tables<"galeria">[]>([]);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [galeriaFotos, setGaleriaFotos] = useState<Tables<"galeria">[]>([]);
 
   const [estudiantes, setEstudiantes] = useState<Tables<"estudiantes">[]>([]);
   const [eventos, setEventos] = useState<Tables<"eventos">[]>([]);
@@ -42,29 +42,47 @@ export default function ParentPortal() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const fetchPagos = useCallback(async () => {
+    const { data } = await supabase.from("pagos").select("*, estudiantes(nombre)").order("fecha", { ascending: false }).limit(10);
+    if (data) setPagos(data.map((p: any) => ({ ...p, estudiante_nombre: p.estudiantes?.nombre })));
+  }, []);
+
+  const fetchGaleria = useCallback(async () => {
+    const { data } = await supabase.from("galeria").select("*").order("created_at", { ascending: false }).limit(12);
+    if (data) setGaleriaFotos(data);
+  }, []);
+
   useEffect(() => {
     const fetchAll = async () => {
-      const [estRes, evRes, comRes, notRes, pagRes, cumRes, msgRes, galRes] = await Promise.all([
+      const [estRes, evRes, comRes, notRes, cumRes, msgRes] = await Promise.all([
         supabase.from("estudiantes").select("*"),
         supabase.from("eventos").select("*").order("fecha", { ascending: false }).limit(5),
         supabase.from("comunicados").select("*").order("created_at", { ascending: false }).limit(5),
         supabase.from("notas_maestras").select("*, estudiantes(nombre)").order("created_at", { ascending: false }).limit(10),
-        supabase.from("pagos").select("*, estudiantes(nombre)").order("fecha", { ascending: false }).limit(10),
         supabase.from("cumpleanos").select("*").order("fecha"),
         supabase.from("mensaje_dia").select("*").eq("fecha_iso", new Date().toISOString().split("T")[0]).limit(1).maybeSingle(),
-        supabase.from("galeria").select("*").order("created_at", { ascending: false }).limit(8),
       ]);
       if (estRes.data) setEstudiantes(estRes.data);
       if (evRes.data) setEventos(evRes.data);
       if (comRes.data) setComunicados(comRes.data);
       if (notRes.data) setNotas(notRes.data.map((n: any) => ({ ...n, estudiante_nombre: n.estudiantes?.nombre })));
-      if (pagRes.data) setPagos(pagRes.data.map((p: any) => ({ ...p, estudiante_nombre: p.estudiantes?.nombre })));
       if (cumRes.data) setCumpleanos(cumRes.data);
       if (msgRes.data) setMessageOfDay(msgRes.data.contenido);
-      if (galRes.data) setGaleriaFotos(galRes.data);
     };
     fetchAll();
-  }, []);
+    fetchPagos();
+    fetchGaleria();
+  }, [fetchPagos, fetchGaleria]);
+
+  // Realtime: pagos + galeria
+  useEffect(() => {
+    const channel = supabase
+      .channel("parent-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pagos" }, () => { fetchPagos(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "galeria" }, () => { fetchGaleria(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchPagos, fetchGaleria]);
 
   // Check first visit & profile completion
   useEffect(() => {
@@ -74,7 +92,6 @@ export default function ParentPortal() {
       setShowWelcome(true);
       localStorage.setItem(welcomeKey, "true");
     }
-    // Check if phone is missing
     supabase.from("profiles").select("telefono").eq("user_id", user.id).maybeSingle().then(({ data }) => {
       if (!data?.telefono) setProfileIncomplete(true);
     });
@@ -101,7 +118,7 @@ export default function ParentPortal() {
     }
   };
 
-  // Financial summary
+  // Financial summary - always from fresh state (realtime updates pagos)
   const totalPagado = pagos.filter(p => p.estado === "saldado").reduce((s, p) => s + Number(p.monto), 0);
   const cuotaTotal = estudiantes.reduce((s, e) => s + Number(e.cuota_mensual), 0);
   const saldoPendiente = Math.max(0, cuotaTotal - totalPagado);
@@ -142,8 +159,8 @@ export default function ParentPortal() {
       toast({ title: "✅ Pago registrado", description: isCash ? "Pago en efectivo registrado." : "La dirección revisará tu comprobante pronto." });
       setUploadDrawerOpen(false);
       setSelectedEstudiante(""); setUploadMonto(""); setUploadFile(null);
-      const { data } = await supabase.from("pagos").select("*, estudiantes(nombre)").order("fecha", { ascending: false }).limit(10);
-      if (data) setPagos(data.map((p: any) => ({ ...p, estudiante_nombre: p.estudiantes?.nombre })));
+      // Realtime will auto-refresh, but also fetch immediately
+      fetchPagos();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -153,7 +170,6 @@ export default function ParentPortal() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Welcome Modal (first visit only) */}
       {showWelcome && (
         <WelcomeModal
           name={user?.displayName || ""}
@@ -175,8 +191,8 @@ export default function ParentPortal() {
                 <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
                   ¡Hola, {user?.displayName}! 👋
                 </h1>
-                 <p className="text-muted-foreground mt-1 font-body">
-                   Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Pre-escolar Psicopedagógico de la Sagrada Familia</span>
+                <p className="text-muted-foreground mt-1 font-body">
+                  Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Pre-escolar Psicopedagógico de la Sagrada Familia</span>
                 </p>
               </div>
             </div>
@@ -251,8 +267,8 @@ export default function ParentPortal() {
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className={`p-4 rounded-xl border ${saldoPendiente > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}`}>
                 <p className="text-xs text-muted-foreground mb-1">Saldo Pendiente</p>
-                 <p className={`text-2xl font-display font-bold ${saldoPendiente > 0 ? "text-destructive" : "text-success"}`}>
-                   RD$ {saldoPendiente.toLocaleString()}
+                <p className={`text-2xl font-display font-bold ${saldoPendiente > 0 ? "text-destructive" : "text-success"}`}>
+                  RD$ {saldoPendiente.toLocaleString()}
                 </p>
                 {saldoPendiente > 0 && (
                   <div className="flex items-center gap-1 mt-1">
@@ -263,8 +279,8 @@ export default function ParentPortal() {
               </div>
               <div className="p-4 rounded-xl border border-success/30 bg-success/5">
                 <p className="text-xs text-muted-foreground mb-1">Total Pagado</p>
-                 <p className="text-2xl font-display font-bold text-success">
-                   RD$ {totalPagado.toLocaleString()}
+                <p className="text-2xl font-display font-bold text-success">
+                  RD$ {totalPagado.toLocaleString()}
                 </p>
                 {ultimoPago && (
                   <div className="flex items-center gap-1 mt-1">
@@ -278,14 +294,14 @@ export default function ParentPortal() {
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Últimos Pagos</h3>
                 {pagos.slice(0, 5).map(p => (
-                  <div key={p.id} className="p-3 rounded-lg bg-muted flex items-center justify-between">
+                  <div key={p.id} className="p-3 rounded-lg bg-success/10 border border-success/20 flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-foreground text-sm">{p.estudiante_nombre}</p>
                       <p className="text-xs text-muted-foreground">{p.fecha} — {p.metodo_pago}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-foreground">RD$ {Number(p.monto).toLocaleString()}</p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block font-semibold ${
                         p.estado === "saldado" ? "bg-success/20 text-success" :
                         p.estado === "por_revisar" ? "bg-warning/20 text-warning" :
                         "bg-destructive/20 text-destructive"
@@ -322,9 +338,9 @@ export default function ParentPortal() {
           ) : (
             <div className="space-y-3">
               {comunicados.map(c => (
-                <div key={c.id} className="p-3 rounded-lg bg-muted">
+                <div key={c.id} className="p-3 rounded-lg bg-success/10 border border-success/20">
                   <h3 className="font-semibold text-foreground">{c.titulo}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{c.contenido}</p>
+                  <p className="text-sm text-foreground/80 mt-1 whitespace-pre-wrap">{c.contenido}</p>
                   <span className="text-xs text-muted-foreground mt-1 block">{c.fecha}</span>
                 </div>
               ))}
@@ -343,7 +359,7 @@ export default function ParentPortal() {
             {eventos.length === 0 ? <p className="text-sm text-muted-foreground">No hay eventos</p> : (
               <ul className="space-y-2">
                 {eventos.map(ev => (
-                  <li key={ev.id} className="p-3 rounded-lg bg-muted text-sm">
+                  <li key={ev.id} className="p-3 rounded-lg bg-accent/20 border border-accent/20 text-sm">
                     <span className="font-semibold text-foreground">{ev.titulo}</span>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {ev.fecha}</span>
@@ -360,18 +376,18 @@ export default function ParentPortal() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
               className="bg-card rounded-xl p-5 shadow-card border border-border">
               <div className="flex items-center gap-2 mb-3">
-                <MessageSquare className="w-5 h-5 text-primary" />
+                <MessageSquare className="w-5 h-5 text-info" />
                 <h2 className="font-display font-bold text-foreground">Notas de Maestros</h2>
               </div>
               {notas.length === 0 ? <p className="text-sm text-muted-foreground">No hay notas</p> : (
                 <ul className="space-y-2">
                   {notas.map(n => (
-                    <li key={n.id} className="p-3 rounded-lg bg-muted text-sm">
+                    <li key={n.id} className="p-3 rounded-lg bg-info/10 border border-info/20 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-foreground">{n.estudiante_nombre || "Estudiante"}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-accent-foreground capitalize">{n.categoria}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-info/20 text-info font-semibold capitalize">{n.categoria}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{n.contenido}</p>
+                      <p className="text-xs text-foreground/80 mt-1">{n.contenido}</p>
                     </li>
                   ))}
                 </ul>
@@ -385,7 +401,7 @@ export default function ParentPortal() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
             className="bg-card rounded-xl p-5 shadow-card border border-border">
             <div className="flex items-center gap-2 mb-3">
-              <ImageIcon className="w-5 h-5 text-primary" />
+              <ImageIcon className="w-5 h-5 text-warning" />
               <h2 className="font-display font-bold text-foreground">📸 Galería de Fotos</h2>
             </div>
             {galeriaFotos.length === 0 ? (
@@ -413,7 +429,7 @@ export default function ParentPortal() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {birthdaysThisMonth.map(b => (
-                <div key={b.id} className="text-center p-3 rounded-lg bg-accent/30 border border-accent/20">
+                <div key={b.id} className="text-center p-3 rounded-lg bg-warning/10 border border-warning/20">
                   {b.foto_url ? (
                     <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" loading="lazy" />
                   ) : (
@@ -456,7 +472,7 @@ export default function ParentPortal() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Monto (L)</Label>
+                <Label>Monto (RD$)</Label>
                 <Input type="number" placeholder="0.00" value={uploadMonto} onChange={e => setUploadMonto(e.target.value)} className="min-h-[44px]" />
               </div>
               <div className="space-y-2">
