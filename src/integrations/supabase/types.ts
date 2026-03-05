@@ -203,6 +203,38 @@ export type Database = {
         }
         Relationships: []
       }
+      familia_estudiante: {
+        Row: {
+          created_at: string
+          estudiante_id: string
+          id: string
+          parentesco: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estudiante_id: string
+          id?: string
+          parentesco?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estudiante_id?: string
+          id?: string
+          parentesco?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "familia_estudiante_estudiante_id_fkey"
+            columns: ["estudiante_id"]
+            isOneToOne: false
+            referencedRelation: "estudiantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       galeria: {
         Row: {
           created_at: string
@@ -421,7 +453,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "directora" | "maestro"
+      app_role: "directora" | "maestro" | "padre" | "pendiente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -549,7 +581,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["directora", "maestro"],
+      app_role: ["directora", "maestro", "padre", "pendiente"],
     },
   },
 } as const

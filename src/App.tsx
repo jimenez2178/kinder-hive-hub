@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import LoginPage from "@/pages/LoginPage";
+import PendingPage from "@/pages/PendingPage";
 import ParentPortal from "@/pages/ParentPortal";
 import DashboardHome from "@/pages/DashboardHome";
 import AlertsPage from "@/pages/AlertsPage";
@@ -21,7 +22,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
@@ -36,6 +37,13 @@ function AppRoutes() {
 
   if (!isAuthenticated) return <LoginPage />;
 
+  // Pending users see a waiting screen
+  if (user?.role === "pendiente") return <PendingPage />;
+
+  // Parents go to their portal
+  if (user?.role === "padre") return <ParentPortal />;
+
+  // Staff (directora, maestro) see the dashboard
   return (
     <DashboardLayout>
       <Routes>
@@ -60,14 +68,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/padres" element={<ParentPortal />} />
-          <Route path="/*" element={
-            <AuthProvider>
-              <AppRoutes />
-            </AuthProvider>
-          } />
-        </Routes>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
