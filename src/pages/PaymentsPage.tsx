@@ -176,13 +176,16 @@ export default function PaymentsPage() {
   };
 
   const deletePayment = async (id: string) => {
-    const { error } = await supabase.from("pagos").delete().eq("id", id);
+    console.log("🗑️ Attempting to delete payment:", id);
+    const { error, status, statusText } = await supabase.from("pagos").delete().eq("id", id);
     if (error) {
-      console.error("Error deleting payment:", error);
+      console.error("❌ DELETE FAILED:", JSON.stringify(error, null, 2));
+      console.error("❌ Status:", status, statusText);
+      alert(`Error al borrar pago: ${error.message}\nCódigo: ${error.code}\nDetalles: ${error.details}`);
       return;
     }
-    // Refetch fresh data from DB to ensure totals are correct
-    await fetchData();
+    console.log("✅ DELETE success, status:", status, "- forcing full reload");
+    window.location.reload();
   };
 
   const deleteStudent = async (id: string) => {

@@ -112,8 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // Clear all cached data before signing out
+    localStorage.clear();
+    sessionStorage.clear();
     await supabase.auth.signOut();
     setUser(null);
+    window.location.href = "/";
   }, []);
 
   const hasPermission = useCallback((action: string) => {
