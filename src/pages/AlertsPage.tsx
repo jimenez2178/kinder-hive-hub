@@ -58,7 +58,7 @@ export default function AlertsPage() {
     fetchAlerts();
   };
 
-  const priorityLabel: Record<string, string> = { urgent: "🔴 Urgente", warning: "🟡 Advertencia", info: "🔵 Información" };
+  const priorityLabel: Record<string, string> = { urgente: "🔴 Urgente", advertencia: "🟡 Advertencia", info: "🔵 Información" };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -86,8 +86,8 @@ export default function AlertsPage() {
             <Select value={priority} onValueChange={setPriority}>
               <SelectTrigger className="w-48 min-h-[44px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="urgent">🔴 Urgente</SelectItem>
-                <SelectItem value="warning">🟡 Advertencia</SelectItem>
+                <SelectItem value="urgente">🔴 Urgente</SelectItem>
+                <SelectItem value="advertencia">🟡 Advertencia</SelectItem>
                 <SelectItem value="info">🔵 Información</SelectItem>
               </SelectContent>
             </Select>
@@ -106,8 +106,8 @@ export default function AlertsPage() {
         ) : alerts.map(alert => (
           <motion.div key={alert.id} layout
             className={`bg-card rounded-xl p-4 border border-border shadow-card flex items-start gap-3 ${!alert.activa ? "opacity-50" : ""}
-              ${alert.prioridad === "urgent" && alert.activa ? "animate-urgent-flash border-destructive/50" : ""}`}>
-            <span className="text-lg">{alert.prioridad === "urgent" ? "🔴" : alert.prioridad === "warning" ? "🟡" : "🔵"}</span>
+              ${alert.prioridad === "urgente" && alert.activa ? "animate-urgent-flash border-destructive/50" : ""}`}>
+            <span className="text-lg">{alert.prioridad === "urgente" ? "🔴" : alert.prioridad === "advertencia" ? "🟡" : "🔵"}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-foreground">{alert.titulo}</h3>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle } from "lucide-react";
+import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertBanner } from "@/components/AlertBanner";
@@ -19,7 +19,8 @@ export default function ParentPortal() {
   const fileRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLDivElement>(null);
   const financialRef = useRef<HTMLDivElement>(null);
-  const galleryRef = useRef<HTMLDivElement>(null);
+   const galleryRef = useRef<HTMLDivElement>(null);
+   const [galeriaFotos, setGaleriaFotos] = useState<Tables<"galeria">[]>([]);
 
   const [estudiantes, setEstudiantes] = useState<Tables<"estudiantes">[]>([]);
   const [eventos, setEventos] = useState<Tables<"eventos">[]>([]);
@@ -43,7 +44,7 @@ export default function ParentPortal() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [estRes, evRes, comRes, notRes, pagRes, cumRes, msgRes] = await Promise.all([
+      const [estRes, evRes, comRes, notRes, pagRes, cumRes, msgRes, galRes] = await Promise.all([
         supabase.from("estudiantes").select("*"),
         supabase.from("eventos").select("*").order("fecha", { ascending: false }).limit(5),
         supabase.from("comunicados").select("*").order("created_at", { ascending: false }).limit(5),
@@ -51,6 +52,7 @@ export default function ParentPortal() {
         supabase.from("pagos").select("*, estudiantes(nombre)").order("fecha", { ascending: false }).limit(10),
         supabase.from("cumpleanos").select("*").order("fecha"),
         supabase.from("mensaje_dia").select("*").eq("fecha_iso", new Date().toISOString().split("T")[0]).limit(1).maybeSingle(),
+        supabase.from("galeria").select("*").order("created_at", { ascending: false }).limit(8),
       ]);
       if (estRes.data) setEstudiantes(estRes.data);
       if (evRes.data) setEventos(evRes.data);
@@ -59,6 +61,7 @@ export default function ParentPortal() {
       if (pagRes.data) setPagos(pagRes.data.map((p: any) => ({ ...p, estudiante_nombre: p.estudiantes?.nombre })));
       if (cumRes.data) setCumpleanos(cumRes.data);
       if (msgRes.data) setMessageOfDay(msgRes.data.contenido);
+      if (galRes.data) setGaleriaFotos(galRes.data);
     };
     fetchAll();
   }, []);
@@ -221,7 +224,7 @@ export default function ParentPortal() {
             <h2 className="font-display font-bold text-foreground text-lg mb-3">👧 Mis Hijos</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {estudiantes.map(e => (
-                <div key={e.id} className="p-3 rounded-lg bg-muted flex items-center gap-3">
+                <div key={e.id} className="p-3 rounded-lg bg-accent/20 border border-accent/20 flex items-center gap-3">
                   {e.foto_url ? (
                     <img src={e.foto_url} alt={e.nombre} className="w-12 h-12 rounded-full object-cover" loading="lazy" />
                   ) : (
@@ -377,30 +380,51 @@ export default function ParentPortal() {
           </div>
         </div>
 
-        {/* Birthdays / Gallery */}
+        {/* Gallery Section */}
         <div ref={galleryRef}>
-          {birthdaysThisMonth.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-              className="bg-card rounded-xl p-5 shadow-card border border-border">
-              <div className="flex items-center gap-2 mb-3">
-                <Cake className="w-5 h-5 text-warning" />
-                <h2 className="font-display font-bold text-foreground">🎉 Cumpleañeros del Mes</h2>
-              </div>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
+            className="bg-card rounded-xl p-5 shadow-card border border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <ImageIcon className="w-5 h-5 text-primary" />
+              <h2 className="font-display font-bold text-foreground">📸 Galería de Fotos</h2>
+            </div>
+            {galeriaFotos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay fotos en la galería aún</p>
+            ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {birthdaysThisMonth.map(b => (
-                  <div key={b.id} className="text-center p-3 rounded-lg bg-muted">
-                    {b.foto_url ? (
-                      <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" loading="lazy" />
-                    ) : (
-                      <span className="text-3xl block mb-1">{b.emoji || "🎂"}</span>
-                    )}
-                    <p className="font-semibold text-foreground text-sm">{b.nombre}</p>
+                {galeriaFotos.map(foto => (
+                  <div key={foto.id} className="rounded-lg overflow-hidden border border-border aspect-square">
+                    <img src={foto.foto_url} alt={foto.descripcion || "Foto"} loading="lazy"
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                   </div>
                 ))}
               </div>
-            </motion.div>
-          )}
+            )}
+          </motion.div>
         </div>
+
+        {/* Birthdays */}
+        {birthdaysThisMonth.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="bg-card rounded-xl p-5 shadow-card border border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <Cake className="w-5 h-5 text-warning" />
+              <h2 className="font-display font-bold text-foreground">🎉 Cumpleañeros del Mes</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {birthdaysThisMonth.map(b => (
+                <div key={b.id} className="text-center p-3 rounded-lg bg-accent/30 border border-accent/20">
+                  {b.foto_url ? (
+                    <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" loading="lazy" />
+                  ) : (
+                    <span className="text-3xl block mb-1">{b.emoji || "🎂"}</span>
+                  )}
+                  <p className="font-semibold text-foreground text-sm">{b.nombre}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         <footer className="text-center text-xs text-muted-foreground py-4 border-t border-border">
           <p>Pre-escolar Psicopedagógico de la Sagrada Familia © {new Date().getFullYear()}</p>
@@ -447,20 +471,22 @@ export default function ParentPortal() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Foto del comprobante</Label>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
-                <Button variant="outline" className="w-full min-h-[44px] gap-2" onClick={() => fileRef.current?.click()}>
-                  <Upload className="w-4 h-4" />
-                  {uploadFile ? uploadFile.name : "Seleccionar imagen"}
-                </Button>
-              </div>
+              {uploadMetodo !== "efectivo" && (
+                <div className="space-y-2">
+                  <Label>Foto del comprobante</Label>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+                  <Button variant="outline" className="w-full min-h-[44px] gap-2" onClick={() => fileRef.current?.click()}>
+                    <Upload className="w-4 h-4" />
+                    {uploadFile ? uploadFile.name : "Seleccionar imagen"}
+                  </Button>
+                </div>
+              )}
               <Button
                 onClick={handleUploadComprobante}
-                disabled={uploading || !selectedEstudiante || !uploadMonto || !uploadFile}
+                disabled={uploading || !selectedEstudiante || !uploadMonto || (uploadMetodo !== "efectivo" && !uploadFile)}
                 className="w-full gradient-warm text-primary-foreground border-0 min-h-[44px]"
               >
-                {uploading ? "Enviando..." : "Enviar Comprobante"}
+                {uploading ? "Enviando..." : uploadMetodo === "efectivo" ? "Registrar Pago" : "Enviar Comprobante"}
               </Button>
             </div>
           </DrawerContent>

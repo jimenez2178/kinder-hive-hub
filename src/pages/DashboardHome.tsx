@@ -156,7 +156,7 @@ export default function DashboardHome() {
   const hasPendingTasks = pendingPayments > 0 || pendingUsers > 0;
 
   // Check for urgent comunicados
-  const hasUrgentAlerts = alertas.some(a => a.prioridad === "urgent" && a.activa);
+  const hasUrgentAlerts = alertas.some(a => a.prioridad === "urgente" && a.activa);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -196,7 +196,7 @@ export default function DashboardHome() {
             <div>
               <p className="font-display font-bold text-destructive">⚠️ Avisos Urgentes Activos</p>
               <p className="text-sm text-muted-foreground">
-                {alertas.filter(a => a.prioridad === "urgent" && a.activa).map(a => a.titulo).join(" • ")}
+                {alertas.filter(a => a.prioridad === "urgente" && a.activa).map(a => a.titulo).join(" • ")}
               </p>
             </div>
           </div>
@@ -284,7 +284,7 @@ export default function DashboardHome() {
           ) : (
             <ul className="space-y-2">
               {eventos.slice(0, 4).map(ev => (
-                <li key={ev.id} className="text-sm p-3 rounded-lg bg-muted">
+                <li key={ev.id} className="text-sm p-3 rounded-lg bg-accent/20 border border-accent/20">
                   <span className="font-semibold text-foreground">{ev.titulo}</span>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {ev.fecha}</span>
@@ -309,7 +309,7 @@ export default function DashboardHome() {
           ) : (
             <ul className="space-y-2">
               {notas.slice(0, 4).map(n => (
-                <li key={n.id} className="text-sm p-3 rounded-lg bg-muted">
+                <li key={n.id} className="text-sm p-3 rounded-lg bg-primary/10 border border-primary/15">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-foreground">{n.estudiante_nombre || "Estudiante"}</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-accent-foreground capitalize">{n.categoria}</span>
@@ -336,7 +336,7 @@ export default function DashboardHome() {
           ) : (
             <ul className="space-y-3">
               {comunicados.slice(0, 3).map(c => (
-                <li key={c.id} className="p-3 rounded-lg bg-muted">
+                <li key={c.id} className="p-3 rounded-lg bg-success/10 border border-success/15">
                   <span className="font-semibold text-foreground text-sm">{c.titulo}</span>
                   <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{c.contenido}</p>
                   <span className="text-[10px] text-muted-foreground block mt-1">{c.fecha}</span>
@@ -357,7 +357,7 @@ export default function DashboardHome() {
           ) : (
             <ul className="space-y-2">
               {agradecimientos.slice(0, 3).map(t => (
-                <li key={t.id} className="text-sm p-3 rounded-lg bg-muted">
+                <li key={t.id} className="text-sm p-3 rounded-lg bg-warning/10 border border-warning/15">
                   <span className="text-foreground">"{t.mensaje}"</span>
                   <span className="text-muted-foreground block text-xs mt-1">— {t.autor}</span>
                 </li>
@@ -377,7 +377,7 @@ export default function DashboardHome() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {birthdaysThisMonth.map(b => (
-              <div key={b.id} className="text-center p-3 rounded-lg bg-muted">
+              <div key={b.id} className="text-center p-3 rounded-lg bg-info/10 border border-info/15">
                 {b.foto_url ? (
                   <img src={b.foto_url} alt={b.nombre} loading="lazy" className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" />
                 ) : (
