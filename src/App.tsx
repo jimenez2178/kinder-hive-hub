@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import LoginPage from "@/pages/LoginPage";
+import ParentPortal from "@/pages/ParentPortal";
 import DashboardHome from "@/pages/DashboardHome";
 import AlertsPage from "@/pages/AlertsPage";
 import CalendarPage from "@/pages/CalendarPage";
@@ -20,7 +21,18 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 rounded-xl gradient-warm mx-auto animate-pulse" />
+          <p className="text-muted-foreground text-sm">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) return <LoginPage />;
 
@@ -47,11 +59,16 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/padres" element={<ParentPortal />} />
+          <Route path="/*" element={
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          } />
+        </Routes>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

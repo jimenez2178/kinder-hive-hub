@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </SidebarTrigger>
             <div className="flex-1" />
             <span className="text-sm text-muted-foreground">
-              {user?.role === "directora" ? "👑" : user?.role === "asistente" ? "⭐" : "🧑‍🏫"}{" "}
+              {user?.role === "directora" ? "👑" : "🧑‍🏫"}{" "}
               {user?.displayName}
             </span>
           </header>
