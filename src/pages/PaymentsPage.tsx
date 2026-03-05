@@ -69,11 +69,12 @@ export default function PaymentsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Realtime subscription for pagos
+  // Realtime subscription for pagos + estudiantes
   useEffect(() => {
     const channel = supabase
       .channel("payments-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "pagos" }, () => { fetchData(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "estudiantes" }, () => { fetchData(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchData]);
@@ -185,8 +186,15 @@ export default function PaymentsPage() {
   };
 
   const deleteStudent = async (id: string) => {
-    await supabase.from("estudiantes").update({ activo: false }).eq("id", id);
-    fetchData();
+    const { error } = await supabase.from("estudiantes").update({ activo: false }).eq("id", id);
+    if (error) {
+      console.error("Error deactivating student:", error);
+      return;
+    }
+    // Immediately filter out orphaned payments from UI state, then refetch
+    setPagos(prev => prev.filter(p => p.estudiante_id !== id));
+    setEstudiantes(prev => prev.filter(s => s.id !== id));
+    await fetchData();
   };
 
   const getStudentPayments = (id: string) => pagos.filter(p => p.estudiante_id === id);
