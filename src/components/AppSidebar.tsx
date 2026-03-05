@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import {
   Home, Bell, Calendar, FileText, GraduationCap, Image, DollarSign,
   Cake, Heart, LogOut, ChevronLeft,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -12,25 +14,32 @@ import {
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
-  { title: "Dashboard", url: "/", icon: Home, roles: ["directora", "maestro"] },
-  { title: "Avisos", url: "/avisos", icon: Bell, roles: ["directora", "maestro"] },
-  { title: "Calendario", url: "/calendario", icon: Calendar, roles: ["directora", "maestro"] },
-  { title: "Comunicados", url: "/comunicados", icon: FileText, roles: ["directora", "maestro"] },
-  { title: "Notas Maestros", url: "/notas", icon: GraduationCap, roles: ["directora", "maestro"] },
-  { title: "Galería", url: "/galeria", icon: Image, roles: ["directora", "maestro"] },
-  { title: "Pagos", url: "/pagos", icon: DollarSign, roles: ["directora"] },
-  { title: "Cumpleaños", url: "/cumpleanos", icon: Cake, roles: ["directora", "maestro"] },
-  { title: "Agradecimientos", url: "/agradecimientos", icon: Heart, roles: ["directora", "maestro"] },
+  { title: "Dashboard", url: "/", icon: Home, roles: ["directora", "maestro"], badgeKey: null },
+  { title: "Avisos", url: "/avisos", icon: Bell, roles: ["directora", "maestro"], badgeKey: null },
+  { title: "Calendario", url: "/calendario", icon: Calendar, roles: ["directora", "maestro"], badgeKey: null },
+  { title: "Comunicados", url: "/comunicados", icon: FileText, roles: ["directora", "maestro"], badgeKey: null },
+  { title: "Notas Maestros", url: "/notas", icon: GraduationCap, roles: ["directora", "maestro"], badgeKey: null },
+  { title: "Galería", url: "/galeria", icon: Image, roles: ["directora", "maestro"], badgeKey: null },
+  { title: "Pagos", url: "/pagos", icon: DollarSign, roles: ["directora"], badgeKey: "pagos" as const },
+  { title: "Cumpleaños", url: "/cumpleanos", icon: Cake, roles: ["directora", "maestro"], badgeKey: null },
+  { title: "Agradecimientos", url: "/agradecimientos", icon: Heart, roles: ["directora", "maestro"], badgeKey: null },
 ];
 
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
+  const [pendingPayments, setPendingPayments] = useState(0);
 
   const roleEmoji = user?.role === "directora" ? "👑" : "🧑‍🏫";
-
   const visibleItems = NAV_ITEMS.filter(item => user?.role && item.roles.includes(user.role));
+
+  // Fetch pending counts for directora
+  useEffect(() => {
+    if (user?.role !== "directora") return;
+    supabase.from("pagos").select("id", { count: "exact", head: true }).eq("estado", "por_revisar")
+      .then(({ count }) => setPendingPayments(count || 0));
+  }, [user?.role]);
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -70,21 +79,29 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {visibleItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                      activeClassName="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-                    >
-                      <item.icon className="w-4 h-4 mr-2 flex-shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {visibleItems.map((item) => {
+                const badge = item.badgeKey === "pagos" ? pendingPayments : 0;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground relative"
+                        activeClassName="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                      >
+                        <item.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+                        {!collapsed && <span>{item.title}</span>}
+                        {badge > 0 && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                            {badge}
+                          </span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

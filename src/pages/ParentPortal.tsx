@@ -175,6 +175,32 @@ export default function ParentPortal() {
           </div>
         </motion.div>
 
+        {/* Quick Action Cards */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
+          className="grid grid-cols-3 gap-3">
+          <button
+            onClick={() => galleryRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="bg-card rounded-xl p-4 shadow-card border border-border text-center hover:shadow-elevated transition-shadow min-h-[44px]"
+          >
+            <span className="text-2xl block mb-1">📸</span>
+            <p className="text-xs font-semibold text-foreground">Ver Fotos</p>
+          </button>
+          <button
+            onClick={() => notesRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="bg-card rounded-xl p-4 shadow-card border border-border text-center hover:shadow-elevated transition-shadow min-h-[44px]"
+          >
+            <span className="text-2xl block mb-1">📝</span>
+            <p className="text-xs font-semibold text-foreground">Ver Notas</p>
+          </button>
+          <button
+            onClick={() => financialRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="bg-card rounded-xl p-4 shadow-card border border-border text-center hover:shadow-elevated transition-shadow min-h-[44px]"
+          >
+            <span className="text-2xl block mb-1">💳</span>
+            <p className="text-xs font-semibold text-foreground">Mi Cuenta</p>
+          </button>
+        </motion.div>
+
         {/* Profile completion alert */}
         {profileIncomplete && (
           <ProfileCompletionBanner onSave={handleSavePhone} />
