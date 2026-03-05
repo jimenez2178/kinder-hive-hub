@@ -1,23 +1,38 @@
-import { dataStore } from "@/lib/dataStore";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Info, AlertCircle } from "lucide-react";
+import type { Tables } from "@/integrations/supabase/types";
 
 export function AlertBanner() {
-  const alerts = dataStore.getAlerts().filter(a => a.active && a.showBanner);
+  const [alerts, setAlerts] = useState<Tables<"alertas">[]>([]);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase
+        .from("alertas")
+        .select("*")
+        .eq("activa", true)
+        .eq("show_banner", true)
+        .order("created_at", { ascending: false });
+      if (data) setAlerts(data);
+    };
+    fetch();
+  }, []);
 
   if (alerts.length === 0) return null;
 
-  const priorityConfig = {
-    urgent: { icon: AlertCircle, bg: "bg-urgent", text: "text-urgent-foreground", glow: "animate-pulse-glow" },
-    warning: { icon: AlertTriangle, bg: "bg-warning", text: "text-warning-foreground", glow: "" },
-    info: { icon: Info, bg: "bg-info", text: "text-info-foreground", glow: "" },
+  const priorityConfig: Record<string, { icon: typeof AlertCircle; bgClass: string; glowClass: string }> = {
+    urgent: { icon: AlertCircle, bgClass: "bg-urgent text-urgent-foreground", glowClass: "animate-urgent-flash" },
+    warning: { icon: AlertTriangle, bgClass: "bg-warning text-warning-foreground", glowClass: "" },
+    info: { icon: Info, bgClass: "bg-info text-info-foreground", glowClass: "" },
   };
 
   return (
     <AnimatePresence>
       <div className="space-y-2">
         {alerts.map(alert => {
-          const config = priorityConfig[alert.priority];
+          const config = priorityConfig[alert.prioridad] || priorityConfig.info;
           const Icon = config.icon;
           return (
             <motion.div
@@ -25,12 +40,12 @@ export function AlertBanner() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className={`${config.bg} ${config.text} ${config.glow} rounded-xl px-4 py-3 flex items-center gap-3`}
+              className={`${config.bgClass} ${config.glowClass} rounded-xl px-4 py-3 flex items-center gap-3 min-h-[44px]`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm">{alert.title}</p>
-                <p className="text-sm opacity-90">{alert.message}</p>
+                <p className="font-bold text-sm">{alert.titulo}</p>
+                <p className="text-sm opacity-90">{alert.mensaje}</p>
               </div>
             </motion.div>
           );

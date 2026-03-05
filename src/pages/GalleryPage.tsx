@@ -81,7 +81,7 @@ export default function GalleryPage() {
               className="bg-card rounded-xl overflow-hidden border border-border shadow-card group cursor-pointer"
               onClick={() => setViewing(photo)}>
               <div className="aspect-video bg-muted relative overflow-hidden">
-                <img src={photo.url} alt={photo.description} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <img src={photo.url} alt={photo.description} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
               </div>
               <div className="p-3">
                 <p className="text-sm text-foreground line-clamp-2">{photo.description || "Sin descripción"}</p>
