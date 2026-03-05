@@ -195,34 +195,34 @@
   }
 }
 
-/* Urgent alert flash animation */
+/* Urgent alert flash animation — solid red, slow readable pulse */
 @keyframes urgent-flash {
   0%, 100% {
-    background-color: hsl(var(--card));
-    box-shadow: 0 0 0 0 hsl(var(--urgent) / 0);
+    opacity: 1;
+    box-shadow: 0 0 0 0 hsl(0 72% 51% / 0);
   }
   50% {
-    background-color: hsl(var(--urgent) / 0.08);
-    box-shadow: 0 0 16px 2px hsl(var(--urgent) / 0.25);
+    opacity: 0.88;
+    box-shadow: 0 0 20px 4px hsl(0 72% 51% / 0.45);
   }
 }
 .animate-urgent-flash {
-  animation: urgent-flash 2.5s ease-in-out infinite;
+  animation: urgent-flash 3s ease-in-out infinite;
 }
 
 /* Urgent banner animation */
 @keyframes urgent-banner-pulse {
   0%, 100% {
     opacity: 1;
-    box-shadow: 0 0 8px hsl(var(--urgent) / 0.3);
+    box-shadow: 0 0 12px hsl(0 72% 51% / 0.4);
   }
   50% {
     opacity: 0.85;
-    box-shadow: 0 0 24px hsl(var(--urgent) / 0.6);
+    box-shadow: 0 0 28px 6px hsl(0 72% 51% / 0.6);
   }
 }
 .animate-urgent-banner {
-  animation: urgent-banner-pulse 2s ease-in-out infinite;
+  animation: urgent-banner-pulse 3s ease-in-out infinite;
 }
 
 /* Scrollbar styling */
