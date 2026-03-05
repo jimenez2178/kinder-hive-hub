@@ -1,26 +1,49 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Heart, Plus, Trash2 } from "lucide-react";
-import { dataStore, type ThankYou, generateId } from "@/lib/dataStore";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import type { Tables } from "@/integrations/supabase/types";
 
 export default function ThanksPage() {
   const { hasPermission, user } = useAuth();
-  const [thanks, setThanks] = useState<ThankYou[]>(dataStore.getThanks());
+  const { toast } = useToast();
+  const [thanks, setThanks] = useState<Tables<"agradecimientos">[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
   const [author, setAuthor] = useState("");
   const canManage = hasPermission("manage-thanks");
 
-  const save = (updated: ThankYou[]) => { setThanks(updated); dataStore.saveThanks(updated); };
+  useEffect(() => { fetchThanks(); }, []);
 
-  const handleAdd = () => {
+  const fetchThanks = async () => {
+    const { data } = await supabase.from("agradecimientos").select("*").order("created_at", { ascending: false });
+    if (data) setThanks(data);
+  };
+
+  const handleAdd = async () => {
     if (!message.trim()) return;
-    save([{ id: generateId(), message: message.trim(), author: author.trim() || user?.displayName || "Anónimo", date: new Date().toLocaleDateString("es") }, ...thanks]);
+    const { error } = await supabase.from("agradecimientos").insert({
+      mensaje: message.trim(),
+      autor: author.trim() || user?.displayName || "Anónimo",
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "✅ Agradecimiento publicado" });
     setMessage(""); setAuthor(""); setShowForm(false);
+    fetchThanks();
+  };
+
+  const handleDelete = async (id: string) => {
+    await supabase.from("agradecimientos").delete().eq("id", id);
+    toast({ title: "Agradecimiento eliminado" });
+    fetchThanks();
   };
 
   return (
@@ -57,12 +80,11 @@ export default function ThanksPage() {
               transition={{ delay: i * 0.05 }}
               className="bg-card rounded-xl p-5 border border-border shadow-card relative">
               <span className="absolute top-3 right-3 text-2xl opacity-20">💛</span>
-              <p className="text-foreground italic mb-3">"{t.message}"</p>
+              <p className="text-foreground italic mb-3">"{t.mensaje}"</p>
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">— {t.author} • {t.date}</p>
+                <p className="text-sm text-muted-foreground">— {t.autor} • {t.fecha}</p>
                 {canManage && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                    onClick={() => save(thanks.filter(x => x.id !== t.id))}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(t.id)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 )}
