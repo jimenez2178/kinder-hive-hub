@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, FileText, Image, Cake, Bell, MessageSquare, Sparkles, Clock, MapPin, Users } from "lucide-react";
+import { Calendar, FileText, Image, Cake, Bell, MessageSquare, Sparkles, Clock, MapPin, Users, DollarSign, UserCheck, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertBanner } from "@/components/AlertBanner";
+import { WelcomeModal } from "@/components/WelcomeModal";
 import type { Tables } from "@/integrations/supabase/types";
 
 const WEBHOOK_URL = "https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/frase-del-dia";
@@ -21,10 +22,37 @@ export default function DashboardHome() {
   const [fotos, setFotos] = useState<Tables<"galeria">[]>([]);
   const [agradecimientos, setAgradecimientos] = useState<Tables<"agradecimientos">[]>([]);
 
+  // Directora pending tasks
+  const [pendingPayments, setPendingPayments] = useState(0);
+  const [pendingUsers, setPendingUsers] = useState(0);
+
+  // Welcome modal
+  const [showWelcome, setShowWelcome] = useState(false);
+
   useEffect(() => {
     fetchData();
     fetchMessage();
-  }, []);
+    checkFirstVisit();
+    if (user?.role === "directora") fetchPendingTasks();
+  }, [user]);
+
+  const checkFirstVisit = () => {
+    if (!user) return;
+    const key = `educonnect_welcome_staff_${user.id}`;
+    if (!localStorage.getItem(key)) {
+      setShowWelcome(true);
+      localStorage.setItem(key, "true");
+    }
+  };
+
+  const fetchPendingTasks = async () => {
+    const [payRes, userRes] = await Promise.all([
+      supabase.from("pagos").select("id", { count: "exact", head: true }).eq("estado", "por_revisar"),
+      supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "pendiente"),
+    ]);
+    setPendingPayments(payRes.count || 0);
+    setPendingUsers(userRes.count || 0);
+  };
 
   const fetchData = async () => {
     const [evRes, comRes, notRes, cumRes, alRes, fotRes, agrRes] = await Promise.all([
@@ -47,7 +75,6 @@ export default function DashboardHome() {
 
   const fetchMessage = async () => {
     try {
-      // Try DB first
       const today = new Date().toISOString().split("T")[0];
       const { data: dbMsg } = await supabase.from("mensaje_dia").select("*").eq("fecha_iso", today).limit(1).maybeSingle();
       if (dbMsg) {
@@ -56,7 +83,6 @@ export default function DashboardHome() {
         setLoadingMessage(false);
         return;
       }
-      // Fallback to webhook
       const res = await fetch(WEBHOOK_URL);
       if (res.ok) {
         const data = await res.json();
@@ -73,12 +99,8 @@ export default function DashboardHome() {
     }
   };
 
-  // Current month birthdays
   const currentMonth = new Date().getMonth() + 1;
-  const birthdaysThisMonth = cumpleanos.filter(c => {
-    const m = new Date(c.fecha).getMonth() + 1;
-    return m === currentMonth;
-  });
+  const birthdaysThisMonth = cumpleanos.filter(c => new Date(c.fecha).getMonth() + 1 === currentMonth);
 
   const kpis = [
     { label: "Eventos", value: eventos.length, icon: Calendar, color: "bg-accent text-accent-foreground" },
@@ -89,25 +111,72 @@ export default function DashboardHome() {
     { label: "Notas", value: notas.length, icon: MessageSquare, color: "bg-primary text-primary-foreground" },
   ];
 
+  const hasPendingTasks = pendingPayments > 0 || pendingUsers > 0;
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Staff Welcome Modal */}
+      {showWelcome && user && (
+        <WelcomeModal
+          name={user.displayName}
+          onDismiss={() => setShowWelcome(false)}
+          onAction={() => setShowWelcome(false)}
+          variant="staff"
+        />
+      )}
+
       <AlertBanner />
 
       {/* Welcome Banner */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl p-6 bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-100 dark:from-amber-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 shadow-lg">
         <div className="flex items-center gap-4">
-          <span className="text-5xl">👨‍👩‍👧‍👦</span>
+          <span className="text-5xl">{user?.role === "directora" ? "👑" : "🧑‍🏫"}</span>
           <div>
             <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-              {isAuthenticated ? `¡Buen día, ${user?.displayName}! 👋` : "¡Hola, Padres y Madres! 👋"}
+              ¡Buen día, {user?.displayName}! 👋
             </h1>
             <p className="text-muted-foreground mt-1 text-lg">
-              Bienvenidos al <span className="font-bold text-foreground">Pre-escolar Psicopedagógico de la Sagrada Familia</span>
+              Es un gusto tenerte aquí hoy — <span className="font-bold text-foreground">Pre-escolar Sagrada Familia</span>
             </p>
           </div>
         </div>
       </motion.div>
+
+      {/* Directora: Pending Tasks */}
+      {user?.role === "directora" && hasPendingTasks && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          className="bg-card rounded-xl p-5 shadow-card border border-warning/30">
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList className="w-5 h-5 text-warning" />
+            <h3 className="font-display font-bold text-foreground">Tareas Pendientes</h3>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {pendingPayments > 0 && (
+              <a href="/pagos" className="p-4 rounded-xl bg-warning/10 border border-warning/20 flex items-center gap-3 hover:bg-warning/15 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-warning/20 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground">{pendingPayments} pago{pendingPayments > 1 ? "s" : ""} por validar</p>
+                  <p className="text-xs text-muted-foreground">Comprobantes pendientes de revisión</p>
+                </div>
+              </a>
+            )}
+            {pendingUsers > 0 && (
+              <div className="p-4 rounded-xl bg-info/10 border border-info/20 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-info/20 flex items-center justify-center">
+                  <UserCheck className="w-5 h-5 text-info" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground">{pendingUsers} padre{pendingUsers > 1 ? "s" : ""} por vincular</p>
+                  <p className="text-xs text-muted-foreground">Cuentas en espera de validación</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Message of the Day */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -144,11 +213,10 @@ export default function DashboardHome() {
 
       {/* Recent Events + Recent Notes */}
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Recent Events */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           className="bg-card rounded-xl p-5 shadow-card border border-border">
           <div className="flex items-center gap-2 mb-3">
-            <Calendar className="w-4 h-4 text-accent" />
+            <Calendar className="w-4 h-4 text-accent-foreground" />
             <h3 className="font-display font-bold text-foreground">Eventos Recientes</h3>
           </div>
           {eventos.length === 0 ? (
@@ -159,19 +227,9 @@ export default function DashboardHome() {
                 <li key={ev.id} className="text-sm p-3 rounded-lg bg-muted">
                   <span className="font-semibold text-foreground">{ev.titulo}</span>
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> {ev.fecha}
-                    </span>
-                    {ev.hora && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {ev.hora}
-                      </span>
-                    )}
-                    {ev.ubicacion && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> {ev.ubicacion}
-                      </span>
-                    )}
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {ev.fecha}</span>
+                    {ev.hora && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {ev.hora}</span>}
+                    {ev.ubicacion && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {ev.ubicacion}</span>}
                   </div>
                   {ev.descripcion && <p className="text-xs text-muted-foreground mt-1">{ev.descripcion}</p>}
                 </li>
@@ -180,7 +238,6 @@ export default function DashboardHome() {
           )}
         </motion.div>
 
-        {/* Recent Teacher Notes */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
           className="bg-card rounded-xl p-5 shadow-card border border-border">
           <div className="flex items-center gap-2 mb-3">
@@ -206,7 +263,7 @@ export default function DashboardHome() {
         </motion.div>
       </div>
 
-      {/* Comunicados completos + Agradecimientos */}
+      {/* Comunicados + Agradecimientos */}
       <div className="grid md:grid-cols-2 gap-4">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
           className="bg-card rounded-xl p-5 shadow-card border border-border">
@@ -262,7 +319,7 @@ export default function DashboardHome() {
             {birthdaysThisMonth.map(b => (
               <div key={b.id} className="text-center p-3 rounded-lg bg-muted">
                 {b.foto_url ? (
-                  <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" />
+                  <img src={b.foto_url} alt={b.nombre} loading="lazy" className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" />
                 ) : (
                   <span className="text-3xl block mb-1">{b.emoji || "🎂"}</span>
                 )}
