@@ -23,7 +23,7 @@ export function AlertBanner() {
   if (alerts.length === 0) return null;
 
   const priorityConfig: Record<string, { icon: typeof AlertCircle; bgClass: string; glowClass: string }> = {
-    urgente: { icon: AlertCircle, bgClass: "bg-urgent text-urgent-foreground", glowClass: "animate-urgent-flash" },
+    urgente: { icon: AlertCircle, bgClass: "bg-red-600 text-white font-bold", glowClass: "animate-urgent-flash" },
     advertencia: { icon: AlertTriangle, bgClass: "bg-warning text-warning-foreground", glowClass: "" },
     info: { icon: Info, bgClass: "bg-info text-info-foreground", glowClass: "" },
   };
