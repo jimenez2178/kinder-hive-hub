@@ -176,12 +176,12 @@ export default function PaymentsPage() {
 
   const deletePayment = async (id: string) => {
     const { error } = await supabase.from("pagos").delete().eq("id", id);
-    if (!error) {
-      // Immediately remove from local state for instant UI feedback
-      setPagos(prev => prev.filter(p => p.id !== id));
+    if (error) {
+      console.error("Error deleting payment:", error);
+      return;
     }
-    // Also refetch for consistency
-    fetchData();
+    // Refetch fresh data from DB to ensure totals are correct
+    await fetchData();
   };
 
   const deleteStudent = async (id: string) => {
