@@ -108,27 +108,35 @@ export default function ParentPortal() {
   const birthdaysThisMonth = cumpleanos.filter(c => new Date(c.fecha).getMonth() + 1 === currentMonth);
 
   const handleUploadComprobante = async () => {
-    if (!selectedEstudiante || !uploadMonto || !uploadFile) {
+    const isCash = uploadMetodo === "efectivo";
+    if (!selectedEstudiante || !uploadMonto) {
       toast({ title: "Completa todos los campos", variant: "destructive" });
+      return;
+    }
+    if (!isCash && !uploadFile) {
+      toast({ title: "Debes adjuntar el comprobante", variant: "destructive" });
       return;
     }
     setUploading(true);
     try {
-      const ext = uploadFile.name.split(".").pop();
-      const path = `${user?.id}/${Date.now()}.${ext}`;
-      const { error: storageError } = await supabase.storage.from("comprobantes").upload(path, uploadFile);
-      if (storageError) throw storageError;
-      const { data: urlData } = supabase.storage.from("comprobantes").getPublicUrl(path);
+      let comprobanteUrl: string | null = null;
+      if (uploadFile) {
+        const ext = uploadFile.name.split(".").pop();
+        const path = `${user?.id}/${Date.now()}.${ext}`;
+        const { error: storageError } = await supabase.storage.from("comprobantes").upload(path, uploadFile);
+        if (storageError) throw storageError;
+        const { data: urlData } = supabase.storage.from("comprobantes").getPublicUrl(path);
+        comprobanteUrl = urlData.publicUrl;
+      }
       const { error: insertError } = await supabase.from("pagos").insert({
         estudiante_id: selectedEstudiante,
         monto: parseFloat(uploadMonto),
         metodo_pago: uploadMetodo,
-        comprobante_url: urlData.publicUrl,
+        comprobante_url: comprobanteUrl,
         estado: "por_revisar",
-        created_by: user?.id,
       });
       if (insertError) throw insertError;
-      toast({ title: "✅ Comprobante enviado", description: "La dirección revisará tu pago pronto." });
+      toast({ title: "✅ Pago registrado", description: isCash ? "Pago en efectivo registrado." : "La dirección revisará tu comprobante pronto." });
       setUploadDrawerOpen(false);
       setSelectedEstudiante(""); setUploadMonto(""); setUploadFile(null);
       const { data } = await supabase.from("pagos").select("*, estudiantes(nombre)").order("fecha", { ascending: false }).limit(10);
