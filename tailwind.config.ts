@@ -25,7 +25,7 @@ export default {
   				'sans-serif'
   			],
   			sans: [
-  				'Inter',
+  				'Lato',
   				'ui-sans-serif',
   				'system-ui',
   				'-apple-system',
@@ -38,7 +38,7 @@ export default {
   				'sans-serif'
   			],
   			serif: [
-  				'Lora',
+  				'EB Garamond',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -47,7 +47,7 @@ export default {
   				'serif'
   			],
   			mono: [
-  				'Space Mono',
+  				'Fira Code',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
@@ -104,15 +104,15 @@ export default {
   				DEFAULT: 'hsl(var(--info))',
   				foreground: 'hsl(var(--info-foreground))'
   			},
-			urgent: {
-				DEFAULT: 'hsl(var(--urgent))',
-				foreground: 'hsl(var(--urgent-foreground))'
-			},
-			'calendar-event': {
-				DEFAULT: 'hsl(var(--calendar-event))',
-				foreground: 'hsl(var(--calendar-event-foreground))',
-				dot: 'hsl(var(--calendar-event-dot))'
-			},
+  			urgent: {
+  				DEFAULT: 'hsl(var(--urgent))',
+  				foreground: 'hsl(var(--urgent-foreground))'
+  			},
+  			'calendar-event': {
+  				DEFAULT: 'hsl(var(--calendar-event))',
+  				foreground: 'hsl(var(--calendar-event-foreground))',
+  				dot: 'hsl(var(--calendar-event-dot))'
+  			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',
