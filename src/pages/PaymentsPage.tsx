@@ -69,6 +69,15 @@ export default function PaymentsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Realtime subscription for pagos
+  useEffect(() => {
+    const channel = supabase
+      .channel("payments-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pagos" }, () => { fetchData(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchData]);
+
   const getStudentStatus = (studentId: string) => {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -93,7 +102,7 @@ export default function PaymentsPage() {
   const now = new Date();
   const thisMonthPayments = pagos.filter(p => {
     const d = new Date(p.fecha);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && p.estado === "saldado";
   });
   const totalIncome = thisMonthPayments.reduce((s, p) => s + Number(p.monto), 0);
 
@@ -166,7 +175,12 @@ export default function PaymentsPage() {
   };
 
   const deletePayment = async (id: string) => {
-    await supabase.from("pagos").delete().eq("id", id);
+    const { error } = await supabase.from("pagos").delete().eq("id", id);
+    if (!error) {
+      // Immediately remove from local state for instant UI feedback
+      setPagos(prev => prev.filter(p => p.id !== id));
+    }
+    // Also refetch for consistency
     fetchData();
   };
 
@@ -444,7 +458,7 @@ export default function PaymentsPage() {
                                 {p.metodo_pago === "efectivo" ? "💵" : p.metodo_pago === "transferencia" ? "🏦" : p.metodo_pago === "tarjeta" ? "💳" : "📝"} {p.metodo_pago}
                               </Badge>
                               <Badge variant={p.estado === "saldado" ? "default" : "secondary"} className="text-[10px]">
-                                {p.estado === "saldado" ? "✅ Saldado" : "⏳ Pendiente"}
+                                {p.estado === "saldado" ? "✅ Saldado" : p.estado === "por_revisar" ? "⏳ En revisión" : "⏳ Pendiente"}
                               </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
