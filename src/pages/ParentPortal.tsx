@@ -76,10 +76,15 @@ export default function ParentPortal() {
 
   // Realtime: pagos + galeria
   useEffect(() => {
+    const fetchEstudiantes = async () => {
+      const { data } = await supabase.from("estudiantes").select("*");
+      if (data) setEstudiantes(data);
+    };
     const channel = supabase
       .channel("parent-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "pagos" }, () => { fetchPagos(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "galeria" }, () => { fetchGaleria(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "estudiantes" }, () => { fetchEstudiantes(); fetchPagos(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchPagos, fetchGaleria]);
@@ -118,11 +123,13 @@ export default function ParentPortal() {
     }
   };
 
-  // Financial summary - always from fresh state (realtime updates pagos)
-  const totalPagado = pagos.filter(p => p.estado === "saldado").reduce((s, p) => s + Number(p.monto), 0);
+  // Financial summary - only count payments belonging to active/linked students
+  const activeStudentIds = new Set(estudiantes.map(s => s.id));
+  const activePagos = pagos.filter(p => activeStudentIds.has(p.estudiante_id));
+  const totalPagado = activePagos.filter(p => p.estado === "saldado").reduce((s, p) => s + Number(p.monto), 0);
   const cuotaTotal = estudiantes.reduce((s, e) => s + Number(e.cuota_mensual), 0);
   const saldoPendiente = Math.max(0, cuotaTotal - totalPagado);
-  const ultimoPago = pagos.find(p => p.estado === "saldado");
+  const ultimoPago = activePagos.find(p => p.estado === "saldado");
 
   const currentMonth = new Date().getMonth() + 1;
   const birthdaysThisMonth = cumpleanos.filter(c => new Date(c.fecha).getMonth() + 1 === currentMonth);
