@@ -125,7 +125,7 @@ export default function BirthdaysPage() {
                 transition={{ delay: i * 0.05 }}
                 className="bg-card rounded-xl p-4 border-2 border-warning/30 shadow-card text-center">
                 {b.foto_url ? (
-                  <img src={b.foto_url} alt={b.nombre} className="w-20 h-20 rounded-full mx-auto mb-2 object-cover border-2 border-warning/30" />
+                  <img src={b.foto_url} alt={b.nombre} loading="lazy" className="w-20 h-20 rounded-full mx-auto mb-2 object-cover border-2 border-warning/30" />
                 ) : (
                   <span className="text-4xl block mb-2">{b.emoji || "🎂"}</span>
                 )}
@@ -150,7 +150,7 @@ export default function BirthdaysPage() {
             {otherMonths.map(b => (
               <div key={b.id} className="bg-card rounded-xl p-4 border border-border shadow-card text-center">
                 {b.foto_url ? (
-                  <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" />
+                  <img src={b.foto_url} alt={b.nombre} loading="lazy" className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" />
                 ) : (
                   <span className="text-3xl block mb-2">{b.emoji || "🎂"}</span>
                 )}

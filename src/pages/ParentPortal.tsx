@@ -1,14 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, Image, DollarSign, LogOut } from "lucide-react";
+import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, Image, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertBanner } from "@/components/AlertBanner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { useToast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 export default function ParentPortal() {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [estudiantes, setEstudiantes] = useState<Tables<"estudiantes">[]>([]);
   const [eventos, setEventos] = useState<Tables<"eventos">[]>([]);
   const [comunicados, setComunicados] = useState<Tables<"comunicados">[]>([]);
@@ -16,6 +23,14 @@ export default function ParentPortal() {
   const [pagos, setPagos] = useState<(Tables<"pagos"> & { estudiante_nombre?: string })[]>([]);
   const [cumpleanos, setCumpleanos] = useState<Tables<"cumpleanos">[]>([]);
   const [messageOfDay, setMessageOfDay] = useState("¡Cada día es una nueva oportunidad para aprender! 🌟");
+
+  // Payment upload state
+  const [uploadDrawerOpen, setUploadDrawerOpen] = useState(false);
+  const [selectedEstudiante, setSelectedEstudiante] = useState("");
+  const [uploadMonto, setUploadMonto] = useState("");
+  const [uploadMetodo, setUploadMetodo] = useState("transferencia");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -39,36 +54,79 @@ export default function ParentPortal() {
     fetchAll();
   }, []);
 
+  // Financial summary
+  const totalPagado = pagos.filter(p => p.estado === "saldado").reduce((s, p) => s + Number(p.monto), 0);
+  const cuotaTotal = estudiantes.reduce((s, e) => s + Number(e.cuota_mensual), 0);
+  const saldoPendiente = Math.max(0, cuotaTotal - totalPagado);
+  const ultimoPago = pagos.find(p => p.estado === "saldado");
+
   const currentMonth = new Date().getMonth() + 1;
   const birthdaysThisMonth = cumpleanos.filter(c => new Date(c.fecha).getMonth() + 1 === currentMonth);
 
+  const handleUploadComprobante = async () => {
+    if (!selectedEstudiante || !uploadMonto || !uploadFile) {
+      toast({ title: "Completa todos los campos", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = uploadFile.name.split(".").pop();
+      const path = `${user?.id}/${Date.now()}.${ext}`;
+      const { error: storageError } = await supabase.storage.from("comprobantes").upload(path, uploadFile);
+      if (storageError) throw storageError;
+
+      const { data: urlData } = supabase.storage.from("comprobantes").getPublicUrl(path);
+
+      const { error: insertError } = await supabase.from("pagos").insert({
+        estudiante_id: selectedEstudiante,
+        monto: parseFloat(uploadMonto),
+        metodo_pago: uploadMetodo,
+        comprobante_url: urlData.publicUrl,
+        estado: "por_revisar",
+        created_by: user?.id,
+      });
+      if (insertError) throw insertError;
+
+      toast({ title: "✅ Comprobante enviado", description: "La dirección revisará tu pago pronto." });
+      setUploadDrawerOpen(false);
+      setSelectedEstudiante("");
+      setUploadMonto("");
+      setUploadFile(null);
+      // Refresh payments
+      const { data } = await supabase.from("pagos").select("*, estudiantes(nombre)").order("fecha", { ascending: false }).limit(10);
+      if (data) setPagos(data.map((p: any) => ({ ...p, estudiante_nombre: p.estudiantes?.nombre })));
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
         <AlertBanner />
 
-        {/* Header with logout */}
-        <div className="flex items-center justify-between">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="flex-1 rounded-2xl p-6 bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-100 dark:from-amber-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-5xl">👨‍👩‍👧‍👦</span>
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-                    ¡Hola, {user?.displayName}! 👋
-                  </h1>
-                  <p className="text-muted-foreground mt-1">
-                    Portal de Padres — <span className="font-bold text-foreground">Sagrada Familia</span>
-                  </p>
-                </div>
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl p-6 bg-gradient-to-r from-amber-100 via-orange-50 to-yellow-100 dark:from-amber-900/30 dark:via-orange-900/20 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-800 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-5xl">👨‍👩‍👧‍👦</span>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
+                  ¡Hola, {user?.displayName}! 👋
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Portal de Padres — <span className="font-bold text-foreground">Sagrada Familia</span>
+                </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => logout()} className="gap-2">
-                <LogOut className="w-4 h-4" /> Salir
-              </Button>
             </div>
-          </motion.div>
-        </div>
+            <Button variant="outline" size="sm" onClick={() => logout()} className="gap-2 min-h-[44px]">
+              <LogOut className="w-4 h-4" /> Salir
+            </Button>
+          </div>
+        </motion.div>
 
         {/* My Students */}
         {estudiantes.length > 0 && (
@@ -79,7 +137,7 @@ export default function ParentPortal() {
               {estudiantes.map(e => (
                 <div key={e.id} className="p-3 rounded-lg bg-muted flex items-center gap-3">
                   {e.foto_url ? (
-                    <img src={e.foto_url} alt={e.nombre} className="w-12 h-12 rounded-full object-cover" />
+                    <img src={e.foto_url} alt={e.nombre} className="w-12 h-12 rounded-full object-cover" loading="lazy" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-xl">👦</div>
                   )}
@@ -92,6 +150,64 @@ export default function ParentPortal() {
             </div>
           </motion.div>
         )}
+
+        {/* Financial Summary */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+          className="bg-card rounded-xl p-5 shadow-card border border-border">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="w-5 h-5 text-success" />
+            <h2 className="font-display font-bold text-foreground text-lg">Resumen Financiero</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className={`p-4 rounded-xl border ${saldoPendiente > 0 ? "border-destructive/30 bg-destructive/5" : "border-success/30 bg-success/5"}`}>
+              <p className="text-xs text-muted-foreground mb-1">Saldo Pendiente</p>
+              <p className={`text-2xl font-display font-bold ${saldoPendiente > 0 ? "text-destructive" : "text-success"}`}>
+                L {saldoPendiente.toLocaleString()}
+              </p>
+              {saldoPendiente > 0 && (
+                <div className="flex items-center gap-1 mt-1">
+                  <AlertCircle className="w-3 h-3 text-destructive" />
+                  <span className="text-[10px] text-destructive">Pendiente de pago</span>
+                </div>
+              )}
+            </div>
+            <div className="p-4 rounded-xl border border-success/30 bg-success/5">
+              <p className="text-xs text-muted-foreground mb-1">Total Pagado</p>
+              <p className="text-2xl font-display font-bold text-success">
+                L {totalPagado.toLocaleString()}
+              </p>
+              {ultimoPago && (
+                <div className="flex items-center gap-1 mt-1">
+                  <CheckCircle2 className="w-3 h-3 text-success" />
+                  <span className="text-[10px] text-muted-foreground">Último: {ultimoPago.fecha}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent payments */}
+          {pagos.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">Últimos Pagos</h3>
+              {pagos.slice(0, 5).map(p => (
+                <div key={p.id} className="p-3 rounded-lg bg-muted flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">{p.estudiante_nombre}</p>
+                    <p className="text-xs text-muted-foreground">{p.fecha} — {p.metodo_pago}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-foreground">L {Number(p.monto).toLocaleString()}</p>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block ${
+                      p.estado === "saldado" ? "bg-success/20 text-success" :
+                      p.estado === "por_revisar" ? "bg-warning/20 text-warning" :
+                      "bg-destructive/20 text-destructive"
+                    }`}>{p.estado === "por_revisar" ? "En revisión" : p.estado}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
 
         {/* Message of Day */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -132,7 +248,7 @@ export default function ParentPortal() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="bg-card rounded-xl p-5 shadow-card border border-border">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-5 h-5 text-accent" />
+              <Calendar className="w-5 h-5 text-accent-foreground" />
               <h2 className="font-display font-bold text-foreground">Próximos Eventos</h2>
             </div>
             {eventos.length === 0 ? <p className="text-sm text-muted-foreground">No hay eventos</p> : (
@@ -173,36 +289,9 @@ export default function ParentPortal() {
           </motion.div>
         </div>
 
-        {/* Payments */}
-        {pagos.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-5 h-5 text-success" />
-              <h2 className="font-display font-bold text-foreground">Historial de Pagos</h2>
-            </div>
-            <div className="space-y-2">
-              {pagos.map(p => (
-                <div key={p.id} className="p-3 rounded-lg bg-muted flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">{p.estudiante_nombre}</p>
-                    <p className="text-xs text-muted-foreground">{p.fecha} — {p.metodo_pago}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-foreground">L {Number(p.monto).toLocaleString()}</p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      p.estado === "saldado" ? "bg-success/20 text-success" : "bg-warning/20 text-warning"
-                    }`}>{p.estado}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
         {/* Birthdays */}
         {birthdaysThisMonth.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
             className="bg-card rounded-xl p-5 shadow-card border border-border">
             <div className="flex items-center gap-2 mb-3">
               <Cake className="w-5 h-5 text-warning" />
@@ -212,7 +301,7 @@ export default function ParentPortal() {
               {birthdaysThisMonth.map(b => (
                 <div key={b.id} className="text-center p-3 rounded-lg bg-muted">
                   {b.foto_url ? (
-                    <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" />
+                    <img src={b.foto_url} alt={b.nombre} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover" loading="lazy" />
                   ) : (
                     <span className="text-3xl block mb-1">{b.emoji || "🎂"}</span>
                   )}
@@ -227,6 +316,66 @@ export default function ParentPortal() {
           <p>Pre-escolar Psicopedagógico de la Sagrada Familia © {new Date().getFullYear()}</p>
         </footer>
       </div>
+
+      {/* Floating upload button */}
+      {estudiantes.length > 0 && (
+        <Drawer open={uploadDrawerOpen} onOpenChange={setUploadDrawerOpen}>
+          <DrawerTrigger asChild>
+            <button className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-warm text-primary-foreground shadow-elevated flex items-center justify-center hover:scale-110 transition-transform active:scale-95">
+              <Plus className="w-6 h-6" />
+            </button>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader>
+              <DrawerTitle className="font-display">Subir Comprobante de Pago</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6 space-y-4">
+              <div className="space-y-2">
+                <Label>Estudiante</Label>
+                <Select value={selectedEstudiante} onValueChange={setSelectedEstudiante}>
+                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecciona hijo/a" /></SelectTrigger>
+                  <SelectContent>
+                    {estudiantes.map(e => (
+                      <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Monto (L)</Label>
+                <Input type="number" placeholder="0.00" value={uploadMonto} onChange={e => setUploadMonto(e.target.value)} className="min-h-[44px]" />
+              </div>
+              <div className="space-y-2">
+                <Label>Método de pago</Label>
+                <Select value={uploadMetodo} onValueChange={setUploadMetodo}>
+                  <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                    <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
+                    <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                    <SelectItem value="cheque">📄 Cheque</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Foto del comprobante</Label>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+                <Button variant="outline" className="w-full min-h-[44px] gap-2" onClick={() => fileRef.current?.click()}>
+                  <Upload className="w-4 h-4" />
+                  {uploadFile ? uploadFile.name : "Seleccionar imagen"}
+                </Button>
+              </div>
+              <Button
+                onClick={handleUploadComprobante}
+                disabled={uploading || !selectedEstudiante || !uploadMonto || !uploadFile}
+                className="w-full gradient-warm text-primary-foreground border-0 min-h-[44px]"
+              >
+                {uploading ? "Enviando..." : "Enviar Comprobante"}
+              </Button>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
     </div>
   );
 }

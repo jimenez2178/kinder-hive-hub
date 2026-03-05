@@ -6,9 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import type { Tables } from "@/integrations/supabase/types";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -76,14 +76,18 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-            <CalIcon className="w-6 h-6 text-accent" /> Calendario {year}
+            <CalIcon className="w-6 h-6 text-accent-foreground" /> Calendario {year}
           </h1>
           <p className="text-muted-foreground text-sm">Calendario anual interactivo</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setYear(y => y - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+          <Button variant="outline" size="icon" className="min-h-[44px] min-w-[44px]" onClick={() => setYear(y => y - 1)}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
           <span className="font-bold text-foreground w-14 text-center">{year}</span>
-          <Button variant="outline" size="icon" onClick={() => setYear(y => y + 1)}><ChevronRight className="w-4 h-4" /></Button>
+          <Button variant="outline" size="icon" className="min-h-[44px] min-w-[44px]" onClick={() => setYear(y => y + 1)}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
@@ -111,10 +115,10 @@ export default function CalendarPage() {
                   return (
                     <button key={day} onClick={() => setSelectedDate(dateStr)}
                       title={hasEvents ? dayEvents.map(e => e.titulo).join(", ") : ""}
-                      className={`h-7 w-full rounded text-xs transition-colors cursor-pointer relative
+                      className={`h-8 w-full rounded text-xs transition-colors cursor-pointer relative min-h-[32px]
                         ${hasEvents ? "bg-calendar-event text-calendar-event-foreground font-bold shadow-sm" : "hover:bg-muted text-foreground"}`}>
                       {day}
-                      {hasEvents && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-calendar-event-dot rounded-full" />}
+                      {hasEvents && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-calendar-event-dot rounded-full" />}
                     </button>
                   );
                 })}
@@ -125,10 +129,10 @@ export default function CalendarPage() {
                     <div key={ev.id} className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-calendar-event flex-shrink-0" />
                       <span className="truncate">{ev.titulo}</span>
-                      {ev.hora && <span className="text-calendar-event flex-shrink-0">{ev.hora.slice(0, 5)}</span>}
+                      {ev.hora && <span className="text-accent-foreground flex-shrink-0">{String(ev.hora).slice(0, 5)}</span>}
                     </div>
                   ))}
-                  {monthEvents.length > 3 && <p className="text-[10px] text-accent">+{monthEvents.length - 3} más</p>}
+                  {monthEvents.length > 3 && <p className="text-[10px] text-accent-foreground">+{monthEvents.length - 3} más</p>}
                 </div>
               )}
             </motion.div>
@@ -136,66 +140,66 @@ export default function CalendarPage() {
         })}
       </div>
 
-      {/* Day detail dialog */}
-      <Dialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display">
+      {/* Day detail drawer (mobile-friendly) */}
+      <Drawer open={!!selectedDate} onOpenChange={(open) => { if (!open) setSelectedDate(null); }}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle className="font-display text-lg">
               {selectedDate && new Date(selectedDate + "T12:00:00").toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-3 overflow-y-auto">
             {selectedDate && eventsForDate(selectedDate).map(ev => (
-              <div key={ev.id} className="p-3 rounded-lg bg-muted space-y-1">
+              <div key={ev.id} className="p-4 rounded-xl bg-muted space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm text-foreground">{ev.titulo}</span>
+                  <span className="font-semibold text-foreground">{ev.titulo}</span>
                   {canManage && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeEvent(ev.id)}>
-                      <Trash2 className="w-3 h-3" />
+                    <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px] text-destructive" onClick={() => removeEvent(ev.id)}>
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
-                {ev.descripcion && <p className="text-xs text-muted-foreground">{ev.descripcion}</p>}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  {ev.hora && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {ev.hora.slice(0, 5)}</span>}
-                  {ev.ubicacion && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {ev.ubicacion}</span>}
+                {ev.descripcion && <p className="text-sm text-muted-foreground">{ev.descripcion}</p>}
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  {ev.hora && <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {String(ev.hora).slice(0, 5)}</span>}
+                  {ev.ubicacion && <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {ev.ubicacion}</span>}
                 </div>
               </div>
             ))}
             {selectedDate && eventsForDate(selectedDate).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-2">Sin actividades</p>
+              <p className="text-sm text-muted-foreground text-center py-4">Sin actividades este día</p>
             )}
             {canManage && (
-              <div className="space-y-3 pt-2 border-t border-border">
+              <div className="space-y-3 pt-3 border-t border-border">
                 <h4 className="font-display font-bold text-sm text-foreground">Agregar Evento</h4>
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs">Título de la actividad *</Label>
-                    <Input placeholder="Ej: Reunión de padres" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+                    <Label className="text-xs">Título *</Label>
+                    <Input placeholder="Ej: Reunión de padres" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="min-h-[44px]" />
                   </div>
                   <div>
                     <Label className="text-xs">Descripción</Label>
-                    <Textarea placeholder="Descripción del evento..." value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={2} />
+                    <Textarea placeholder="Descripción..." value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={2} />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Hora</Label>
-                      <Input type="time" value={newHora} onChange={e => setNewHora(e.target.value)} />
+                      <Input type="time" value={newHora} onChange={e => setNewHora(e.target.value)} className="min-h-[44px]" />
                     </div>
                     <div>
                       <Label className="text-xs">Ubicación</Label>
-                      <Input placeholder="Ej: Salón A" value={newUbicacion} onChange={e => setNewUbicacion(e.target.value)} />
+                      <Input placeholder="Ej: Salón A" value={newUbicacion} onChange={e => setNewUbicacion(e.target.value)} className="min-h-[44px]" />
                     </div>
                   </div>
                 </div>
-                <Button onClick={addEvent} className="w-full gradient-warm text-primary-foreground border-0">
+                <Button onClick={addEvent} className="w-full gradient-warm text-primary-foreground border-0 min-h-[44px]">
                   <Plus className="w-4 h-4 mr-2" /> Agregar Evento
                 </Button>
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
