@@ -91,18 +91,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signup = useCallback(async (email: string, password: string, displayName: string, role?: UserRole) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return { error: error.message };
-    if (data.user) {
-      // Pass role only for staff; for parents/general signup, let the function auto-detect
-      const { error: fnError } = await (supabase.rpc as any)("handle_new_user_registration", {
-        _user_id: data.user.id,
-        _display_name: displayName,
-        ...(role && ["directora", "maestro"].includes(role) ? { _role: role } : {}),
-      });
-      if (fnError) return { error: fnError.message };
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) return { error: error.message };
+      if (data.user) {
+        const rpcParams: Record<string, string> = {
+          _user_id: data.user.id,
+          _display_name: displayName,
+        };
+        if (role && ["directora", "maestro"].includes(role)) {
+          rpcParams._role = role;
+        }
+        const { error: fnError } = await (supabase.rpc as any)("handle_new_user_registration", rpcParams);
+        if (fnError) return { error: fnError.message };
+      }
+      return {};
+    } catch (err: any) {
+      return { error: err?.message || "Error inesperado durante el registro" };
     }
-    return {};
   }, []);
 
   const logout = useCallback(async () => {
