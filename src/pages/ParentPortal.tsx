@@ -495,14 +495,13 @@ export default function ParentPortal() {
         </footer>
       </div>
 
-      {/* Floating upload button */}
-      {estudiantes.length > 0 && (
-        <Drawer open={uploadDrawerOpen} onOpenChange={setUploadDrawerOpen}>
-          <DrawerTrigger asChild>
-            <button className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-warm text-primary-foreground shadow-elevated flex items-center justify-center hover:scale-110 transition-transform active:scale-95">
-              <Plus className="w-6 h-6" />
-            </button>
-          </DrawerTrigger>
+      {/* Floating upload button — always visible */}
+      <Drawer open={uploadDrawerOpen} onOpenChange={setUploadDrawerOpen}>
+        <DrawerTrigger asChild>
+          <button className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-warm text-primary-foreground shadow-elevated flex items-center justify-center hover:scale-110 transition-transform active:scale-95">
+            <Plus className="w-6 h-6" />
+          </button>
+        </DrawerTrigger>
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader>
               <DrawerTitle className="font-display">Subir Comprobante de Pago</DrawerTitle>
