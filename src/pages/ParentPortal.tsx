@@ -88,28 +88,18 @@ export default function ParentPortal() {
 
   // Realtime: all parent-relevant tables
   useEffect(() => {
-    const refetchEstudiantes = async () => {
-      const { data } = await supabase.from("estudiantes").select("*");
-      if (data) setEstudiantes(data);
-    };
-    const refetchAll = async () => {
-      refetchEstudiantes();
-      fetchPagos();
-      fetchGaleria();
-    };
     const channel = supabase
       .channel("parent-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "pagos" }, () => { fetchPagos(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "galeria" }, () => { fetchGaleria(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "estudiantes" }, () => { refetchEstudiantes(); fetchPagos(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "alertas" }, () => {}) // AlertBanner handles its own fetch
+      .on("postgres_changes", { event: "*", schema: "public", table: "estudiantes" }, () => { fetchEstudiantes(); fetchPagos(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "alertas" }, () => {})
       .on("postgres_changes", { event: "*", schema: "public", table: "comunicados" }, async () => {
         const { data } = await supabase.from("comunicados").select("*").order("created_at", { ascending: false }).limit(5);
         if (data) setComunicados(data);
       })
       .subscribe();
 
-    // Cleanup state on auth change (logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         setEstudiantes([]);
@@ -126,7 +116,7 @@ export default function ParentPortal() {
       supabase.removeChannel(channel);
       subscription.unsubscribe();
     };
-  }, [fetchPagos, fetchGaleria]);
+  }, [fetchPagos, fetchGaleria, fetchEstudiantes]);
 
   // Check first visit & profile completion
   useEffect(() => {
