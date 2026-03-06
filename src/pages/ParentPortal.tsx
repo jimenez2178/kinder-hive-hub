@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle } from "lucide-react";
+import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertBanner } from "@/components/AlertBanner";
