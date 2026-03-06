@@ -387,7 +387,7 @@ export default function ParentPortal() {
 
         {/* Events + Notes */}
         <div className="grid md:grid-cols-2 gap-4">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          <motion.div id="parent-events-section" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="bg-card rounded-xl p-5 shadow-card border border-border">
             <div className="flex items-center gap-2 mb-3">
               <Calendar className="w-5 h-5 text-accent-foreground" />
