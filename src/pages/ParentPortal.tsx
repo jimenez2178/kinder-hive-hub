@@ -52,17 +52,28 @@ export default function ParentPortal() {
     if (data) setGaleriaFotos(data);
   }, []);
 
+  const fetchEstudiantes = useCallback(async () => {
+    if (!user) return;
+    // Get only students linked to this parent via familia_estudiante
+    const { data: links } = await supabase.from("familia_estudiante").select("estudiante_id").eq("user_id", user.id);
+    if (links && links.length > 0) {
+      const ids = links.map(l => l.estudiante_id);
+      const { data } = await supabase.from("estudiantes").select("*").in("id", ids).eq("activo", true);
+      setEstudiantes(data || []);
+    } else {
+      setEstudiantes([]);
+    }
+  }, [user]);
+
   useEffect(() => {
     const fetchAll = async () => {
-      const [estRes, evRes, comRes, notRes, cumRes, msgRes] = await Promise.all([
-        supabase.from("estudiantes").select("*"),
+      const [evRes, comRes, notRes, cumRes, msgRes] = await Promise.all([
         supabase.from("eventos").select("*").order("fecha", { ascending: false }).limit(5),
         supabase.from("comunicados").select("*").order("created_at", { ascending: false }).limit(5),
         supabase.from("notas_maestras").select("*, estudiantes(nombre)").order("created_at", { ascending: false }).limit(10),
         supabase.from("cumpleanos").select("*").order("fecha"),
         supabase.from("mensaje_dia").select("*").eq("fecha_iso", new Date().toISOString().split("T")[0]).limit(1).maybeSingle(),
       ]);
-      if (estRes.data) setEstudiantes(estRes.data);
       if (evRes.data) setEventos(evRes.data);
       if (comRes.data) setComunicados(comRes.data);
       if (notRes.data) setNotas(notRes.data.map((n: any) => ({ ...n, estudiante_nombre: n.estudiantes?.nombre })));
@@ -70,9 +81,10 @@ export default function ParentPortal() {
       if (msgRes.data) setMessageOfDay(msgRes.data.contenido);
     };
     fetchAll();
+    fetchEstudiantes();
     fetchPagos();
     fetchGaleria();
-  }, [fetchPagos, fetchGaleria]);
+  }, [fetchPagos, fetchGaleria, fetchEstudiantes]);
 
   // Realtime: all parent-relevant tables
   useEffect(() => {
