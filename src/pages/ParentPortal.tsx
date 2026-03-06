@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle } from "lucide-react";
+import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertBanner } from "@/components/AlertBanner";
@@ -434,7 +434,36 @@ export default function ParentPortal() {
         </div>
 
 
-        {/* Birthdays */}
+        {/* Galería de Fotos */}
+        <motion.div ref={galleryRef} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
+          className="bg-card rounded-xl p-5 shadow-card border border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <ImageIcon className="w-5 h-5 text-primary" />
+            <h2 className="font-display font-bold text-foreground text-lg">📸 Galería de Fotos</h2>
+          </div>
+          {galeriaFotos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay fotos en la galería</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {galeriaFotos.map(foto => (
+                <div key={foto.id} className="rounded-lg overflow-hidden border border-border bg-muted aspect-square relative group">
+                  <img
+                    src={foto.foto_url}
+                    alt={foto.descripcion || foto.titulo || "Foto"}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  {(foto.titulo || foto.descripcion) && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-foreground/60 text-background p-2">
+                      <p className="text-xs font-semibold truncate">{foto.titulo || foto.descripcion}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
         {birthdaysThisMonth.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
             className="bg-card rounded-xl p-5 shadow-card border border-border">
