@@ -507,50 +507,56 @@ export default function ParentPortal() {
               <DrawerTitle className="font-display">Subir Comprobante de Pago</DrawerTitle>
             </DrawerHeader>
             <div className="px-4 pb-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Estudiante</Label>
-                <Select value={selectedEstudiante} onValueChange={setSelectedEstudiante}>
-                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecciona hijo/a" /></SelectTrigger>
-                  <SelectContent>
-                    {estudiantes.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Monto (RD$)</Label>
-                <Input type="number" placeholder="0.00" value={uploadMonto} onChange={e => setUploadMonto(e.target.value)} className="min-h-[44px]" />
-              </div>
-              <div className="space-y-2">
-                <Label>Método de pago</Label>
-                <Select value={uploadMetodo} onValueChange={setUploadMetodo}>
-                  <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
-                    <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
-                    <SelectItem value="efectivo">💵 Efectivo</SelectItem>
-                    <SelectItem value="cheque">📄 Cheque</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {uploadMetodo !== "efectivo" && (
-                <div className="space-y-2">
-                  <Label>Foto del comprobante</Label>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
-                  <Button variant="outline" className="w-full min-h-[44px] gap-2" onClick={() => fileRef.current?.click()}>
-                    <Upload className="w-4 h-4" />
-                    {uploadFile ? uploadFile.name : "Seleccionar imagen"}
+              {estudiantes.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No hay estudiantes vinculados a tu cuenta. Contacta a la dirección.</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label>Estudiante</Label>
+                    <Select value={selectedEstudiante} onValueChange={setSelectedEstudiante}>
+                      <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecciona hijo/a" /></SelectTrigger>
+                      <SelectContent>
+                        {estudiantes.map(e => (
+                          <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Monto (RD$)</Label>
+                    <Input type="number" placeholder="0.00" value={uploadMonto} onChange={e => setUploadMonto(e.target.value)} className="min-h-[44px]" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Método de pago</Label>
+                    <Select value={uploadMetodo} onValueChange={setUploadMetodo}>
+                      <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                        <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
+                        <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                        <SelectItem value="cheque">📄 Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {uploadMetodo !== "efectivo" && (
+                    <div className="space-y-2">
+                      <Label>Foto del comprobante</Label>
+                      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+                      <Button variant="outline" className="w-full min-h-[44px] gap-2" onClick={() => fileRef.current?.click()}>
+                        <Upload className="w-4 h-4" />
+                        {uploadFile ? uploadFile.name : "Seleccionar imagen"}
+                      </Button>
+                    </div>
+                  )}
+                  <Button
+                    onClick={handleUploadComprobante}
+                    disabled={uploading || !selectedEstudiante || !uploadMonto || (uploadMetodo !== "efectivo" && !uploadFile)}
+                    className="w-full gradient-warm text-primary-foreground border-0 min-h-[44px]"
+                  >
+                    {uploading ? "Enviando..." : uploadMetodo === "efectivo" ? "Registrar Pago" : "Enviar Comprobante"}
                   </Button>
-                </div>
+                </>
               )}
-              <Button
-                onClick={handleUploadComprobante}
-                disabled={uploading || !selectedEstudiante || !uploadMonto || (uploadMetodo !== "efectivo" && !uploadFile)}
-                className="w-full gradient-warm text-primary-foreground border-0 min-h-[44px]"
-              >
-                {uploading ? "Enviando..." : uploadMetodo === "efectivo" ? "Registrar Pago" : "Enviar Comprobante"}
-              </Button>
             </div>
           </DrawerContent>
         </Drawer>
