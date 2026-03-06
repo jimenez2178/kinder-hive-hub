@@ -273,10 +273,12 @@ export default function ParentPortal() {
         )}
 
         {/* My Students */}
-        {estudiantes.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <h2 className="font-display font-bold text-foreground text-lg mb-3">👧 Mis Hijos</h2>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          className="bg-card rounded-xl p-5 shadow-card border border-border">
+          <h2 className="font-display font-bold text-foreground text-lg mb-3">👧 Mis Hijos</h2>
+          {estudiantes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay estudiantes vinculados</p>
+          ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {estudiantes.map(e => (
                 <div key={e.id} className="p-3 rounded-lg bg-accent/20 border border-accent/20 flex items-center gap-3">
@@ -292,8 +294,8 @@ export default function ParentPortal() {
                 </div>
               ))}
             </div>
-          </motion.div>
-        )}
+          )}
+        </motion.div>
 
         {/* Financial Summary */}
         <div ref={financialRef}>
