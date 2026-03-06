@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle, Image as ImageIcon } from "lucide-react";
+import { Calendar, FileText, Cake, MessageSquare, Sparkles, Clock, MapPin, DollarSign, LogOut, Plus, Upload, CheckCircle2, AlertCircle, Phone, UserCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertBanner } from "@/components/AlertBanner";
@@ -240,11 +240,14 @@ export default function ParentPortal() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
           className="grid grid-cols-3 gap-3">
           <button
-            onClick={() => galleryRef.current?.scrollIntoView({ behavior: "smooth" })}
+            onClick={() => {
+              const evSection = document.getElementById("parent-events-section");
+              evSection?.scrollIntoView({ behavior: "smooth" });
+            }}
             className="bg-card rounded-xl p-4 shadow-card border border-border text-center hover:shadow-elevated transition-shadow min-h-[44px]"
           >
-            <span className="text-2xl block mb-1">📸</span>
-            <p className="text-xs font-semibold text-foreground">Ver Fotos</p>
+            <span className="text-2xl block mb-1">📅</span>
+            <p className="text-xs font-semibold text-foreground">Ver Eventos</p>
           </button>
           <button
             onClick={() => notesRef.current?.scrollIntoView({ behavior: "smooth" })}
@@ -384,7 +387,7 @@ export default function ParentPortal() {
 
         {/* Events + Notes */}
         <div className="grid md:grid-cols-2 gap-4">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          <motion.div id="parent-events-section" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="bg-card rounded-xl p-5 shadow-card border border-border">
             <div className="flex items-center gap-2 mb-3">
               <Calendar className="w-5 h-5 text-accent-foreground" />
@@ -430,28 +433,6 @@ export default function ParentPortal() {
           </div>
         </div>
 
-        {/* Gallery Section */}
-        <div ref={galleryRef}>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
-            className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <div className="flex items-center gap-2 mb-3">
-              <ImageIcon className="w-5 h-5 text-warning" />
-              <h2 className="font-display font-bold text-foreground">📸 Galería de Fotos</h2>
-            </div>
-            {galeriaFotos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay fotos en la galería aún</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {galeriaFotos.map(foto => (
-                  <div key={foto.id} className="rounded-lg overflow-hidden border border-border aspect-square">
-                    <img src={foto.foto_url} alt={foto.descripcion || "Foto"} loading="lazy"
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        </div>
 
         {/* Birthdays */}
         {birthdaysThisMonth.length > 0 && (
