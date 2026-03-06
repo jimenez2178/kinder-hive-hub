@@ -273,10 +273,12 @@ export default function ParentPortal() {
         )}
 
         {/* My Students */}
-        {estudiantes.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="bg-card rounded-xl p-5 shadow-card border border-border">
-            <h2 className="font-display font-bold text-foreground text-lg mb-3">👧 Mis Hijos</h2>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          className="bg-card rounded-xl p-5 shadow-card border border-border">
+          <h2 className="font-display font-bold text-foreground text-lg mb-3">👧 Mis Hijos</h2>
+          {estudiantes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay estudiantes vinculados</p>
+          ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {estudiantes.map(e => (
                 <div key={e.id} className="p-3 rounded-lg bg-accent/20 border border-accent/20 flex items-center gap-3">
@@ -292,8 +294,8 @@ export default function ParentPortal() {
                 </div>
               ))}
             </div>
-          </motion.div>
-        )}
+          )}
+        </motion.div>
 
         {/* Financial Summary */}
         <div ref={financialRef}>
@@ -493,67 +495,71 @@ export default function ParentPortal() {
         </footer>
       </div>
 
-      {/* Floating upload button */}
-      {estudiantes.length > 0 && (
-        <Drawer open={uploadDrawerOpen} onOpenChange={setUploadDrawerOpen}>
-          <DrawerTrigger asChild>
-            <button className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-warm text-primary-foreground shadow-elevated flex items-center justify-center hover:scale-110 transition-transform active:scale-95">
-              <Plus className="w-6 h-6" />
-            </button>
-          </DrawerTrigger>
+      {/* Floating upload button — always visible */}
+      <Drawer open={uploadDrawerOpen} onOpenChange={setUploadDrawerOpen}>
+        <DrawerTrigger asChild>
+          <button className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-warm text-primary-foreground shadow-elevated flex items-center justify-center hover:scale-110 transition-transform active:scale-95">
+            <Plus className="w-6 h-6" />
+          </button>
+        </DrawerTrigger>
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader>
               <DrawerTitle className="font-display">Subir Comprobante de Pago</DrawerTitle>
             </DrawerHeader>
             <div className="px-4 pb-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Estudiante</Label>
-                <Select value={selectedEstudiante} onValueChange={setSelectedEstudiante}>
-                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecciona hijo/a" /></SelectTrigger>
-                  <SelectContent>
-                    {estudiantes.map(e => (
-                      <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Monto (RD$)</Label>
-                <Input type="number" placeholder="0.00" value={uploadMonto} onChange={e => setUploadMonto(e.target.value)} className="min-h-[44px]" />
-              </div>
-              <div className="space-y-2">
-                <Label>Método de pago</Label>
-                <Select value={uploadMetodo} onValueChange={setUploadMetodo}>
-                  <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
-                    <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
-                    <SelectItem value="efectivo">💵 Efectivo</SelectItem>
-                    <SelectItem value="cheque">📄 Cheque</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {uploadMetodo !== "efectivo" && (
-                <div className="space-y-2">
-                  <Label>Foto del comprobante</Label>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
-                  <Button variant="outline" className="w-full min-h-[44px] gap-2" onClick={() => fileRef.current?.click()}>
-                    <Upload className="w-4 h-4" />
-                    {uploadFile ? uploadFile.name : "Seleccionar imagen"}
+              {estudiantes.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No hay estudiantes vinculados a tu cuenta. Contacta a la dirección.</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label>Estudiante</Label>
+                    <Select value={selectedEstudiante} onValueChange={setSelectedEstudiante}>
+                      <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecciona hijo/a" /></SelectTrigger>
+                      <SelectContent>
+                        {estudiantes.map(e => (
+                          <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Monto (RD$)</Label>
+                    <Input type="number" placeholder="0.00" value={uploadMonto} onChange={e => setUploadMonto(e.target.value)} className="min-h-[44px]" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Método de pago</Label>
+                    <Select value={uploadMetodo} onValueChange={setUploadMetodo}>
+                      <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                        <SelectItem value="tarjeta">💳 Tarjeta</SelectItem>
+                        <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                        <SelectItem value="cheque">📄 Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {uploadMetodo !== "efectivo" && (
+                    <div className="space-y-2">
+                      <Label>Foto del comprobante</Label>
+                      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+                      <Button variant="outline" className="w-full min-h-[44px] gap-2" onClick={() => fileRef.current?.click()}>
+                        <Upload className="w-4 h-4" />
+                        {uploadFile ? uploadFile.name : "Seleccionar imagen"}
+                      </Button>
+                    </div>
+                  )}
+                  <Button
+                    onClick={handleUploadComprobante}
+                    disabled={uploading || !selectedEstudiante || !uploadMonto || (uploadMetodo !== "efectivo" && !uploadFile)}
+                    className="w-full gradient-warm text-primary-foreground border-0 min-h-[44px]"
+                  >
+                    {uploading ? "Enviando..." : uploadMetodo === "efectivo" ? "Registrar Pago" : "Enviar Comprobante"}
                   </Button>
-                </div>
+                </>
               )}
-              <Button
-                onClick={handleUploadComprobante}
-                disabled={uploading || !selectedEstudiante || !uploadMonto || (uploadMetodo !== "efectivo" && !uploadFile)}
-                className="w-full gradient-warm text-primary-foreground border-0 min-h-[44px]"
-              >
-                {uploading ? "Enviando..." : uploadMetodo === "efectivo" ? "Registrar Pago" : "Enviar Comprobante"}
-              </Button>
             </div>
           </DrawerContent>
         </Drawer>
-      )}
     </div>
   );
 }
