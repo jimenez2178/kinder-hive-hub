@@ -554,7 +554,6 @@ export default function ParentPortal() {
             </div>
           </DrawerContent>
         </Drawer>
-      )}
     </div>
   );
 }
