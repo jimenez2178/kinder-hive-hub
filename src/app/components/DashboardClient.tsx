@@ -1,0 +1,796 @@
+"use client";
+
+import {
+    Bell,
+    Calendar,
+    CreditCard,
+    Image as ImageIcon,
+    MessageCircle,
+    Search,
+    BookOpen,
+    FileText,
+    CheckCircle2,
+    Printer,
+    Download,
+    Users,
+    GraduationCap,
+    Star,
+    ChevronRight,
+    AlertTriangle,
+    MapPin,
+    Phone,
+    User
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LogoutButton } from "@/components/LogoutButton";
+import { useState } from "react";
+import { processParentPaymentAction } from "@/app/actions/padre";
+
+export default function DashboardClient({
+    initialFrase,
+    userName,
+    saldoPendiente,
+    estudiantes,
+    comunicado,
+    galeria = [],
+    recibos = [],
+    eventos = [],
+    agradecimientos = [],
+    evaluaciones = []
+}: {
+    initialFrase: string,
+    userName: string,
+    saldoPendiente: number,
+    estudiantes: any[],
+    comunicado: any,
+    galeria?: any[],
+    recibos?: any[],
+    eventos?: any[],
+    agradecimientos?: any[],
+    evaluaciones?: any[]
+}) {
+    const [frase] = useState(initialFrase);
+    const [currentSaldo] = useState(saldoPendiente);
+    const [selectedRecibo, setSelectedRecibo] = useState<any>(null);
+    const [showAllPhotos, setShowAllPhotos] = useState(false);
+    const [selectedStudentForFile, setSelectedStudentForFile] = useState<any>(null);
+    const [showContact, setShowContact] = useState(false);
+    const [contactTab, setContactTab] = useState<"menu" | "cita">("menu");
+    const [citaOk, setCitaOk] = useState(false);
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    return (
+        <div className="min-h-screen bg-[#f0f4f8] pb-20">
+            {/* MARQUEE TOP BAR */}
+            <div className="bg-[#020617] px-4 py-2 text-white text-xs font-black overflow-hidden">
+                <div className="animate-marquee inline-block whitespace-nowrap">
+                    ✨ {frase} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ {frase} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ {frase}
+                </div>
+            </div>
+
+            <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6">
+
+                {/* ═══ HEADER PREMIUM ═══ */}
+                <header className="bg-[#7ed957] rounded-[40px] p-7 mb-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                    {/* Orb decorativo */}
+                    <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/20 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-[#004aad]/10 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="flex items-center gap-5 z-10">
+                        <div className="bg-white p-2.5 rounded-[22px] shadow-xl border-4 border-white/70">
+                            <img
+                                src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
+                                alt="Logo Sagrada Familia"
+                                className="h-16 w-16 object-contain"
+                            />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl md:text-4xl font-black italic text-[#020617] tracking-tight leading-tight drop-shadow-sm">
+                                ¡Hola, {userName}!
+                            </h1>
+                            <p className="text-[#020617]/70 font-semibold mt-0.5 text-sm">
+                                Portal Familiar · Pre-escolar Sagrada Familia
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 z-10">
+                        <span className="bg-[#020617]/10 text-[#020617] text-xs font-black px-4 py-1.5 rounded-full border border-[#020617]/15">
+                            Ciclo 2026–2027
+                        </span>
+                        <LogoutButton />
+                    </div>
+                </header>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    {/* ═══ COLUMNA IZQUIERDA ═══ */}
+                    <div className="lg:col-span-2 space-y-8">
+
+                        {/* KPI CARDS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                            {/* TARJETA AMARILLA — Mensualidad (Lo que paga el estudiante) */}
+                            <div className="bg-[#ffcc00] rounded-[40px] p-8 shadow-2xl shadow-amber-200/50 relative overflow-hidden transition-all hover:scale-[1.02] border-0">
+                                <div className="absolute right-4 top-4 text-[#020617]/10 text-8xl font-black leading-none pointer-events-none select-none italic">RD$</div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#020617]/60 mb-2">Mensualidad Total</p>
+                                <div className="text-5xl font-black text-[#020617] tracking-tighter">
+                                    RD$ {estudiantes.reduce((acc, est) => acc + (Number(est.cuota_mensual) || 0), 0).toLocaleString('es-DO')}
+                                </div>
+                                <div className="mt-4 flex flex-col gap-2">
+                                    <div className={`inline-flex items-center gap-1.5 text-[10px] font-black px-4 py-1.5 rounded-full w-fit ${currentSaldo > 0 ? 'bg-black text-[#ffcc00]' : 'bg-white text-green-700'}`}>
+                                        {currentSaldo > 0 ? `⚠️ PENDIENTE: RD$ ${currentSaldo.toLocaleString()}` : '✓ CUENTA AL DÍA'}
+                                    </div>
+                                    <p className="text-[9px] font-bold text-black/40 italic uppercase">Referencia para pagos mensuales</p>
+                                </div>
+                            </div>
+
+                            {/* TARJETA PÚRPURA — Hijos */}
+                            <div className="bg-[#8A2BE2] rounded-[40px] p-8 shadow-2xl shadow-purple-200/50 relative overflow-hidden transition-all hover:scale-[1.02] border-0">
+                                <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60 mb-3">Dependientes Académicos</p>
+                                <div className="space-y-4 relative z-10">
+                                    {estudiantes.length > 0 ? estudiantes.map(est => (
+                                        <div key={est.id} className="bg-white/15 backdrop-blur-md rounded-[28px] p-5 border border-white/20 shadow-inner">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="font-black text-white text-lg leading-tight tracking-tight">{est.nombre}</span>
+                                                <Badge className="bg-white text-[#8A2BE2] font-black text-[9px] px-3 py-0.5 rounded-full border-0 uppercase">{est.grado}</Badge>
+                                            </div>
+                                            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-4 italic">Ciclo Escolar 2026–2027</p>
+                                            <button
+                                                onClick={() => setSelectedStudentForFile(est)}
+                                                className="w-full bg-[#7ed957] hover:bg-white text-[#020617] font-black text-xs py-3 rounded-full shadow-lg transition-all hover:shadow-[#7ed957]/30 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-tighter"
+                                            >
+                                                <FileText className="h-4 w-4" /> Ver Ficha Digital
+                                            </button>
+                                        </div>
+                                    )) : (
+                                        <p className="text-white/60 italic text-sm">No hay estudiantes asociados</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* GALERÍA */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between px-1">
+                                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                    <span className="bg-[#ffcc00] p-1.5 rounded-lg">
+                                        <ImageIcon className="h-4 w-4 text-[#020617]" />
+                                    </span>
+                                    Galería de Momentos
+                                </h3>
+                                <button
+                                    onClick={() => setShowAllPhotos(true)}
+                                    className="text-sm font-bold text-[#004aad] hover:text-[#8A2BE2] transition-colors"
+                                >
+                                    Ver todo →
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {galeria.length > 0 ? galeria.map((img, i) => (
+                                    <div key={img.id || i} className="bg-white rounded-[32px] overflow-hidden shadow-xl border border-slate-50 group hover:shadow-2xl transition-all duration-500">
+                                        <div className="aspect-video relative overflow-hidden">
+                                            <img src={img.foto_url} alt={img.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                            <div className="absolute top-3 left-3">
+                                                <Badge className="bg-white/90 backdrop-blur-md text-[#020617] font-black text-[8px] uppercase px-2 py-0.5 rounded-full border-0">ACTIVIDAD</Badge>
+                                            </div>
+                                        </div>
+                                        <div className="p-5">
+                                            <h5 className="font-black text-slate-800 text-[13px] italic uppercase tracking-tighter leading-tight mb-1">{img.titulo}</h5>
+                                            {img.descripcion && (
+                                                <p className="text-[11px] font-medium text-slate-500 leading-snug line-clamp-3">{img.descripcion}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="col-span-full h-40 bg-white rounded-[24px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                                        <ImageIcon className="h-10 w-10 mb-2 opacity-20" />
+                                        <p className="font-bold text-sm">Aún no hay fotos compartidas</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* AGRADECIMIENTOS */}
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 px-1">
+                                <span className="bg-[#8A2BE2]/15 p-1.5 rounded-lg">
+                                    <MessageCircle className="h-4 w-4 text-[#8A2BE2]" />
+                                </span>
+                                Agradecimientos
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {agradecimientos.length > 0 ? agradecimientos.map((ag) => (
+                                    <div key={ag.id} className="bg-[#ff8f1c] p-8 rounded-[48px] shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
+                                        <div className="absolute -right-6 -bottom-6 opacity-10 rotate-12 transition-transform group-hover:scale-110 group-hover:rotate-0 duration-700">
+                                            <MessageCircle className="w-40 h-40 text-white" />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <p className="text-white font-bold italic text-xl leading-relaxed mb-8 drop-shadow-sm">"{ag.contenido}"</p>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">{ag.titulo}</span>
+                                                    <span className="text-white font-black text-sm uppercase italic tracking-tighter">Sagrada Familia</span>
+                                                </div>
+                                                <div className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20">
+                                                    <span className="text-white text-[9px] font-black uppercase tracking-widest">COMUNIDAD</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="col-span-full h-20 bg-white rounded-[28px] border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 italic font-bold text-sm">
+                                        Gracias por ser parte de nuestra comunidad.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* PROGRESO ACADÉMICO */}
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 px-1">
+                                <span className="bg-[#FF1493]/15 p-1.5 rounded-lg">
+                                    <GraduationCap className="h-4 w-4 text-[#FF1493]" />
+                                </span>
+                                Progreso Académico
+                            </h3>
+                            <div className="space-y-4">
+                                {evaluaciones && evaluaciones.length > 0 ? evaluaciones.map((ev: any) => (
+                                    <div key={ev.id} className="bg-gradient-to-br from-[#FF1493] to-[#C71585] p-8 md:p-12 rounded-[55px] shadow-2xl relative overflow-hidden group hover:scale-[1.01] transition-all duration-500 border-4 border-white/10">
+                                        {/* Decoración de fondo */}
+                                        <div className="absolute -right-16 -bottom-16 opacity-10 rotate-12 transition-transform group-hover:scale-110 duration-1000">
+                                            <Star className="w-80 h-80 text-white" fill="currentColor" />
+                                        </div>
+                                        
+                                        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                                            {/* Info Estudiante (4 cols) */}
+                                            <div className="lg:col-span-4 flex items-center gap-6">
+                                                <div className="h-24 w-24 rounded-[35px] bg-white/20 backdrop-blur-xl flex items-center justify-center border-2 border-white/30 shadow-2xl shrink-0">
+                                                    <Star className="text-white h-12 w-12 drop-shadow-lg" fill="currentColor" />
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <h5 className="font-black text-white text-3xl tracking-tighter leading-none">{ev.estudiantes?.nombre}</h5>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <div className="bg-white px-4 py-1.5 rounded-full shadow-xl">
+                                                            <span className="text-[#FF1493] font-black text-[10px] uppercase tracking-widest">{ev.categoria}</span>
+                                                        </div>
+                                                        {ev.maestro_nombre && (
+                                                            <div className="bg-black/30 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/10">
+                                                                <span className="text-white/90 font-black text-[9px] uppercase tracking-tighter">🎓 {ev.maestro_nombre}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Observaciones (6 cols) */}
+                                            <div className="lg:col-span-6 lg:border-l lg:border-white/10 lg:pl-10">
+                                                <div className="relative">
+                                                    <div className="absolute -left-6 -top-4 text-6xl text-white/10 font-serif translate-y-2">“</div>
+                                                    <p className="text-white font-bold italic text-xl md:text-2xl leading-relaxed drop-shadow-md">
+                                                        {ev.observaciones}
+                                                    </p>
+                                                    <div className="absolute -right-2 -bottom-8 text-6xl text-white/10 font-serif rotate-180">“</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Fecha (2 cols) */}
+                                            <div className="lg:col-span-2 flex justify-center lg:justify-end">
+                                                <div className="bg-white/10 backdrop-blur-md p-6 rounded-[40px] text-center border border-white/20 shadow-xl min-w-[140px]">
+                                                    <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] block mb-2">REGISTRO</span>
+                                                    <span className="text-2xl font-black text-white uppercase italic tracking-tighter">{new Date(ev.created_at).toLocaleDateString('es-DO', { day: 'numeric', month: 'short' }).replace('.', '')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="h-20 bg-white rounded-[28px] border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 italic font-bold text-sm">
+                                        Aún no hay reportes académicos disponibles.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* HISTORIAL DE RECIBOS */}
+                        <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border-0">
+                            <div className="px-8 pt-8 pb-6 bg-slate-50/50 flex items-center justify-between border-b border-slate-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-[#7ed957]/20 p-2.5 rounded-2xl">
+                                        <FileText className="h-5 w-5 text-green-700" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-800 italic uppercase tracking-tighter">Historial de Pagos</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documentos fiscales y recibos</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white px-4 py-1.5 rounded-full border border-slate-100 shadow-sm text-[10px] font-black text-slate-400 uppercase">
+                                    {recibos.length} comprobantes
+                                </div>
+                            </div>
+                            <div className="divide-y divide-slate-50">
+                                {recibos.length > 0 ? recibos.map((rec) => (
+                                    <div key={rec.id} className="flex items-center justify-between px-8 py-5 hover:bg-slate-50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-[#8A2BE2]/10 h-11 w-11 rounded-2xl flex items-center justify-center shrink-0">
+                                                <CheckCircle2 className="h-5 w-5 text-[#8A2BE2]" />
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-slate-800 text-sm">{rec.estudiantes?.nombre || "Pago Colegio"}</p>
+                                                <p className="text-[11px] font-semibold text-slate-400">{new Date(rec.fecha + 'T12:00:00').toLocaleDateString('es-DO', { day: 'numeric', month: 'long' })} · {(rec.metodo || '').toLowerCase()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-black text-slate-900">RD$ {rec.monto?.toLocaleString('es-DO')}</div>
+                                            <button
+                                                onClick={() => setSelectedRecibo(rec)}
+                                                className="text-[10px] font-black text-[#8A2BE2] hover:text-[#004aad] uppercase tracking-widest flex items-center gap-1 mt-1 ml-auto transition-colors"
+                                            >
+                                                <Printer className="h-3 w-3" /> Ver Recibo
+                                            </button>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="p-8 text-center text-slate-400 font-medium italic text-sm">No se han registrado pagos aún.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ═══ COLUMNA DERECHA ═══ */}
+                    <div className="space-y-6">
+
+                        {/* COMUNICADO — tarjeta semáforo */}
+                        {comunicado && (
+                            <div className={`rounded-[32px] p-7 shadow-xl relative overflow-hidden transition-all ${comunicado.prioridad === 'alta'
+                                ? 'bg-[#ef4444] shadow-red-100'
+                                : comunicado.prioridad === 'media'
+                                    ? 'bg-[#ffcc00] shadow-amber-100'
+                                    : 'bg-[#004aad] shadow-blue-100'
+                                }`}>
+                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-white/40 rounded-l-full" />
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-xl">
+                                        {comunicado.prioridad === 'alta' ? '🚨' : comunicado.prioridad === 'media' ? '⚠️' : 'ℹ️'}
+                                    </span>
+                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${comunicado.prioridad === 'media' ? 'bg-black/10 text-black' : 'bg-white/20 text-white'}`}>
+                                        {comunicado.prioridad === 'alta' ? 'Urgente / Crítico' : comunicado.prioridad === 'media' ? 'Advertencia Escolar' : 'Información'}
+                                    </span>
+                                </div>
+                                <h4 className={`font-black text-lg leading-tight ${comunicado.prioridad === 'media' ? 'text-black' : 'text-white'}`}>{comunicado.titulo}</h4>
+                                <p className={`text-sm font-medium mt-2 leading-relaxed ${comunicado.prioridad === 'media' ? 'text-black/80' : 'text-white/85'}`}>{comunicado.contenido}</p>
+                            </div>
+                        )}
+
+                        {/* PRÓXIMOS EVENTOS */}
+                        <div className="bg-white rounded-[32px] shadow-xl overflow-hidden">
+                            <div className="px-7 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+                                <h4 className="text-base font-black text-slate-800">Próximos Eventos</h4>
+                                <div className="bg-[#004aad]/10 p-2 rounded-xl">
+                                    <Calendar className="h-4 w-4 text-[#004aad]" />
+                                </div>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                {eventos.length > 0 ? eventos.map((ev) => {
+                                    // Robust date parsing
+                                    const rawDate = ev.fecha ? new Date(ev.fecha.includes('T') ? ev.fecha : ev.fecha + 'T12:00:00') : new Date();
+                                    const date = isNaN(rawDate.getTime()) ? new Date() : rawDate;
+                                    
+                                    const monthShort = date.toLocaleDateString('es-DO', { month: 'short' }).toUpperCase().replace('.', '');
+                                    const day = date.getDate();
+                                    return (
+                                        <div key={ev.id} className="flex gap-4 items-start p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-md transition-all">
+                                            <div className="bg-[#004aad] px-4 py-2.5 rounded-2xl text-center min-w-[64px] text-white shrink-0 shadow-lg shadow-blue-100">
+                                                <div className="text-[10px] font-black uppercase tracking-tighter">{monthShort}</div>
+                                                <div className="text-2xl font-black leading-none mt-1">{day}</div>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tight">{ev.titulo}</h5>
+                                                <div className="flex items-center gap-1.5 mt-1">
+                                                    <MapPin className="h-3 w-3 text-[#004aad]" />
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase">{ev.locacion || 'Centro Educativo'}</p>
+                                                </div>
+                                                {ev.descripcion && (
+                                                    <div className="mt-2 text-[11px] font-medium text-slate-500 leading-relaxed bg-white/50 p-2.5 rounded-xl border border-slate-100">
+                                                        {ev.descripcion}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                }) : (
+                                    <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                                        <p className="text-xs font-bold text-slate-400">No hay eventos programados.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* CARD MENSUALIDAD */}
+                        <div className="bg-white rounded-[32px] shadow-xl p-6 border-t-4 border-[#7ed957]">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mensualidad</p>
+                            {estudiantes.length > 0 ? (
+                                <div className="space-y-2">
+                                    {estudiantes.map(est => (
+                                        <div key={est.id} className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-slate-600 truncate pr-2">{est.nombre}</span>
+                                            <span className="font-black text-[#004aad] shrink-0">
+                                                RD$ {est.cuota_mensual ? Number(est.cuota_mensual).toLocaleString('es-DO') : '—'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-slate-400 italic text-sm">—</p>
+                            )}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+            {/* GALLERY MODAL */}
+            {showAllPhotos && (
+                <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-8">
+                    <button onClick={() => setShowAllPhotos(false)} className="absolute top-8 right-8 text-white scale-150 font-black">✕</button>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-6xl overflow-y-auto max-h-[80vh] p-4">
+                        {galeria.map((img, i) => (
+                            <Card key={i} className="rounded-[32px] border-0 overflow-hidden bg-white/5 border border-white/10">
+                                <img src={img.foto_url} className="w-full aspect-[4/3] object-cover" />
+                                <div className="p-4 text-white text-sm font-bold">{img.titulo}</div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* RECEIPT MODAL */}
+            {selectedRecibo && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 print:p-0 print:bg-white print:relative print:z-0">
+                    <Card className="w-full max-w-xl rounded-[40px] shadow-2xl bg-white overflow-hidden print:shadow-none print:rounded-none print:max-w-none">
+                        <div className="p-8 print:p-4">
+                            <div className="flex justify-between items-center mb-8 print:hidden">
+                                <Button variant="ghost" onClick={() => setSelectedRecibo(null)} className="rounded-full font-bold text-slate-400">Cerrar</Button>
+                                <Button onClick={handlePrint} className="bg-[#8A2BE2] hover:bg-[#7726c5] text-white rounded-full font-black px-6">
+                                    <Printer className="mr-2 h-4 w-4" /> Imprimir Recibo
+                                </Button>
+                            </div>
+                            <div className="border-4 border-slate-50 p-8 rounded-[32px] print:border-2 print:p-6">
+                                <div className="text-center mb-6">
+                                    <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" alt="Logo" className="h-24 w-24 mx-auto mb-4 object-contain" />
+                                    <h1 className="text-2xl font-black text-[#004aad] uppercase leading-tight tracking-tighter">Pre-escolar Sagrada Familia</h1>
+                                    <p className="text-[12px] font-bold text-[#FF1493] italic mt-1">"Educando con Amor y Propósito"</p>
+                                    <p className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-widest mt-4 border-t border-[#8A2BE2]/10 pt-2">RECIBO OFICIAL DE PAGO</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6 mb-8 py-6 border-y border-slate-100">
+                                    <div>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Pagado por:</span>
+                                        <p className="font-extrabold text-slate-800">
+                                            {selectedRecibo.estudiantes?.tutor_nombre || selectedRecibo.estudiantes?.nombre_madre || userName}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Fecha de Operación:</span>
+                                        <p className="font-extrabold text-slate-800">{new Date(selectedRecibo.fecha + 'T12:00:00').toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                        <span className="text-[9px] font-black text-[#FF1493] uppercase block mt-1">Sello Digital: REC-{(selectedRecibo.id || '000').substring(0, 8).toUpperCase()}</span>
+                                    </div>
+                                </div>
+                                <div className="bg-[#004aad] p-6 rounded-2xl text-white shadow-lg space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="text-[9px] font-bold uppercase opacity-80">Método de Pago</p>
+                                            <p className="font-black uppercase text-sm">{selectedRecibo.metodo}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[9px] font-bold uppercase opacity-80">Monto Total</p>
+                                            <p className="font-black uppercase text-sm">RD$ {selectedRecibo.monto?.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                    {selectedRecibo.concepto && (
+                                        <div className="bg-white/15 rounded-xl px-4 py-3 text-xs font-bold text-white/90 text-center border border-white/20">
+                                            📋 {selectedRecibo.concepto}
+                                        </div>
+                                    )}
+                                </div>
+
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {/* FICHA DIGITAL — DISEÑO DOCUMENTO IMPRIMIBLE */}
+            {selectedStudentForFile && (() => {
+                const studentPayments = recibos.filter((r: any) => r.estudiante_id === selectedStudentForFile.id);
+                const isUpToDate = currentSaldo <= 0;
+                const totalPagado = studentPayments.reduce((sum: number, p: any) => sum + (p.monto || 0), 0);
+                const today = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'numeric', year: 'numeric' });
+                const getConcepto = (p: any) => {
+                    if (p.concepto) return p.concepto;
+                    const d = new Date(p.fecha + 'T12:00:00');
+                    return `Cuota ${d.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' })}`;
+                };
+
+                return (
+                    <div className="fixed inset-0 z-[200] bg-white overflow-y-auto print:overflow-visible">
+                        {/* CSS SOLO para impresión */}
+                        <style>{`
+                            @media print {
+                                body * { visibility: hidden !important; }
+                                #ficha-print, #ficha-print * { visibility: visible !important; }
+                                #ficha-print { position: fixed !important; left: 0; top: 0; width: 100%; padding: 32px 40px; }
+                                #ficha-action-bar { display: none !important; }
+                            }
+                        `}</style>
+
+                        {/* BARRA DE ACCIONES — solo en pantalla */}
+                        <div id="ficha-action-bar" className="sticky top-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between z-10 print:hidden">
+                            <button
+                                onClick={() => setSelectedStudentForFile(null)}
+                                className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
+                                Volver al Portal
+                            </button>
+                            <button
+                                onClick={() => window.print()}
+                                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold px-5 py-2 rounded-full transition-colors"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+                                Imprimir / Guardar PDF
+                            </button>
+                        </div>
+
+                        {/* DOCUMENTO IMPRIMIBLE */}
+                        <div id="ficha-print" className="max-w-3xl mx-auto py-12 px-10 print:py-0">
+
+                            {/* CABECERA DOCUMENTO */}
+                            <div className="flex justify-between items-start mb-10 border-b-4 border-slate-900 pb-8">
+                                <div className="flex gap-6 items-center">
+                                    <div className="bg-slate-50 p-3 rounded-[28px] shadow-sm border border-slate-100">
+                                        <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" alt="Logo" className="h-20 w-20 object-contain" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-black text-slate-900 leading-none tracking-tighter uppercase italic">
+                                            Kinder Hive Hub
+                                        </h1>
+                                        <p className="text-sm font-black text-slate-400 mt-1 uppercase tracking-widest">Plataforma de Gestión Académica</p>
+                                        <div className="mt-3 flex items-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
+                                            <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> Santo Domingo, DN</span>
+                                            <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> 809-555-0100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <Badge className="bg-slate-900 text-white font-black px-4 py-1.5 rounded-full border-0 mb-2 uppercase text-[10px]">Expediente Digital</Badge>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ID: ST-{(selectedStudentForFile.id || '000').substring(0, 8).toUpperCase()}</p>
+                                </div>
+                            </div>
+
+                            {/* GRID DE INFORMACIÓN PRINCIPAL */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                                {/* Datos del Estudiante */}
+                                <div className="bg-slate-50 rounded-[35px] p-8 border border-slate-100">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#8A2BE2] mb-6 flex items-center gap-2">
+                                        <User className="h-4 w-4" /> Datos del Alumno
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Nombre Completo</span>
+                                            <span className="text-xl font-black text-slate-900 tracking-tight">{selectedStudentForFile.nombre}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Grado / Nivel</span>
+                                            <span className="text-lg font-black text-slate-700">{selectedStudentForFile.grado}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Cuota Mensual</span>
+                                            <span className="text-lg font-black text-[#004aad]">RD$ {selectedStudentForFile.cuota_mensual ? Number(selectedStudentForFile.cuota_mensual).toLocaleString('es-DO') : "—"}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Datos de Contacto y Estatus */}
+                                <div className="bg-[#7ed957]/10 rounded-[35px] p-8 border border-[#7ed957]/20">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-green-700 mb-6 flex items-center gap-2">
+                                        <Phone className="h-4 w-4" /> Contacto Tutor
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Padre / Tutor</span>
+                                            <span className="text-xl font-black text-slate-900 tracking-tight">
+                                                {selectedStudentForFile.tutor_nombre || selectedStudentForFile.nombre_madre || userName}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Teléfono de Enlace</span>
+                                            <span className="text-lg font-black text-slate-700">
+                                                {selectedStudentForFile.telefono_tutor || selectedStudentForFile.telefono_madre || "—"}
+                                            </span>
+                                        </div>
+                                        <div className="pt-2">
+                                            <Badge className={`px-4 py-2 rounded-full font-black uppercase text-[11px] ${isUpToDate ? 'bg-green-600 text-white' : 'bg-[#ffcc00] text-black'}`}>
+                                                {isUpToDate ? "✓ Estado: Al Día" : "⚠️ Estado: Pendiente"}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* HISTORIAL FINANCIERO */}
+                            <div className="mb-10">
+                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4 px-4">Historial Reciente de Pagos</h3>
+                                <div className="border border-slate-100 rounded-[35px] overflow-hidden shadow-sm">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-100 text-left">
+                                                <th className="px-6 py-4 font-black text-slate-500 uppercase text-[9px]">Fecha</th>
+                                                <th className="px-6 py-4 font-black text-slate-500 uppercase text-[9px]">Concepto / Detalle</th>
+                                                <th className="px-6 py-4 font-black text-slate-500 uppercase text-[9px]">Monto</th>
+                                                <th className="px-6 py-4 font-black text-slate-500 uppercase text-[9px] text-right">Estatus</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {studentPayments.length > 0 ? studentPayments.slice(0, 5).map((p: any) => (
+                                                <tr key={p.id} className="bg-white">
+                                                    <td className="px-6 py-4 font-bold text-slate-500">{new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-DO')}</td>
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-black text-slate-800 text-xs truncate max-w-[200px]">{getConcepto(p)}</p>
+                                                        <p className="text-[9px] font-bold text-slate-400 uppercase">Vía {p.metodo || '—'}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 font-black text-slate-900">RD$ {p.monto?.toLocaleString('es-DO')}</td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <span className="text-[10px] font-black text-green-600 uppercase italic">Saldado ✓</span>
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan={4} className="px-6 py-12 text-center text-slate-300 font-bold italic">No se registran transacciones previas</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                        {studentPayments.length > 0 && (
+                                            <tfoot className="bg-slate-900 text-white">
+                                                <tr>
+                                                    <td colSpan={2} className="px-6 py-5 font-black uppercase text-[10px] tracking-widest text-white/60">Balance Total Acumulado</td>
+                                                    <td className="px-6 py-5 font-black text-xl tracking-tighter">RD$ {totalPagado.toLocaleString('es-DO')}</td>
+                                                    <td className="px-6 py-5"></td>
+                                                </tr>
+                                            </tfoot>
+                                        )}
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* FIRMA Y SELLOS */}
+                            <div className="grid grid-cols-2 gap-12 mt-16 pt-10 border-t border-slate-100">
+                                <div className="text-center">
+                                    <div className="h-0.5 w-full bg-slate-200 mb-4" />
+                                    <p className="text-[10px] font-black uppercase text-slate-800">Dirección Administrativa</p>
+                                    <p className="text-[9px] font-bold text-slate-400">Sagrada Familia Education Group</p>
+                                </div>
+                                <div className="text-center relative">
+                                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-10">
+                                        <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" className="h-24 w-24 grayscale" />
+                                    </div>
+                                    <div className="h-0.5 w-full bg-slate-200 mb-4" />
+                                    <p className="text-[10px] font-black uppercase text-slate-800">Sello Digital de Validación</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Kinder Hive Hub — {today}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* === BOTÓN FLOTANTE DE CONTACTO === */}
+            <div className="fixed bottom-8 right-6 z-[90]">
+                <button
+                    onClick={() => { setShowContact(true); setContactTab("menu"); setCitaOk(false); }}
+                    className="flex items-center gap-3 bg-[#25D366] hover:bg-[#1ebe5d] text-white font-black px-6 py-4 rounded-full shadow-2xl shadow-[#25D366]/40 transition-all hover:scale-105 active:scale-95"
+                >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                    Contactar al Colegio
+                </button>
+            </div>
+
+            {/* === MODAL DE CONTACTO === */}
+            {showContact && (
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+                        <div className="bg-gradient-to-r from-[#004aad] to-[#8A2BE2] p-8 text-white relative">
+                            <button onClick={() => setShowContact(false)} className="absolute top-5 right-5 text-white/60 hover:text-white transition-colors text-2xl font-black">✕</button>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+                                    <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" className="h-12 w-12 object-contain" alt="Logo" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black tracking-tighter">Contacto Directo</h3>
+                                    <p className="text-white/70 text-sm font-bold">Pre-escolar Sagrada Familia</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8">
+                            {contactTab === "menu" && (
+                                <div className="space-y-4">
+                                    <a href={`https://wa.me/18095550100?text=Hola,%20soy%20${encodeURIComponent(userName)},%20padre%2Fmadre%20de%20${encodeURIComponent(estudiantes[0]?.nombre || 'un alumno')}%20y%20quisiera%20consultar%20algo.`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-5 bg-[#25D366]/10 hover:bg-[#25D366]/20 rounded-[24px] transition-all group cursor-pointer">
+                                        <div className="h-14 w-14 bg-[#25D366] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <svg viewBox="0 0 24 24" fill="white" className="h-7 w-7"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-slate-800 text-base">WhatsApp</p>
+                                            <p className="text-xs font-bold text-slate-400">Respuesta en minutos</p>
+                                        </div>
+                                    </a>
+                                    <a href={`mailto:admin@sagradafamilia.edu.do?subject=Consulta sobre ${encodeURIComponent(estudiantes[0]?.nombre || 'alumno')}&body=Estimada dirección,%0A%0ASoy ${encodeURIComponent(userName)} y quisiera...`} className="flex items-center gap-4 p-5 bg-[#004aad]/10 hover:bg-[#004aad]/20 rounded-[24px] transition-all group cursor-pointer">
+                                        <div className="h-14 w-14 bg-[#004aad] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="h-7 w-7"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-slate-800 text-base">Enviar Correo</p>
+                                            <p className="text-xs font-bold text-slate-400">admin@sagradafamilia.edu.do</p>
+                                        </div>
+                                    </a>
+                                    <button onClick={() => setContactTab("cita")} className="w-full flex items-center gap-4 p-5 bg-[#8A2BE2]/10 hover:bg-[#8A2BE2]/20 rounded-[24px] transition-all group text-left">
+                                        <div className="h-14 w-14 bg-[#8A2BE2] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="h-7 w-7"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-slate-800 text-base">Solicitar Reunión</p>
+                                            <p className="text-xs font-bold text-slate-400">Agenda una cita con la dirección</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
+                            {contactTab === "cita" && !citaOk && (
+                                <form onSubmit={(e) => { e.preventDefault(); setCitaOk(true); }} className="space-y-4">
+                                    <button type="button" onClick={() => setContactTab("menu")} className="text-[#8A2BE2] font-black text-sm mb-2">← Volver</button>
+                                    <h4 className="text-xl font-black text-slate-800">Solicitar Reunión</h4>
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Fecha Preferida</label>
+                                        <input type="date" required min={new Date().toISOString().split('T')[0]} className="w-full mt-1 h-12 px-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-700 focus:border-[#8A2BE2] outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Hora</label>
+                                        <select className="w-full mt-1 h-12 px-4 rounded-2xl border-2 border-slate-100 font-bold bg-white focus:border-[#8A2BE2] outline-none">
+                                            <option>8:00 AM</option>
+                                            <option>9:00 AM</option>
+                                            <option>10:00 AM</option>
+                                            <option>11:00 AM</option>
+                                            <option>2:00 PM</option>
+                                            <option>3:00 PM</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Motivo de la reunión</label>
+                                        <textarea rows={3} required className="w-full mt-1 p-4 rounded-3xl border-2 border-slate-100 font-medium text-slate-700 focus:border-[#8A2BE2] outline-none" placeholder="Explique brevemente el motivo..."></textarea>
+                                    </div>
+                                    <button type="submit" className="w-full h-14 bg-[#8A2BE2] hover:bg-[#7726c5] text-white font-black rounded-2xl shadow-lg shadow-[#8A2BE2]/20">
+                                        Confirmar Solicitud
+                                    </button>
+                                </form>
+                            )}
+                            {contactTab === "cita" && citaOk && (
+                                <div className="text-center py-8 space-y-4">
+                                    <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" className="h-10 w-10"><polyline points="20 6 9 17 4 12" /></svg>
+                                    </div>
+                                    <h4 className="text-2xl font-black text-slate-800">¡Solicitud Enviada!</h4>
+                                    <p className="text-slate-500 font-medium">La administración se pondrá en contacto contigo para confirmar la cita.</p>
+                                    <button onClick={() => setShowContact(false)} className="mt-4 px-8 py-3 bg-slate-100 hover:bg-slate-200 rounded-full font-black text-slate-600">Cerrar</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
