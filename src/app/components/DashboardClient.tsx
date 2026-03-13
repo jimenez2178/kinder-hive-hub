@@ -19,7 +19,10 @@ import {
     AlertTriangle,
     MapPin,
     Phone,
-    User
+    User,
+    Edit3,
+    Mic,
+    Waves
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -157,6 +160,89 @@ export default function DashboardClient({
                             </div>
                         </div>
 
+                        {/* PRÓXIMOS EVENTOS (Reubicado debajo de Ficha Digital) */}
+                        <div className="bg-[#7ed957]/10 rounded-[40px] shadow-sm overflow-hidden border-2 border-[#7ed957]/40 p-1 mt-6 ring-4 ring-[#7ed957]/10">
+                            <div className="bg-white rounded-[35px] overflow-hidden">
+                                <div className="px-7 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+                                    <h4 className="text-xl font-black text-[#004aad] uppercase tracking-tight flex items-center gap-3">
+                                        <Calendar className="h-5 w-5 text-[#8A2BE2]" />
+                                        Próximos Eventos
+                                    </h4>
+                                </div>
+                                <div className="p-5 space-y-4">
+                                    {eventos.length > 0 ? eventos.map((ev) => {
+                                        // Robust date parsing enforcing local noon to prevent UTC timezone shifts
+                                        const rawDateStr = ev.fecha ? ev.fecha.split('T')[0] : '';
+                                        const rawDate = rawDateStr ? new Date(rawDateStr + 'T12:00:00') : new Date();
+                                        const date = isNaN(rawDate.getTime()) ? new Date() : rawDate;
+                                        
+                                        const monthShort = date.toLocaleDateString('es-DO', { month: 'short' }).toUpperCase().replace('.', '');
+                                        const day = date.getDate();
+                                        
+                                        // Highlight this week events using #7ed957
+                                        const lowerTitle = ev.titulo.toLowerCase();
+                                        let EventIcon = Calendar;
+                                        let iconColor = "text-[#004aad]";
+                                        let evtColor = "bg-[#004aad]";
+                                        
+                                        if (lowerTitle.includes('evaluacion') || lowerTitle.includes('examen') || lowerTitle.includes('evaluación')) {
+                                            EventIcon = Edit3;
+                                            iconColor = "text-[#FF1493]";
+                                            evtColor = "bg-[#FF1493]";
+                                        } else if (lowerTitle.includes('conferencia') || lowerTitle.includes('padre') || lowerTitle.includes('reunion')) {
+                                            EventIcon = Mic;
+                                            iconColor = "text-[#8A2BE2]";
+                                            evtColor = "bg-[#8A2BE2]";
+                                        } else if (lowerTitle.includes('piscina') || lowerTitle.includes('aqua')) {
+                                            EventIcon = Waves;
+                                            iconColor = "text-[#0099ff]";
+                                            evtColor = "bg-[#0099ff]";
+                                        }
+                                        
+                                        const now = new Date();
+                                        // Normalize times to midnight for accurate day comparison
+                                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                                        const eventTime = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+                                        const isThisWeek = eventTime >= today && eventTime < (today + 7 * 24 * 60 * 60 * 1000);
+                                        
+                                        return (
+                                            <div key={ev.id} className={`flex gap-4 items-start p-5 rounded-3xl border ${isThisWeek ? 'bg-[#7ed957]/10 border-[#7ed957]/50 shadow-md ring-2 ring-[#7ed957]/20 relative overflow-hidden' : 'bg-slate-50 border-slate-100'} hover:bg-white transition-all`}>
+                                                {isThisWeek && <div className="absolute top-0 right-0 bg-[#7ed957] text-[#020617] text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-lg">¡Esta Semana!</div>}
+                                                <div className={`${isThisWeek ? 'bg-[#7ed957] shadow-green-200' : evtColor + ' shadow-blue-100'} px-4 py-2.5 rounded-2xl text-center min-w-[64px] text-white shrink-0 shadow-lg relative z-10`}>
+                                                    <div className={`text-[10px] font-black uppercase tracking-tighter ${isThisWeek ? 'text-green-900' : 'text-white'}`}>{monthShort}</div>
+                                                    <div className={`text-2xl font-black leading-none mt-1 ${isThisWeek ? 'text-green-950' : 'text-white'}`}>{day}</div>
+                                                </div>
+                                                <div className="flex-1 relative z-10">
+                                                    <div className="flex items-center gap-2">
+                                                        <EventIcon className={`h-4 w-4 ${isThisWeek ? 'text-[#7ed957]' : iconColor}`} />
+                                                        <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tight">{ev.titulo}</h5>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 mt-1.5">
+                                                        <MapPin className="h-3 w-3 text-slate-400" />
+                                                        <p className="text-[10px] font-bold text-slate-500 uppercase">{ev.locacion || 'Centro Educativo'}</p>
+                                                    </div>
+                                                    {ev.descripcion && (
+                                                        <div className={`mt-2 text-[11px] font-bold leading-relaxed p-2.5 rounded-xl border ${isThisWeek ? 'bg-white/80 text-green-800 border-green-200' : 'text-slate-500 bg-white/50 border-slate-100'}`}>
+                                                            {ev.descripcion}
+                                                        </div>
+                                                    )}
+                                                    {(lowerTitle.includes('piscina') || lowerTitle.includes('aqua')) && (
+                                                        <div className="mt-2 inline-flex items-center gap-1.5 bg-[#0099ff]/10 text-[#004aad] px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-[#0099ff]/30">
+                                                            <span>💧 Contribución: RD$ 200.00</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="p-4 bg-slate-50 rounded-2xl text-center">
+                                            <p className="text-xs font-bold text-slate-400">No hay eventos programados.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                         {/* GALERÍA */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between px-1">
@@ -236,14 +322,14 @@ export default function DashboardClient({
                         {/* PROGRESO ACADÉMICO */}
                         <div className="space-y-4">
                             <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 px-1">
-                                <span className="bg-[#FF1493]/15 p-1.5 rounded-lg">
-                                    <GraduationCap className="h-4 w-4 text-[#FF1493]" />
+                                <span className="bg-slate-800/10 p-1.5 rounded-lg">
+                                    <GraduationCap className="h-4 w-4 text-slate-800" />
                                 </span>
                                 Progreso Académico
                             </h3>
                             <div className="space-y-4">
                                 {evaluaciones && evaluaciones.length > 0 ? evaluaciones.map((ev: any) => (
-                                    <div key={ev.id} className="bg-gradient-to-br from-[#FF1493] to-[#C71585] p-8 md:p-12 rounded-[55px] shadow-2xl relative overflow-hidden group hover:scale-[1.01] transition-all duration-500 border-4 border-white/10">
+                                    <div key={ev.id} className="bg-gradient-to-br from-slate-800 to-slate-950 p-8 md:p-12 rounded-[55px] shadow-2xl relative overflow-hidden group hover:scale-[1.01] transition-all duration-500 border-4 border-white/10">
                                         {/* Decoración de fondo */}
                                         <div className="absolute -right-16 -bottom-16 opacity-10 rotate-12 transition-transform group-hover:scale-110 duration-1000">
                                             <Star className="w-80 h-80 text-white" fill="currentColor" />
@@ -259,7 +345,7 @@ export default function DashboardClient({
                                                     <h5 className="font-black text-white text-3xl tracking-tighter leading-none">{ev.estudiantes?.nombre}</h5>
                                                     <div className="flex flex-wrap gap-2">
                                                         <div className="bg-white px-4 py-1.5 rounded-full shadow-xl">
-                                                            <span className="text-[#FF1493] font-black text-[10px] uppercase tracking-widest">{ev.categoria}</span>
+                                                            <span className="text-slate-800 font-black text-[10px] uppercase tracking-widest">{ev.categoria}</span>
                                                         </div>
                                                         {ev.maestro_nombre && (
                                                             <div className="bg-black/30 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/10">
@@ -368,50 +454,6 @@ export default function DashboardClient({
                             </div>
                         )}
 
-                        {/* PRÓXIMOS EVENTOS */}
-                        <div className="bg-white rounded-[32px] shadow-xl overflow-hidden">
-                            <div className="px-7 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
-                                <h4 className="text-base font-black text-slate-800">Próximos Eventos</h4>
-                                <div className="bg-[#004aad]/10 p-2 rounded-xl">
-                                    <Calendar className="h-4 w-4 text-[#004aad]" />
-                                </div>
-                            </div>
-                            <div className="p-5 space-y-4">
-                                {eventos.length > 0 ? eventos.map((ev) => {
-                                    // Robust date parsing
-                                    const rawDate = ev.fecha ? new Date(ev.fecha.includes('T') ? ev.fecha : ev.fecha + 'T12:00:00') : new Date();
-                                    const date = isNaN(rawDate.getTime()) ? new Date() : rawDate;
-                                    
-                                    const monthShort = date.toLocaleDateString('es-DO', { month: 'short' }).toUpperCase().replace('.', '');
-                                    const day = date.getDate();
-                                    return (
-                                        <div key={ev.id} className="flex gap-4 items-start p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:bg-white hover:shadow-md transition-all">
-                                            <div className="bg-[#004aad] px-4 py-2.5 rounded-2xl text-center min-w-[64px] text-white shrink-0 shadow-lg shadow-blue-100">
-                                                <div className="text-[10px] font-black uppercase tracking-tighter">{monthShort}</div>
-                                                <div className="text-2xl font-black leading-none mt-1">{day}</div>
-                                            </div>
-                                            <div className="flex-1">
-                                                <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tight">{ev.titulo}</h5>
-                                                <div className="flex items-center gap-1.5 mt-1">
-                                                    <MapPin className="h-3 w-3 text-[#004aad]" />
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase">{ev.locacion || 'Centro Educativo'}</p>
-                                                </div>
-                                                {ev.descripcion && (
-                                                    <div className="mt-2 text-[11px] font-medium text-slate-500 leading-relaxed bg-white/50 p-2.5 rounded-xl border border-slate-100">
-                                                        {ev.descripcion}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                }) : (
-                                    <div className="p-4 bg-slate-50 rounded-2xl text-center">
-                                        <p className="text-xs font-bold text-slate-400">No hay eventos programados.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
                         {/* CARD MENSUALIDAD */}
                         <div className="bg-white rounded-[32px] shadow-xl p-6 border-t-4 border-[#7ed957]">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mensualidad</p>
@@ -464,10 +506,16 @@ export default function DashboardClient({
                             </div>
                             <div className="border-4 border-slate-50 p-8 rounded-[32px] print:border-2 print:p-6">
                                 <div className="text-center mb-6">
-                                    <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" alt="Logo" className="h-24 w-24 mx-auto mb-4 object-contain" />
-                                    <h1 className="text-2xl font-black text-[#004aad] uppercase leading-tight tracking-tighter">Pre-escolar Sagrada Familia</h1>
-                                    <p className="text-[12px] font-bold text-[#FF1493] italic mt-1">"Educando con Amor y Propósito"</p>
-                                    <p className="text-[10px] font-black text-[#8A2BE2] uppercase tracking-widest mt-4 border-t border-[#8A2BE2]/10 pt-2">RECIBO OFICIAL DE PAGO</p>
+                                    <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" alt="Logo" className="h-24 w-24 mx-auto mb-2 object-contain" />
+                                    <h1 className="text-xl font-black text-[#004aad] uppercase leading-tight tracking-tighter">Pre-escolar Psicopedagógico De la Sagrada Familia</h1>
+                                    <div className="text-[11px] font-mono text-slate-500 mt-1 space-y-0.5">
+                                        <p>RNC: 131596152</p>
+                                        <p>Alma Rosa I, Santo Domingo Este</p>
+                                    </div>
+                                    <div className="flex justify-center items-center gap-4 mt-4 border-t border-[#8A2BE2]/10 pt-4">
+                                        <p className="text-[12px] font-black text-[#8A2BE2] uppercase tracking-widest">RECIBO OFICIAL DE PAGO</p>
+                                        <Badge className="bg-green-600 hover:bg-green-600 text-white font-black text-[10px] uppercase border-0">Pagado</Badge>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-6 mb-8 py-6 border-y border-slate-100">
                                     <div>
@@ -475,11 +523,14 @@ export default function DashboardClient({
                                         <p className="font-extrabold text-slate-800">
                                             {selectedRecibo.estudiantes?.tutor_nombre || selectedRecibo.estudiantes?.nombre_madre || userName}
                                         </p>
+                                        <p className="text-[10px] font-bold text-slate-500 mt-0.5">
+                                            Tel: {selectedRecibo.estudiantes?.telefono_tutor || selectedRecibo.estudiantes?.telefono_madre || "No registrado"}
+                                        </p>
                                     </div>
                                     <div className="text-right">
                                         <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Fecha de Operación:</span>
-                                        <p className="font-extrabold text-slate-800">{new Date(selectedRecibo.fecha + 'T12:00:00').toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                                        <span className="text-[9px] font-black text-[#FF1493] uppercase block mt-1">Sello Digital: REC-{(selectedRecibo.id || '000').substring(0, 8).toUpperCase()}</span>
+                                        <p className="font-extrabold text-slate-800 font-mono">{new Date(selectedRecibo.fecha + 'T12:00:00').toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                                        <span className="text-[9px] font-black text-[#FF1493] uppercase block mt-1">Folio N°: REC-{(selectedRecibo.id || '000').substring(0, 8).toUpperCase()}</span>
                                     </div>
                                 </div>
                                 <div className="bg-[#004aad] p-6 rounded-2xl text-white shadow-lg space-y-3">
@@ -490,7 +541,7 @@ export default function DashboardClient({
                                         </div>
                                         <div className="text-right">
                                             <p className="text-[9px] font-bold uppercase opacity-80">Monto Total</p>
-                                            <p className="font-black uppercase text-sm">RD$ {selectedRecibo.monto?.toLocaleString()}</p>
+                                            <p className="font-black uppercase text-sm font-mono">RD$ {selectedRecibo.monto?.toLocaleString()}</p>
                                         </div>
                                     </div>
                                     {selectedRecibo.concepto && (
@@ -558,13 +609,12 @@ export default function DashboardClient({
                                         <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" alt="Logo" className="h-20 w-20 object-contain" />
                                     </div>
                                     <div>
-                                        <h1 className="text-3xl font-black text-slate-900 leading-none tracking-tighter uppercase italic">
-                                            Kinder Hive Hub
+                                        <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
+                                            Pre-escolar Psicopedagógico<br />De la Sagrada Familia
                                         </h1>
-                                        <p className="text-sm font-black text-slate-400 mt-1 uppercase tracking-widest">Plataforma de Gestión Académica</p>
-                                        <div className="mt-3 flex items-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
-                                            <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> Santo Domingo, DN</span>
-                                            <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> 809-555-0100</span>
+                                        <div className="mt-2 text-[11px] font-mono text-slate-500 space-y-0.5">
+                                            <p>RNC: 131596152</p>
+                                            <p className="flex items-center gap-1"><MapPin className="h-3 w-3" /> Alma Rosa I, Santo Domingo Este</p>
                                         </div>
                                     </div>
                                 </div>
@@ -612,7 +662,7 @@ export default function DashboardClient({
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Teléfono de Enlace</span>
                                             <span className="text-lg font-black text-slate-700">
-                                                {selectedStudentForFile.telefono_tutor || selectedStudentForFile.telefono_madre || "—"}
+                                                {selectedStudentForFile.telefono_tutor || selectedStudentForFile.telefono_madre || selectedStudentForFile.padre_telefono || <span className="text-sm text-slate-400 font-medium italic">Pendiente de actualizar</span>}
                                             </span>
                                         </div>
                                         <div className="pt-2">

@@ -29,3 +29,16 @@
     *   **Ficha Digital**: Implementación de vista de expediente imprimible con diseño profesional.
     *   **Contacto**: Botón flotante de WhatsApp y modal de contacto directo.
     *   **Interactividad**: Añadidos efectos de escala y desenfoque en la galería y secciones de feedback.
+    *   **Firmeza de Marca**: Integración del logo oficial en el header.
+
+## [2026-03-13] Fase: Corrección de Redirecciones y Seguridad de Roles
+
+### 1. Reorganización de Rutas (Standardization)
+*   **Directora**: Movido de `/directora` a `/dashboard/directora`.
+*   **Padres**: Movido de `/dashboard` a `/dashboard/padre`.
+*   **Página de Espera**: Creada en `/espera` para usuarios pendientes.
+
+### 2. Refuerzo de Middleware y Autenticación
+*   **Middleware**: Implementada lógica de "Gating" que verifica `rol` y `estado` en cada petición protegida.
+*   **Login & Registro**: Actualizadas las redirecciones post-acción para respetar los nuevos perfiles de ruta y el flujo de aprobación.
+*   **Seguridad**: Bloqueo de acceso cruzado (padres no pueden entrar a rutas de directora y viceversa).

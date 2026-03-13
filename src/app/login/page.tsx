@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react"
+import { useActionState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -16,6 +16,12 @@ import Link from "next/link"
 
 export default function LoginForm() {
     const [state, formAction, isPending] = useActionState(loginAction, null);
+
+    useEffect(() => {
+        if (state?.redirect) {
+            window.location.href = state.redirect;
+        }
+    }, [state?.redirect]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-muted/20 p-4">

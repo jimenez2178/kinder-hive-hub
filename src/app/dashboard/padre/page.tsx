@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { getFraseDelDia } from "@/lib/n8n";
-import DashboardClient from "../components/DashboardClient";
+import DashboardClient from "../../components/DashboardClient";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -15,10 +15,10 @@ export default async function DashboardPage() {
 
     const fraseDelDia = await getFraseDelDia();
 
-    // 1. Perfil del padre y su Colegio ID
+    // 1. Perfil del padre y su Colegio ID y TELÉFONO
     const { data: profile } = await supabase
         .from("perfiles")
-        .select("nombre, colegio_id")
+        .select("nombre, colegio_id, telefono")
         .eq("id", user.id)
         .single();
 
@@ -34,10 +34,15 @@ export default async function DashboardPage() {
 
     // 2. Estudiantes asociados: ID Directo + Match por Email + Match por Nombre
     // MUY IMPORTANTE: Traemos colegio_id para asegurar que el dashboard sepa a qué colegio pertenece el niño
-    const { data: estudiantes } = await supabase
+    const { data: rawEstudiantes } = await supabase
         .from("estudiantes")
         .select("id, nombre, grado, cuota_mensual, tutor_nombre, telefono_tutor, nombre_madre, telefono_madre, colegio_id")
         .or(`padre_id.eq.${user.id},tutor_nombre.ilike.%${user.email}%,tutor_nombre.ilike.%${profile?.nombre}%,nombre_madre.ilike.%${profile?.nombre}%`);
+
+    const estudiantes = rawEstudiantes?.map(est => ({
+        ...est,
+        padre_telefono: profile?.telefono || ""
+    })) || [];
 
     // 2.5 Resolución inteligente de Colegio ID
     // Si el perfil no lo tiene, lo tomamos del primer niño. Si no hay niños, usamos el default de Sagrada Familia.

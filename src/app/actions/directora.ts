@@ -73,8 +73,8 @@ export async function addPaymentAction(prevState: unknown, formData: FormData) {
 
     if (error) return { error: error.message };
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true, timestamp: Date.now(), concepto, montoTotal };
 }
 
@@ -95,8 +95,8 @@ export async function addEventAction(prevState: unknown, formData: FormData) {
 
     if (error) return { error: error.message };
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true, timestamp: Date.now() };
 }
 
@@ -134,8 +134,8 @@ export async function addPhotoAction(prevState: unknown, formData: FormData) {
 
     if (error) return { error: error.message };
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true, timestamp: Date.now() };
 }
 
@@ -200,8 +200,22 @@ export async function addEstudianteAction(prevState: unknown, formData: FormData
 
     if (error) return { error: error.message };
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    // 5. Si encontramos y vinculamos a un padre, lo aprobamos automáticamente para desbloquearlo
+    if (finalPadreId) {
+        const { error: updateError } = await supabase
+            .from('perfiles')
+            .update({ estado: 'aprobado' })
+            .eq('id', finalPadreId);
+        
+        if (updateError) {
+            console.error("[addEstudianteAction] Error auto-aproving parent:", updateError);
+        } else {
+            console.log(`[addEstudianteAction] Parent ${finalPadreId} auto-approved.`);
+        }
+    }
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true, timestamp: Date.now() };
 }
 
@@ -225,8 +239,8 @@ export async function addComunicadoAction(prevState: unknown, formData: FormData
         console.log(`[PUSH TRIGGERED] Title: ${titulo}, Priority: ${prioridad}`);
     }
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true, timestamp: Date.now() };
 }
 
@@ -243,8 +257,8 @@ export async function addAgradecimientoAction(prevState: unknown, formData: Form
 
     if (error) return { error: error.message };
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true, timestamp: Date.now() };
 }
 
@@ -254,8 +268,8 @@ export async function deleteEstudianteAction(id: string) {
 
     if (error) return { error: error.message };
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true };
 }
 
@@ -265,7 +279,7 @@ export async function deleteAllEstudiantesAction() {
 
     if (error) return { error: error.message };
 
-    revalidatePath("/directora");
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
     return { success: true };
 }

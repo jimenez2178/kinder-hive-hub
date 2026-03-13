@@ -9,10 +9,16 @@ export type RegisterState = {
 };
 
 export async function registerAction(prevState: RegisterState | null, formData: FormData): Promise<RegisterState> {
-    const email = (formData.get("email") as string)?.trim().toLowerCase();
+    // Limpiamos los espacios en el email (incluso los internos) para evitar errores del SDK
+    const emailRaw = (formData.get("email") as string) || "";
+    const email = emailRaw.replace(/\s+/g, "").toLowerCase();
+    
     const password = formData.get("password") as string;
-    const nombre = (formData.get("nombre") as string)?.trim();
     const nombreCompleto = (formData.get("nombre_completo") as string)?.trim();
+    
+    // Usamos el prefijo del correo electrónico como "nombre" obligatoriamente para que luego
+    // la función "addEstudianteAction" (que vincula al padre a través del email) lo pueda encontrar.
+    const nombre = email.split('@')[0];
     
     console.log(`[REGISTER] Register attempt for: ${email}`);
     
@@ -48,6 +54,7 @@ export async function registerAction(prevState: RegisterState | null, formData: 
             nombre: nombre,
             nombre_completo: nombreCompleto,
             rol: "padre",
+            estado: "pendiente",
             colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992" 
         });
 
@@ -56,8 +63,8 @@ export async function registerAction(prevState: RegisterState | null, formData: 
         return { error: `Cuenta creada pero hubo un error de perfil: ${profileError.message}. Intente iniciar sesión.` };
     }
 
-    console.log(`[REGISTER] Profile created successfully for ${email}. Redirecting...`);
+    console.log(`[REGISTER] Profile created successfully for ${email}. Redirecting to /espera...`);
 
-    // 3. Redirect to dashboard
-    redirect("/dashboard");
+    // 3. Redirect to espera
+    redirect("/espera");
 }

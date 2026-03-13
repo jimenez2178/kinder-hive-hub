@@ -23,32 +23,43 @@ export default async function DirectoraPage() {
 
     // 2. Cálculos Financieros del Mes Actual y Tendencia 3 Meses
     const now = new Date();
-    const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
 
     const getMonthRange = (monthOffset: number) => {
         const d = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
         const y = d.getFullYear();
         const m = d.getMonth() + 1;
+        const lastDay = new Date(y, m, 0).getDate();
         return {
             start: `${y}-${String(m).padStart(2, '0')}-01`,
-            end: `${y}-${String(m).padStart(2, '0')}-31`,
+            end: `${y}-${String(m).padStart(2, '0')}-${lastDay}`,
             name: d.toLocaleString('es-ES', { month: 'long' })
         };
     };
 
-    const month0 = getMonthRange(0); // Actual
-    const month1 = getMonthRange(1); // Hace 1 mes
-    const month2 = getMonthRange(2); // Hace 2 meses
+    const month0 = getMonthRange(0);
+    const month1 = getMonthRange(1);
+    const month2 = getMonthRange(2);
 
-    const getIngresosMes = async (start: string, end: string) => {
-        const { data } = await supabase.from("pagos").select("monto").eq("estado", "saldado").gte("fecha", start).lte("fecha", end);
-        return data?.reduce((acc, p) => acc + (p.monto || 0), 0) || 0;
+    // Fetch all payments for the 3-month range at once to be even more efficient
+    const { data: allRecentPagos } = await supabase
+        .from("pagos")
+        .select("monto, fecha, estado, estudiante_id")
+        .gte("fecha", month2.start)
+        .lte("fecha", month0.end);
+
+    const filterPagosByRange = (pagosArr: any[], start: string, end: string) => {
+        return pagosArr?.filter(p => p.fecha >= start && p.fecha <= end && p.estado === "saldado") || [];
     };
 
-    const ingresosDelMes = await getIngresosMes(month0.start, month0.end);
-    const ingresosMes1 = await getIngresosMes(month1.start, month1.end);
-    const ingresosMes2 = await getIngresosMes(month2.start, month2.end);
+    const pagosM0 = filterPagosByRange(allRecentPagos || [], month0.start, month0.end);
+    const pagosM1 = filterPagosByRange(allRecentPagos || [], month1.start, month1.end);
+    const pagosM2 = filterPagosByRange(allRecentPagos || [], month2.start, month2.end);
+
+    const ingresosDelMes = pagosM0.reduce((acc, p) => acc + (p.monto || 0), 0);
+    const ingresosMes1 = pagosM1.reduce((acc, p) => acc + (p.monto || 0), 0);
+    const ingresosMes2 = pagosM2.reduce((acc, p) => acc + (p.monto || 0), 0);
 
     const trendData = [
         { month: month2.name, total: ingresosMes2 },
@@ -56,41 +67,27 @@ export default async function DirectoraPage() {
         { month: month0.name, total: ingresosDelMes }
     ];
 
-    // Estudiantes que faltan por pagar este mes
+    // Cálculos de pendientes y efectividad (en memoria)
     let countPendientes = 0;
     let metaTotal = 0;
+    let sumaEficiencia = 0;
 
     if (estudiantes) {
-        for (const est of estudiantes) {
+        estudiantes.forEach(est => {
             const cuota = est.cuota_mensual || 11000;
             metaTotal += cuota;
 
-            const { data: pagosEst } = await supabase
-                .from("pagos")
-                .select("monto")
-                .eq("estudiante_id", est.id)
-                .eq("estado", "saldado")
-                .gte("fecha", month0.start)
-                .lte("fecha", month0.end);
-
-            const totalPagado = pagosEst?.reduce((acc, p) => acc + (p.monto || 0), 0) || 0;
+            // Pagos de este estudiante en el mes 0
+            const pagosEstM0 = pagosM0.filter(p => p.estudiante_id === est.id);
+            const totalPagado = pagosEstM0.reduce((acc, p) => acc + (p.monto || 0), 0);
 
             if (totalPagado < cuota) {
                 countPendientes++;
             }
-        }
+            sumaEficiencia += Math.min(1, totalPagado / cuota);
+        });
     }
 
-    // Cálculo de Efectividad: Capado al 100% por estudiante para evitar porcentajes > 100
-    let sumaEficiencia = 0;
-    if (estudiantes) {
-        for (const est of estudiantes) {
-            const cuota = est.cuota_mensual || 11000;
-            const { data: pEst } = await supabase.from("pagos").select("monto").eq("estudiante_id", est.id).eq("estado", "saldado").gte("fecha", month0.start).lte("fecha", month0.end);
-            const totalP = pEst?.reduce((acc, p) => acc + (p.monto || 0), 0) || 0;
-            sumaEficiencia += Math.min(1, totalP / cuota);
-        }
-    }
     const porcentajeCobro = (estudiantes?.length || 0) > 0 ? Math.round((sumaEficiencia / (estudiantes?.length || 0)) * 100) : 0;
 
     // 3. Datos para la Previsualización y Métricas Directas
@@ -98,6 +95,7 @@ export default async function DirectoraPage() {
     const { data: galeria } = await supabase.from("galeria").select("*").order("created_at", { ascending: false }).limit(6);
     const { data: eventos } = await supabase.from("eventos").select("*").order("fecha", { ascending: true }).limit(3);
     const { data: agradecimientos } = await supabase.from("agradecimientos").select("*").order("created_at", { ascending: false }).limit(2);
+
 
     return (
         <div className="min-h-screen bg-slate-50 pb-12">

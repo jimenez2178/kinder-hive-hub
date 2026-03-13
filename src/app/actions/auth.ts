@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 export type AuthState = {
     error?: string;
     success?: boolean;
+    redirect?: string;
 };
 
 export async function loginAction(prevState: AuthState | null, formData: FormData): Promise<AuthState> {
@@ -35,10 +36,10 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
 
     console.log(`[AUTH_DEBUG] User ${email} authenticated successfully.`);
 
-    // Fetch the user role from the 'perfiles' table
+    // Fetch the user role and status from the 'perfiles' table
     const { data: profiles } = await supabase
         .from("perfiles")
-        .select("rol")
+        .select("rol, estado")
         .eq("id", data.user.id);
 
     let profile = profiles?.[0];
@@ -61,6 +62,7 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
                 nombre: email.split('@')[0],
                 nombre_completo: email.split('@')[0], // Fallback
                 rol: rescueRol,
+                estado: "aprobado", // Rescue profiles are usually admin-driven, auto-approve
                 colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992" // Sagrada Familia default
             })
             .select()
@@ -74,17 +76,23 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
         }
     }
 
-    console.log(`[LOGIN] Final Role: "${profile?.rol}"`);
+    console.log(`[LOGIN] Final Role: "${profile?.rol}", Estado: "${profile?.estado}"`);
+
+    // ESTADO PENDIENTE CHECK
+    if (profile?.estado === "pendiente") {
+        console.log(`[LOGIN] User is pending approval. Redirecting to /espera`);
+        return { redirect: "/espera" };
+    }
 
     if (profile?.rol === "directora") {
-        console.log(`[LOGIN] Redirecting to /directora`);
-        redirect("/directora");
+        console.log(`[LOGIN] Redirecting to /dashboard/directora`);
+        return { redirect: "/dashboard/directora" };
     } else if (profile?.rol === "maestro") {
         console.log(`[LOGIN] Redirecting to /maestro`);
-        redirect("/maestro");
+        return { redirect: "/maestro" };
     } else {
-        console.log(`[LOGIN] Redirecting to /dashboard`);
-        redirect("/dashboard");
+        console.log(`[LOGIN] Redirecting to /dashboard/padre`);
+        return { redirect: "/dashboard/padre" };
     }
 }
 

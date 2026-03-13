@@ -37,3 +37,24 @@ export async function addNotaAction(prevState: unknown, formData: FormData) {
     revalidatePath("/dashboard");
     return { success: true, timestamp: Date.now() };
 }
+
+export async function deleteNotaAction(prevState: unknown, formData: FormData) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: "No autorizado" };
+
+    const id = formData.get("id") as string;
+
+    const { error } = await supabase
+        .from("evaluaciones")
+        .delete()
+        .eq("id", id)
+        .eq("maestro_id", user.id); // Security check to ensure they can only delete their own
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/maestro");
+    revalidatePath("/dashboard");
+    return { success: true, timestamp: Date.now() };
+}
