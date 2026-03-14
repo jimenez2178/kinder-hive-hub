@@ -32,8 +32,8 @@ export default async function DirectoraPage() {
     const { data: pagosRevision } = await supabase
         .from("pagos")
         .select("*, estudiantes(nombre)")
-        .not("url_comprobante", "is", null)
-        .order("created_at", { ascending: false });
+        .or("estado.eq.en_revision,estado.eq.pendiente")
+        .order("fecha", { ascending: false });
 
     // 2. Cálculos Financieros del Mes Actual y Tendencia 3 Meses
     const now = new Date();
@@ -106,7 +106,7 @@ export default async function DirectoraPage() {
 
     // 3. Datos para la Previsualización y Métricas Directas
     const { data: allComunicados } = await supabase.from("comunicados").select("*").order("created_at", { ascending: false });
-    const { data: galeria } = await supabase.from("galeria").select("*").order("created_at", { ascending: false }).limit(6);
+    const { data: galeria } = await supabase.from("galeria").select("*").order("created_at", { ascending: false });
     const { data: eventos } = await supabase.from("eventos").select("*").order("fecha", { ascending: true }).limit(3);
     const { data: agradecimientos } = await supabase.from("agradecimientos").select("*").order("created_at", { ascending: false }).limit(2);
 

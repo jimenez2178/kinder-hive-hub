@@ -125,9 +125,9 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         className="rounded-full bg-amber-500 hover:bg-amber-600 text-white font-black h-12 px-6 shadow-lg shadow-amber-500/20 relative"
                     >
                         <Wallet className="mr-2 h-5 w-5" /> Verificar Pagos
-                        {pagosRevision.filter(p => p.estado === 'en_revision').length > 0 && (
+                        {pagosRevision.filter(p => p.estado === 'en_revision' || p.estado === 'pendiente').length > 0 && (
                             <span className="absolute -top-2 -right-2 bg-black text-white text-xs rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">
-                                {pagosRevision.filter(p => p.estado === 'en_revision').length}
+                                {pagosRevision.filter(p => p.estado === 'en_revision' || p.estado === 'pendiente').length}
                             </span>
                         )}
                     </Button>
@@ -835,8 +835,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                             Fecha: {new Date(pago.fecha + 'T12:00:00').toLocaleDateString('es-DO')}
                                                         </p>
                                                     </div>
-                                                    <Badge className={pago.estado === 'pagado' ? 'bg-green-500' : 'bg-amber-500'}>
-                                                        {pago.estado === 'en_revision' ? 'En Revisión' : pago.estado === 'pagado' ? 'Pagado' : 'Rechazado'}
+                                                    <Badge className={pago.estado === 'saldado' ? 'bg-green-500' : 'bg-amber-500'}>
+                                                        {pago.estado === 'en_revision' ? 'En Revisión' : pago.estado === 'saldado' ? 'Saldado' : 'Rechazado'}
                                                     </Badge>
                                                 </div>
 

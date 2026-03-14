@@ -75,6 +75,8 @@ export default function DashboardClient({
     const [showReportarModal, setShowReportarModal] = useState(false);
     const [reportData, setReportData] = useState({ estudiante_id: estudiantes[0]?.id || "", monto: "", concepto: "Mensualidad" });
     const [isReporting, setIsReporting] = useState(false);
+    const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
 
     useEffect(() => {
         if ("serviceWorker" in navigator && "PushManager" in window) {
@@ -362,33 +364,37 @@ export default function DashboardClient({
                                     </span>
                                     Galería de Momentos
                                 </h3>
-                                <button
-                                    onClick={() => setShowAllPhotos(true)}
-                                    className="text-sm font-bold text-[#004aad] hover:text-[#8A2BE2] transition-colors"
-                                >
-                                    Ver todo →
-                                </button>
+                                <div className="bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{galeria.length} {galeria.length === 1 ? 'Momento' : 'Momentos'}</span>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-6">
                                 {galeria.length > 0 ? galeria.map((img, i) => (
-                                    <div key={img.id || i} className="bg-white rounded-[32px] overflow-hidden shadow-xl border border-slate-50 group hover:shadow-2xl transition-all duration-500">
-                                        <div className="aspect-video relative overflow-hidden">
+                                    <div key={img.id || i} className="bg-white rounded-[32px] overflow-hidden shadow-xl border border-slate-50 group hover:shadow-2xl transition-all duration-500 flex flex-col h-full">
+                                        <div className="aspect-[4/5] sm:aspect-square relative overflow-hidden">
                                             <img src={img.foto_url} alt={img.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                            <div className="absolute top-3 left-3">
-                                                <Badge className="bg-white/90 backdrop-blur-md text-[#020617] font-black text-[8px] uppercase px-2 py-0.5 rounded-full border-0">ACTIVIDAD</Badge>
+                                            <div className="absolute top-4 left-4 z-10">
+                                                <Badge className="bg-white/90 backdrop-blur-md text-[#020617] font-black text-[9px] uppercase px-3 py-1 rounded-full border-0 shadow-sm">ACTIVIDAD</Badge>
                                             </div>
+                                            {/* Gradiente sutil sobre la imagen */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
-                                        <div className="p-5">
-                                            <h5 className="font-black text-slate-800 text-[13px] italic uppercase tracking-tighter leading-tight mb-1">{img.titulo}</h5>
+                                        <div className="p-6 flex flex-col flex-1 bg-white">
+                                            <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tighter leading-tight mb-2 group-hover:text-[#004aad] transition-colors">{img.titulo}</h5>
                                             {img.descripcion && (
-                                                <p className="text-[11px] font-medium text-slate-500 leading-snug line-clamp-3">{img.descripcion}</p>
+                                                <p className="text-[11px] font-medium text-slate-500 leading-relaxed line-clamp-2 md:line-clamp-3">{img.descripcion}</p>
                                             )}
+                                            <div className="mt-auto pt-4 flex items-center justify-between border-t border-slate-50">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase">{new Date(img.created_at).toLocaleDateString('es-DO')}</span>
+                                                <button onClick={() => { setSelectedPhoto(img); setShowPhotoModal(true); }} className="text-[9px] font-black text-[#8A2BE2] uppercase tracking-widest hover:underline">Ampliar</button>
+                                            </div>
                                         </div>
                                     </div>
                                 )) : (
-                                    <div className="col-span-full h-40 bg-white rounded-[24px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
-                                        <ImageIcon className="h-10 w-10 mb-2 opacity-20" />
-                                        <p className="font-bold text-sm">Aún no hay fotos compartidas</p>
+                                    <div className="col-span-full h-60 bg-white rounded-[40px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 shadow-inner">
+                                        <ImageIcon className="h-12 w-12 mb-3 opacity-20" />
+                                        <p className="font-extrabold text-base tracking-tight italic">Nuestros pequeños están creando recuerdos...</p>
+                                        <p className="text-xs font-bold text-slate-300 uppercase mt-1">Pronto verás fotos aquí</p>
                                     </div>
                                 )}
                             </div>
@@ -1079,6 +1085,33 @@ export default function DashboardClient({
                                 </Button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* === MODAL DE FOTO (AMPLIAR) === */}
+            {showPhotoModal && selectedPhoto && (
+                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl animate-in fade-in duration-200" onClick={() => setShowPhotoModal(false)}>
+                    <div className="relative w-full max-w-4xl bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setShowPhotoModal(false)} className="absolute top-6 right-6 z-10 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full backdrop-blur-md transition-colors font-black">✕</button>
+                        <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+                            <div className="md:w-2/3 bg-black flex items-center justify-center overflow-hidden">
+                                <img src={selectedPhoto.foto_url} alt={selectedPhoto.titulo} className="w-full h-full object-contain" />
+                            </div>
+                            <div className="md:w-1/3 p-10 flex flex-col justify-center bg-white">
+                                <Badge className="bg-[#ffcc00] text-black font-black text-[10px] uppercase px-4 py-1 rounded-full w-fit mb-6">Actividad Escolar</Badge>
+                                <h3 className="text-3xl font-black text-slate-800 italic uppercase tracking-tighter leading-tight mb-4">{selectedPhoto.titulo}</h3>
+                                <p className="text-slate-500 font-bold leading-relaxed mb-8">{selectedPhoto.descripcion || "Sin descripción adicional."}</p>
+                                <div className="pt-8 border-t border-slate-100 flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-2xl bg-[#7ed957] flex items-center justify-center text-white shadow-lg">
+                                        <ImageIcon className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase">Publicado el</p>
+                                        <p className="font-black text-slate-800 uppercase italic tracking-tighter">{new Date(selectedPhoto.created_at).toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

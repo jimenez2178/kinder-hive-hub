@@ -98,8 +98,7 @@ export default async function DashboardPage() {
         .from("galeria")
         .select("*")
         .eq("colegio_id", finalColegioId)
-        .order("created_at", { ascending: false })
-        .limit(6);
+        .order("created_at", { ascending: false });
 
     // 6. Historial de Recibos
     const { data: recibos } = await supabase

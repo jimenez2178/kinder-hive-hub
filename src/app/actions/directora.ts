@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { enviarNotificacionPago } from "@/lib/n8n";
 
 async function getColegioId(supabase: any) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -330,14 +331,41 @@ export async function deleteEstudianteAction(id: string) {
     return { success: true };
 }
 
+
+
 export async function approvePaymentAction(pagoId: string) {
     const supabase = await createClient();
+    
+    // 1. Obtener datos del pago para la notificación
+    const { data: pago } = await supabase
+        .from("pagos")
+        .select("monto, estudiante_id, estudiantes(nombre, padre_id)")
+        .eq("id", pagoId)
+        .single();
+
+    // 2. Actualizar estado a 'saldado' (según enum DB)
     const { error } = await supabase
         .from("pagos")
-        .update({ estado: 'pagado' })
+        .update({ estado: 'saldado' }) 
         .eq('id', pagoId);
 
     if (error) return { error: error.message };
+
+    // 3. Disparar notificación n8n
+    if (pago && pago.estudiantes) {
+        const est = pago.estudiantes as any;
+        const { data: perfil } = await supabase
+            .from("perfiles")
+            .select("nombre_completo")
+            .eq("id", est.padre_id)
+            .single();
+
+        await enviarNotificacionPago(
+            perfil?.nombre_completo || "Tutor",
+            Number(pago.monto),
+            est.nombre
+        );
+    }
 
     revalidatePath("/dashboard/directora");
     revalidatePath("/dashboard/padre");

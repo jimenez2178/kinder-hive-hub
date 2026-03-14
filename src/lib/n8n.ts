@@ -11,3 +11,20 @@ export async function getFraseDelDia(): Promise<string> {
         return "Educando con amor y propósito.";
     }
 }
+export async function enviarNotificacionPago(nombrePadre: string, monto: number, nombreEstudiante: string) {
+    try {
+        await fetch("https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/notificacion-pago", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombrePadre,
+                monto,
+                nombreEstudiante,
+                fecha: new Date().toLocaleDateString('es-DO'),
+                mensaje: `¡Hola ${nombrePadre}! Tu pago de RD$ ${monto.toLocaleString()} por ${nombreEstudiante} ha sido validado correctamente. Gracias por tu puntualidad.`
+            })
+        });
+    } catch (error) {
+        console.error("Error al enviar notificación a n8n:", error);
+    }
+}
