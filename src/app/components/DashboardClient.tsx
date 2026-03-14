@@ -22,15 +22,22 @@ import {
     User,
     Edit3,
     Mic,
-    Waves
+    Waves,
+    UploadCloud,
+    BellRing,
+    Clock,
+    Plus,
+    Wallet,
+    ExternalLink
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoutButton } from "@/components/LogoutButton";
-import { useState } from "react";
-import { processParentPaymentAction } from "@/app/actions/padre";
+import { useState, useEffect } from "react";
+import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction } from "@/app/actions/padre";
+import { createClient } from "@/utils/supabase/client";
 
 export default function DashboardClient({
     initialFrase,
@@ -63,6 +70,91 @@ export default function DashboardClient({
     const [showContact, setShowContact] = useState(false);
     const [contactTab, setContactTab] = useState<"menu" | "cita">("menu");
     const [citaOk, setCitaOk] = useState(false);
+    const [uploadingPagoId, setUploadingPagoId] = useState<string | null>(null);
+    const [showPushBanner, setShowPushBanner] = useState(false);
+    const [showReportarModal, setShowReportarModal] = useState(false);
+    const [reportData, setReportData] = useState({ estudiante_id: estudiantes[0]?.id || "", monto: "", concepto: "Mensualidad" });
+    const [isReporting, setIsReporting] = useState(false);
+
+    useEffect(() => {
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+            navigator.serviceWorker.register("/sw.js").then((reg) => {
+                reg.pushManager.getSubscription().then((sub) => {
+                    if (!sub) {
+                        setShowPushBanner(true);
+                    }
+                });
+            });
+        }
+    }, []);
+
+    const subscribeToPush = async () => {
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            });
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase.from('perfiles').update({ push_token: JSON.stringify(sub) }).eq('id', user.id);
+            }
+            setShowPushBanner(false);
+            alert("¡Notificaciones activadas!");
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleUploadComprobante = async (pagoId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingPagoId(pagoId);
+        const supabase = createClient();
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${pagoId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('comprobantes_pagos')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            alert('Error al subir el comprobante: ' + uploadError.message);
+            setUploadingPagoId(null);
+            return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('comprobantes_pagos')
+            .getPublicUrl(filePath);
+
+        const res = await uploadComprobanteAction(pagoId, publicUrl);
+        if (res?.error) {
+            alert(res.error);
+        } else {
+            alert('Comprobante subido exitosamente y en revisión.');
+        }
+        setUploadingPagoId(null);
+    };
+
+    const handleReportSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsReporting(true);
+        const res = await reportarPagoAction({
+            ...reportData,
+            monto: Number(reportData.monto)
+        });
+        setIsReporting(false);
+        if (res.error) alert(res.error);
+        else {
+            alert("Pago reportado exitosamente. Será revisado por la administración.");
+            setShowReportarModal(false);
+            setReportData({ estudiante_id: estudiantes[0]?.id || "", monto: "", concepto: "Mensualidad" });
+        }
+    };
 
     const handlePrint = () => {
         window.print();
@@ -111,7 +203,25 @@ export default function DashboardClient({
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* PUSH NOTIFICATIONS BANNER */}
+                {showPushBanner && (
+                    <div className="bg-[#8A2BE2] text-white rounded-[32px] p-6 mb-10 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-white/20 p-3 rounded-full shrink-0">
+                                <BellRing className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-lg leading-tight">Activar Alertas Inmediatas</h3>
+                                <p className="text-white/80 text-sm font-semibold mt-1">Recibe notificaciones en tu celular sobre pagos, comunicados y eventos.</p>
+                            </div>
+                        </div>
+                        <Button onClick={subscribeToPush} className="rounded-full bg-white hover:bg-slate-100 text-[#8A2BE2] font-black shrink-0 px-6 h-12 w-full sm:w-auto">
+                            Activar Ahora
+                        </Button>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
 
                     {/* ═══ COLUMNA IZQUIERDA ═══ */}
                     <div className="lg:col-span-2 space-y-8">
@@ -396,9 +506,17 @@ export default function DashboardClient({
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documentos fiscales y recibos</p>
                                     </div>
                                 </div>
-                                <div className="bg-white px-4 py-1.5 rounded-full border border-slate-100 shadow-sm text-[10px] font-black text-slate-400 uppercase">
-                                    {recibos.length} comprobantes
-                                </div>
+                                 <div className="flex items-center gap-3">
+                                    <Button 
+                                        onClick={() => setShowReportarModal(true)}
+                                        className="h-9 px-4 rounded-full bg-[#8A2BE2] hover:bg-[#7223bd] text-white text-[10px] font-black uppercase shadow-lg shadow-[#8A2BE2]/20"
+                                    >
+                                        <Plus className="w-3 h-3 mr-1" /> Reportar Pago
+                                    </Button>
+                                    <div className="bg-white px-4 py-1.5 rounded-full border border-slate-100 shadow-sm text-[10px] font-black text-slate-400 uppercase">
+                                        {recibos.length} comprobantes
+                                    </div>
+                                 </div>
                             </div>
                             <div className="divide-y divide-slate-50">
                                 {recibos.length > 0 ? recibos.map((rec) => (
@@ -414,12 +532,48 @@ export default function DashboardClient({
                                         </div>
                                         <div className="text-right">
                                             <div className="font-black text-slate-900">RD$ {rec.monto?.toLocaleString('es-DO')}</div>
-                                            <button
-                                                onClick={() => setSelectedRecibo(rec)}
-                                                className="text-[10px] font-black text-[#8A2BE2] hover:text-[#004aad] uppercase tracking-widest flex items-center gap-1 mt-1 ml-auto transition-colors"
-                                            >
-                                                <Printer className="h-3 w-3" /> Ver Recibo
-                                            </button>
+                                            {rec.estado === 'saldado' ? (
+                                                <button
+                                                    onClick={() => setSelectedRecibo(rec)}
+                                                    className="text-[10px] font-black text-[#8A2BE2] hover:text-[#004aad] uppercase tracking-widest flex items-center gap-1 mt-1 ml-auto transition-colors"
+                                                >
+                                                    <Printer className="h-3 w-3" /> Ver Recibo
+                                                </button>
+                                            ) : rec.estado === 'en_revision' ? (
+                                                <div className="flex flex-col items-end gap-1 mt-1">
+                                                    <Badge className="bg-[#ffcc00] text-black font-black text-[9px] uppercase border-none shadow-sm flex items-center justify-center gap-1">
+                                                        <Clock className="w-3 h-3" /> En Revisión
+                                                    </Badge>
+                                                    {rec.url_comprobante && (
+                                                        <a 
+                                                            href={rec.url_comprobante} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="text-[9px] font-bold text-[#004aad] hover:underline flex items-center gap-0.5"
+                                                        >
+                                                            Ver Foto <ExternalLink className="w-2.5 h-2.5" />
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="mt-1 relative">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*,.pdf"
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        onChange={(e) => handleUploadComprobante(rec.id, e)}
+                                                        disabled={uploadingPagoId === rec.id}
+                                                    />
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <Badge className="bg-[#004aad] hover:bg-[#003785] cursor-pointer text-white font-black text-[9px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-1 min-w-[120px]">
+                                                            {uploadingPagoId === rec.id ? "Subiendo..." : <><UploadCloud className="w-3 h-3" /> Subir Comprobante</>}
+                                                        </Badge>
+                                                        {rec.estado === 'rechazado' && (
+                                                            <span className="text-[8px] font-bold text-rose-500 uppercase tracking-tighter">⚠️ Rechazado: Sube otro</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )) : (
@@ -524,7 +678,12 @@ export default function DashboardClient({
                                             {selectedRecibo.estudiantes?.tutor_nombre || selectedRecibo.estudiantes?.nombre_madre || userName}
                                         </p>
                                         <p className="text-[10px] font-bold text-slate-500 mt-0.5">
-                                            Tel: {selectedRecibo.estudiantes?.telefono_tutor || selectedRecibo.estudiantes?.telefono_madre || "No registrado"}
+                                            Tel: {
+                                                estudiantes.find(e => e.id === selectedRecibo.estudiante_id)?.padre_telefono ||
+                                                selectedRecibo.estudiantes?.telefono_tutor ||
+                                                selectedRecibo.estudiantes?.telefono_madre ||
+                                                "Pendiente de actualizar"
+                                            }
                                         </p>
                                     </div>
                                     <div className="text-right">
@@ -666,9 +825,19 @@ export default function DashboardClient({
                                             </span>
                                         </div>
                                         <div className="pt-2">
-                                            <Badge className={`px-4 py-2 rounded-full font-black uppercase text-[11px] ${isUpToDate ? 'bg-green-600 text-white' : 'bg-[#ffcc00] text-black'}`}>
-                                                {isUpToDate ? "✓ Estado: Al Día" : "⚠️ Estado: Pendiente"}
-                                            </Badge>
+                                            {isUpToDate ? (
+                                                <Badge className="px-4 py-2 rounded-full font-black uppercase text-[11px] bg-green-600 text-white border-none shadow-md">
+                                                    ✓ Estado: Al Día
+                                                </Badge>
+                                            ) : (studentPayments.some((p: any) => p.estado === 'en_revision')) ? (
+                                                <Badge className="px-4 py-2 rounded-full font-black uppercase text-[11px] bg-blue-600 text-white border-none shadow-md animate-pulse">
+                                                    ⌛ Verificando Pago
+                                                </Badge>
+                                            ) : (
+                                                <Badge className="px-4 py-2 rounded-full font-black uppercase text-[11px] bg-[#ffcc00] text-black border-none shadow-md">
+                                                    ⚠️ Pago Pendiente
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -838,6 +1007,78 @@ export default function DashboardClient({
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* === MODAL REPORTAR PAGO === */}
+            {showReportarModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="bg-gradient-to-r from-[#8A2BE2] to-[#004aad] p-8 text-white">
+                            <h3 className="text-2xl font-black tracking-tighter italic uppercase">Reportar Transferencia</h3>
+                            <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Notificar depósito o transferencia bancaria</p>
+                        </div>
+                        <form onSubmit={handleReportSubmit} className="p-8 space-y-5">
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Estudiante</label>
+                                <select 
+                                    className="w-full mt-1 h-12 px-4 rounded-2xl border-2 border-slate-100 font-bold bg-white outline-none focus:border-[#8A2BE2]"
+                                    value={reportData.estudiante_id}
+                                    onChange={(e) => setReportData({...reportData, estudiante_id: e.target.value})}
+                                    required
+                                >
+                                    {estudiantes.map((est: any) => (
+                                        <option key={est.id} value={est.id}>{est.nombre}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Monto Pagado (RD$)</label>
+                                <input 
+                                    type="number" 
+                                    required 
+                                    className="w-full mt-1 h-12 px-4 rounded-2xl border-2 border-slate-100 font-black text-lg outline-none focus:border-[#8A2BE2]"
+                                    placeholder="Ej: 11000"
+                                    value={reportData.monto}
+                                    onChange={(e) => setReportData({...reportData, monto: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Concepto</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full mt-1 h-12 px-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-700 outline-none focus:border-[#8A2BE2]"
+                                    value={reportData.concepto}
+                                    onChange={(e) => setReportData({...reportData, concepto: e.target.value})}
+                                />
+                            </div>
+                            
+                            <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
+                                <p className="text-[10px] text-amber-700 font-bold leading-relaxed">
+                                    <AlertTriangle className="h-3 w-3 inline mr-1 mb-0.5" />
+                                    Una vez registrado, podrás subir la foto del comprobante desde tu historial para que sea aprobado.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    className="flex-1 h-12 rounded-2xl font-black text-slate-400 border-slate-100"
+                                    onClick={() => setShowReportarModal(false)}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button 
+                                    type="submit" 
+                                    disabled={isReporting}
+                                    className="flex-[2] h-12 rounded-2xl bg-[#8A2BE2] hover:bg-[#7726c5] text-white font-black shadow-lg"
+                                >
+                                    {isReporting ? "Procesando..." : "Registrar Reporte"}
+                                </Button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

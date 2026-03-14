@@ -66,7 +66,7 @@ export async function addPaymentAction(prevState: unknown, formData: FormData) {
         metodo,
         estado,
         fecha,
-        comprobante_url,
+        url_comprobante: comprobante_url,
         concepto,
         colegio_id: await getColegioId(supabase)
     });
@@ -162,14 +162,11 @@ export async function addEstudianteAction(prevState: unknown, formData: FormData
     if (explicitPadreId && explicitPadreId !== "") {
         finalPadreId = explicitPadreId;
     } else if (tutorEmail) {
-        // Mejorado: Buscar en perfiles por nombre (prefix) o por email si agregamos esa búsqueda
-        // Como no tenemos columna email en perfiles, buscamos por 'nombre' (que el rescue login llena con el email prefix)
-        const emailPrefix = tutorEmail.split('@')[0];
-        
+        // Mejorado: Buscar en perfiles por EMAIL directamente
         const { data: perfilPadre } = await supabase
             .from('perfiles')
             .select('id')
-            .or(`nombre.eq.${emailPrefix},nombre_completo.ilike.%${tutorNombre}%`)
+            .eq('email', tutorEmail)
             .eq('rol', 'padre')
             .limit(1)
             .maybeSingle();
@@ -178,8 +175,6 @@ export async function addEstudianteAction(prevState: unknown, formData: FormData
     }
 
     // 4. Insertar al estudiante con el vínculo automático
-    // Guardamos el email dentro del campo tutor_nombre para búsqueda cruzada si no hay ID
-    // Esto es CRUCIAL para que el dashboard del padre encuentre al niño por email
     const displayTutor = tutorNombre || tutorEmail.split('@')[0] || "Tutor";
     const savedTutorInfo = tutorEmail ? `${displayTutor} [${tutorEmail}]` : displayTutor;
 
@@ -194,7 +189,8 @@ export async function addEstudianteAction(prevState: unknown, formData: FormData
                 colegio_id: colegioId,
                 padre_id: finalPadreId,
                 tutor_nombre: savedTutorInfo,
-                estatus: 'Activo'
+                email_tutor: tutorEmail,
+                estatus: 'Saldado' // Por defecto para que aparezca "Al Día" si no hay deudas
             }
         ]);
 
@@ -262,6 +258,67 @@ export async function addAgradecimientoAction(prevState: unknown, formData: Form
     return { success: true, timestamp: Date.now() };
 }
 
+export async function deleteAllEstudiantesAction(prevState: unknown, formData: FormData) {
+    const supabase = await createClient();
+    const colegioId = await getColegioId(supabase);
+    
+    // Safety check: requires 'CONFIRMAR_BORRADO'
+    const confirmText = formData.get("confirmacion") as string;
+    if (confirmText !== "CONFIRMAR_BORRADO") {
+        return { error: "Debe escribir CONFIRMAR_BORRADO exactamente." };
+    }
+
+    const { error } = await supabase
+        .from("estudiantes")
+        .delete()
+        .eq("colegio_id", colegioId);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true, timestamp: Date.now() };
+}
+
+export async function approveParentAction(prevState: unknown, formData: FormData) {
+    const supabase = await createClient();
+    const parentId = formData.get("parent_id") as string;
+
+    const { error } = await supabase
+        .from("perfiles")
+        .update({ estado: 'aprobado' })
+        .eq('id', parentId)
+        .eq('rol', 'padre');
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    revalidatePath("/espera");
+    return { success: true, timestamp: Date.now() };
+}
+
+export async function rejectParentAction(prevState: unknown, formData: FormData) {
+    const supabase = await createClient();
+    const parentId = formData.get("parent_id") as string;
+
+    // Hard delete or set to 'rechazado'? Let's just delete the profile for now.
+    // Given the foreign key constraints to auth.users, deleting just the profile might be an issue.
+    // It's safer to just set estado = 'rechazado'
+    const { error } = await supabase
+        .from("perfiles")
+        .update({ estado: 'rechazado' })
+        .eq('id', parentId)
+        .eq('rol', 'padre');
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/espera");
+    return { success: true, timestamp: Date.now() };
+}
+
+
 export async function deleteEstudianteAction(id: string) {
     const supabase = await createClient();
     const { error } = await supabase.from("estudiantes").delete().eq("id", id);
@@ -273,9 +330,12 @@ export async function deleteEstudianteAction(id: string) {
     return { success: true };
 }
 
-export async function deleteAllEstudiantesAction() {
+export async function approvePaymentAction(pagoId: string) {
     const supabase = await createClient();
-    const { error } = await supabase.from("estudiantes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    const { error } = await supabase
+        .from("pagos")
+        .update({ estado: 'pagado' })
+        .eq('id', pagoId);
 
     if (error) return { error: error.message };
 
@@ -283,3 +343,18 @@ export async function deleteAllEstudiantesAction() {
     revalidatePath("/dashboard/padre");
     return { success: true };
 }
+
+export async function rejectPaymentAction(pagoId: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("pagos")
+        .update({ estado: 'rechazado' })
+        .eq('id', pagoId);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}
+

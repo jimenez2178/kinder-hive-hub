@@ -37,61 +37,54 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
     console.log(`[AUTH_DEBUG] User ${email} authenticated successfully.`);
 
     // Fetch the user role and status from the 'perfiles' table
-    const { data: profiles } = await supabase
+    // Usamos select('*') para asegurar que traemos toda la data necesaria para el login
+    const { data: profile, error: profileError } = await supabase
         .from("perfiles")
-        .select("rol, estado")
-        .eq("id", data.user.id);
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
 
-    let profile = profiles?.[0];
-
-    // AUTO-RESCUE: If profile doesn't exist, create it based on email
-    if (!profile) {
-        console.log(`[LOGIN] Profile missing for ${email}. Creating rescue profile...`);
+    if (profileError || !profile) {
+        console.error(`[AUTH_DEBUG] Profile not found for ${data.user.id}: ${profileError?.message}`);
+        // RESCUE: Si no hay perfil, lo creamos ahora mismo
         const lowerEmail = email.toLowerCase();
-        let rescueRol = "padre"; // default
-        if (lowerEmail.includes("directora") || lowerEmail.includes("admin") || lowerEmail.includes("kinder")) {
-            rescueRol = "directora";
-        } else if (lowerEmail.includes("maestro") || lowerEmail.includes("profe")) {
-            rescueRol = "maestro";
-        }
+        let rescueRol = "padre";
+        if (lowerEmail.includes("directora") || lowerEmail.includes("admin") || lowerEmail.includes("kinder")) rescueRol = "directora";
+        else if (lowerEmail.includes("maestro") || lowerEmail.includes("profe")) rescueRol = "maestro";
 
-        const { data: newProfile, error: insertError } = await supabase
+        const { data: newProfile, error: rescueError } = await supabase
             .from("perfiles")
-            .insert({
+            .upsert({
                 id: data.user.id,
-                nombre: email.split('@')[0],
-                nombre_completo: email.split('@')[0], // Fallback
+                email: lowerEmail,
+                nombre: lowerEmail.split('@')[0],
+                nombre_completo: lowerEmail.split('@')[0],
                 rol: rescueRol,
-                estado: "aprobado", // Rescue profiles are usually admin-driven, auto-approve
-                colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992" // Sagrada Familia default
+                estado: rescueRol === "padre" ? "pendiente" : "aprobado",
+                colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992"
             })
             .select()
             .single();
-
-        if (insertError) {
-            console.error(`[LOGIN] Failed to create rescue profile: ${insertError.message}`);
-        } else {
-            profile = newProfile;
-            console.log(`[LOGIN] Rescue profile created with rol: ${rescueRol} and Colegio ID`);
-        }
+        
+        if (rescueError) return { error: "Error al sincronizar perfil. Por favor, contacte soporte." };
+        
+        // Redirigir basado en el nuevo perfil rescatado
+        if (newProfile.estado === "pendiente") return { redirect: "/espera" };
+        if (newProfile.rol === "directora") return { redirect: "/dashboard/directora" };
+        return { redirect: "/dashboard/padre" };
     }
 
-    console.log(`[LOGIN] Final Role: "${profile?.rol}", Estado: "${profile?.estado}"`);
+    console.log(`[LOGIN] User found: ${profile.email}, Role: ${profile.rol}, Estado: ${profile.estado}`);
 
-    // ESTADO PENDIENTE CHECK
-    if (profile?.estado === "pendiente") {
-        console.log(`[LOGIN] User is pending approval. Redirecting to /espera`);
+    if (profile.estado === "pendiente") {
         return { redirect: "/espera" };
     }
 
-    if (profile?.rol === "directora") {
-        console.log(`[LOGIN] Redirecting to /dashboard/directora`);
+    if (profile.rol === "directora") {
         return { redirect: "/dashboard/directora" };
-    } else if (profile?.rol === "maestro") {
-        console.log(`[LOGIN] Redirecting to /maestro`);
+    } else if (profile.rol === "maestro") {
         return { redirect: "/maestro" };
     } else {
-        console.log(`[LOGIN] Redirecting to /dashboard/padre`);
         return { redirect: "/dashboard/padre" };
     }
 }

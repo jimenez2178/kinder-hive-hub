@@ -5,16 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction } from "@/app/actions/directora";
+import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search } from "lucide-react";
+import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
+import { approvePaymentAction, rejectPaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
 
-export function DirectorDashboardClient({ estudiantes, padres, metrics, previewData }: {
+export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, metrics, previewData }: {
     estudiantes: any[],
     padres: { id: string, nombre: string, nombre_completo: string | null }[],
+    usuariosPendientes: { id: string, nombre: string, nombre_completo: string | null, created_at: string }[],
+    pagosRevision: any[],
     metrics: {
         ingresosDelMes: number,
         metaTotal: number,
@@ -27,7 +30,7 @@ export function DirectorDashboardClient({ estudiantes, padres, metrics, previewD
     },
     previewData: { comunicado: any, galeria: any[], eventos: any[], agradecimientos: any[] }
 }) {
-    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | null>(null);
+    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [showPreview, setShowPreview] = useState(false);
     const [showReport, setShowReport] = useState(false);
@@ -118,10 +121,32 @@ export function DirectorDashboardClient({ estudiantes, padres, metrics, previewD
                         <CreditCard className="mr-2 h-5 w-5" /> Registrar Pago
                     </Button>
                     <Button
+                        onClick={() => setActiveModal("revisar_pagos")}
+                        className="rounded-full bg-amber-500 hover:bg-amber-600 text-white font-black h-12 px-6 shadow-lg shadow-amber-500/20 relative"
+                    >
+                        <Wallet className="mr-2 h-5 w-5" /> Verificar Pagos
+                        {pagosRevision.filter(p => p.estado === 'en_revision').length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-black text-white text-xs rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">
+                                {pagosRevision.filter(p => p.estado === 'en_revision').length}
+                            </span>
+                        )}
+                    </Button>
+                    <Button
                         onClick={() => setActiveModal("estudiante")}
                         className="rounded-full bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black h-12 px-6 shadow-lg shadow-[#7ed957]/20"
                     >
                         <Plus className="mr-1 h-5 w-5" /> Inscribir Alumno
+                    </Button>
+                    <Button
+                        onClick={() => setActiveModal("pendientes")}
+                        className={`rounded-full ${usuariosPendientes.length > 0 ? 'bg-rose-600 animate-pulse' : 'bg-rose-500'} hover:bg-rose-600 text-white font-black h-12 px-6 shadow-lg shadow-rose-500/20 relative transition-all`}
+                    >
+                        <Users className={`mr-2 h-5 w-5 ${usuariosPendientes.length > 0 ? 'animate-bounce' : ''}`} /> Solicitudes
+                        {usuariosPendientes.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-black text-white text-xs rounded-full h-6 w-6 flex items-center justify-center border-2 border-white">
+                                {usuariosPendientes.length}
+                            </span>
+                        )}
                     </Button>
                     <Button
                         onClick={() => setActiveModal("evento")}
@@ -568,8 +593,14 @@ export function DirectorDashboardClient({ estudiantes, padres, metrics, previewD
                                     {activeModal === "foto" && "Subir a Galería"}
                                     {activeModal === "estudiante" && "Inscribir Alumno"}
                                     {activeModal === "agradecimiento" && "Enviar Agradecimiento"}
+                                    {activeModal === "pendientes" && "Aprobar Accesos"}
+                                    {activeModal === "revisar_pagos" && "Validar Comprobantes"}
                                 </CardTitle>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Complete los campos requeridos</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {activeModal === "pendientes" && "Usuarios esperando acceso al portal familiar"}
+                                    {activeModal === "revisar_pagos" && "Revisión de transferencias y depósitos bancarios"}
+                                    {(activeModal !== "pendientes" && activeModal !== "revisar_pagos") && "Complete los campos requeridos"}
+                                </p>
                             </div>
                             <Button
                                 variant="ghost"
@@ -739,27 +770,144 @@ export function DirectorDashboardClient({ estudiantes, padres, metrics, previewD
                                 </div>
                             )}
 
+                            {activeModal === "pendientes" && (
+                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                                    {usuariosPendientes.length === 0 ? (
+                                        <div className="text-center py-12 text-slate-400">
+                                            <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                            <p className="font-bold">No hay solicitudes pendientes.</p>
+                                        </div>
+                                    ) : (
+                                        usuariosPendientes.map(user => (
+                                            <div key={user.id} className="bg-slate-50 border border-slate-100 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                                                <div>
+                                                    <p className="font-black text-slate-800">{user.nombre_completo || "Sin nombre"}</p>
+                                                    <p className="text-sm font-bold text-slate-500">ID Usuario: {user.nombre}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">
+                                                        Solicitado: {new Date(user.created_at).toLocaleDateString('es-DO')}
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-2 w-full sm:w-auto">
+                                                    <Button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            const f = new FormData();
+                                                            f.append('parent_id', user.id);
+                                                            await handleAction(rejectParentAction, f);
+                                                        }}
+                                                        className="flex-1 sm:flex-none rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-6"
+                                                    >
+                                                        Rechazar
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            const f = new FormData();
+                                                            f.append('parent_id', user.id);
+                                                            await handleAction(approveParentAction, f);
+                                                        }}
+                                                        className="flex-1 sm:flex-none rounded-2xl bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black px-6"
+                                                    >
+                                                        Aprobar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+
+                            {activeModal === "revisar_pagos" && (
+                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                                    {pagosRevision.length === 0 ? (
+                                        <div className="text-center py-12 text-slate-400">
+                                            <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                            <p className="font-bold">No hay pagos pendientes de revisión.</p>
+                                        </div>
+                                    ) : (
+                                        pagosRevision.map(pago => (
+                                            <div key={pago.id} className="bg-slate-50 border border-slate-100 rounded-3xl p-5 flex flex-col gap-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="font-black text-slate-800">{pago.estudiantes?.nombre}</p>
+                                                        <p className="text-sm font-bold text-[#004aad]">RD$ {pago.monto?.toLocaleString()}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">
+                                                            Fecha: {new Date(pago.fecha + 'T12:00:00').toLocaleDateString('es-DO')}
+                                                        </p>
+                                                    </div>
+                                                    <Badge className={pago.estado === 'pagado' ? 'bg-green-500' : 'bg-amber-500'}>
+                                                        {pago.estado === 'en_revision' ? 'En Revisión' : pago.estado === 'pagado' ? 'Pagado' : 'Rechazado'}
+                                                    </Badge>
+                                                </div>
+
+                                                {pago.url_comprobante && (
+                                                    <div className="relative group rounded-2xl overflow-hidden border-2 border-slate-200">
+                                                        <img src={pago.url_comprobante} alt="Comprobante" className="w-full aspect-video object-cover cursor-zoom-in" onClick={() => window.open(pago.url_comprobante, '_blank')} />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                                                            <SearchIcon className="text-white h-8 w-8" />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {pago.estado === 'en_revision' && (
+                                                    <div className="flex gap-2 w-full">
+                                                        <Button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                setIsLoading(true);
+                                                                const res = await rejectPaymentAction(pago.id);
+                                                                setIsLoading(false);
+                                                                if (res.error) alert(res.error);
+                                                                else showToast("Pago rechazado");
+                                                            }}
+                                                            className="flex-1 rounded-2xl bg-rose-100 hover:bg-rose-200 text-rose-600 font-black h-12"
+                                                        >
+                                                            <XCircle className="mr-2 h-4 w-4" /> Rechazar
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                setIsLoading(true);
+                                                                const res = await approvePaymentAction(pago.id);
+                                                                setIsLoading(false);
+                                                                if (res.error) alert(res.error);
+                                                                else showToast("Pago aprobado");
+                                                            }}
+                                                            className="flex-1 rounded-2xl bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black h-12"
+                                                        >
+                                                            <CheckCircle className="mr-2 h-4 w-4" /> Aprobar
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+
                             {/* --- BOTONES --- */}
                             <div className="pt-4 flex gap-3 border-t border-slate-100">
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     onClick={() => setActiveModal(null)}
-                                    className="flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"
+                                    className={(activeModal === "pendientes" || activeModal === "revisar_pagos") ? "w-full h-14 rounded-2xl font-black text-slate-600 bg-slate-100 hover:bg-slate-200" : "flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"}
                                 >
-                                    Cancelar
+                                    {(activeModal === "pendientes" || activeModal === "revisar_pagos") ? "Cerrar Panel" : "Cancelar"}
                                 </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className={`flex-[2] h-14 rounded-2xl font-black text-white shadow-xl ${
-                                        activeModal === "pago" ? "bg-[#004aad]" :
-                                        activeModal === "comunicado" ? "bg-[#8A2BE2]" :
-                                        activeModal === "evento" ? "bg-[#FF8C00]" : "bg-[#7ed957] text-slate-900"
-                                    }`}
-                                >
-                                    {isLoading ? "Procesando..." : "Confirmar y Guardar"}
-                                </Button>
+                                {(activeModal !== "pendientes" && activeModal !== "revisar_pagos") && (
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className={`flex-[2] h-14 rounded-2xl font-black text-white shadow-xl ${
+                                            activeModal === "pago" ? "bg-[#004aad]" :
+                                            activeModal === "comunicado" ? "bg-[#8A2BE2]" :
+                                            activeModal === "evento" ? "bg-[#FF8C00]" : "bg-[#7ed957] text-slate-900"
+                                        }`}
+                                    >
+                                        {isLoading ? "Procesando..." : "Confirmar y Guardar"}
+                                    </Button>
+                                )}
                             </div>
                         </form>
                     </Card>

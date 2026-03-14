@@ -24,19 +24,27 @@ export async function registerAction(prevState: RegisterState | null, formData: 
     
     const supabase = await createClient();
 
-    // 1. Sign up the user in Supabase Auth
+    // 1. Limpiar sesión previa si existe (evita errores de RLS por sesión cruzada al registrar varios usuarios)
+    await supabase.auth.signOut();
+
+    // 2. Sign up the user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
             data: {
+                nombre_completo: nombreCompleto,
                 full_name: nombreCompleto,
+                rol: "padre"
             }
         }
     });
 
     if (authError) {
         console.error(`[REGISTER] Auth error: ${authError.message}`);
+        if (authError.message.includes("rate limit")) {
+            return { error: "Límite de registros temporales excedido. Por favor, espere unos minutos o contacte a la Directora para registro manual." };
+        }
         return { error: `Error de registro: ${authError.message}` };
     }
 
@@ -46,21 +54,25 @@ export async function registerAction(prevState: RegisterState | null, formData: 
 
     console.log(`[REGISTER] Auth user created: ${authData.user.id}. Creating profile...`);
 
-    // 2. Create the profile in 'perfiles' table
+    // 3. Create or update the profile in 'perfiles' table
+    // El trigger 'on_auth_user_created' ya se encargó de esto de forma segura.
+    // Intentamos un upsert de respaldo, pero si falla por RLS (sesión pendiente de refresco)
+    // y el usuario ya existe en Auth, continuamos pues el perfil ya fue creado por el trigger.
     const { error: profileError } = await supabase
         .from("perfiles")
-        .insert({
+        .upsert({
             id: authData.user.id,
+            email: email,
             nombre: nombre,
             nombre_completo: nombreCompleto,
             rol: "padre",
             estado: "pendiente",
             colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992" 
-        });
+        }, { onConflict: 'id' });
 
-    if (profileError) {
+    if (profileError && !profileError.message.includes("row-level security")) {
         console.error(`[REGISTER] Profile error: ${profileError.message}`);
-        return { error: `Cuenta creada pero hubo un error de perfil: ${profileError.message}. Intente iniciar sesión.` };
+        return { error: `Error parcial al configurar perfil: ${profileError.message}. Intente iniciar sesión.` };
     }
 
     console.log(`[REGISTER] Profile created successfully for ${email}. Redirecting to /espera...`);

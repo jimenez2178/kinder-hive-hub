@@ -1,13 +1,37 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { logoutAction } from "@/app/actions/auth";
+import { createClient } from "@/utils/supabase/client";
 
 export function LogoutButton() {
     const handleLogout = async () => {
-        await logoutAction();
-        // Force a full clean redirect to login and clear any client cache
-        window.location.href = "/login";
+        try {
+            const supabase = createClient();
+            
+            // 1. Sign out on the client
+            await supabase.auth.signOut();
+
+            // 2. Unregister all service workers
+            if ("serviceWorker" in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+
+            // 3. Clear Caches
+            if ("caches" in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+            }
+
+            // 4. Force hard redirect to home (clears server-side redirect loops)
+            window.location.href = "/";
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Fallback redirect
+            window.location.href = "/";
+        }
     };
 
     return (

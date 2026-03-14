@@ -21,6 +21,20 @@ export default async function DirectoraPage() {
         .select("id, nombre, nombre_completo")
         .eq("rol", "padre");
 
+    // 1c. Catálogo de Cuentas Pendientes (Nuevos Padres)
+    const { data: usuariosPendientes } = await supabase
+        .from("perfiles")
+        .select("id, nombre, nombre_completo, created_at")
+        .eq("rol", "padre")
+        .eq("estado", "pendiente");
+
+    // 1d. Pagos para revisión de comprobantes
+    const { data: pagosRevision } = await supabase
+        .from("pagos")
+        .select("*, estudiantes(nombre)")
+        .not("url_comprobante", "is", null)
+        .order("created_at", { ascending: false });
+
     // 2. Cálculos Financieros del Mes Actual y Tendencia 3 Meses
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -102,6 +116,8 @@ export default async function DirectoraPage() {
             <DirectorDashboardClient
                 estudiantes={estudiantes || []}
                 padres={padres || []}
+                usuariosPendientes={usuariosPendientes || []}
+                pagosRevision={pagosRevision || []}
                 metrics={{
                     ingresosDelMes,
                     metaTotal,

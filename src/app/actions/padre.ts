@@ -33,3 +33,40 @@ export async function processParentPaymentAction(monto: number) {
     revalidatePath("/");
     return { success: true };
 }
+
+export async function uploadComprobanteAction(pagoId: string, url: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: "No autorizado" };
+
+    const { error } = await supabase
+        .from("pagos")
+        .update({ url_comprobante: url, estado: 'en_revision' })
+        .eq('id', pagoId);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/");
+    return { success: true };
+}
+export async function reportarPagoAction(data: { estudiante_id: string, monto: number, concepto: string, url_comprobante?: string }) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: "No autorizado" };
+
+    const { error } = await supabase.from("pagos").insert({
+        estudiante_id: data.estudiante_id,
+        monto: data.monto,
+        metodo: "TRANSFERENCIA",
+        estado: data.url_comprobante ? 'en_revision' : 'pendiente',
+        url_comprobante: data.url_comprobante || null,
+        fecha: new Date().toISOString().split('T')[0]
+    });
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}
