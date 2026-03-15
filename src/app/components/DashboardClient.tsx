@@ -39,8 +39,6 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { useState, useEffect } from "react";
 import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction } from "@/app/actions/padre";
 import { createClient } from "@/utils/supabase/client";
-// @ts-ignore
-import InstagramEmbed from 'react-instagram-embed';
 
 function VideoPlayer({ url }: { url: string }) {
     if (!url) return null;
@@ -48,6 +46,12 @@ function VideoPlayer({ url }: { url: string }) {
     const isInstagram = url.includes("instagram.com");
 
     const getEmbedUrl = (url: string) => {
+        // Instagram
+        if (url.includes("instagram.com")) {
+            const cleanUrl = url.split('?')[0].replace(/\/$/, "");
+            return `${cleanUrl}/embed/`;
+        }
+
         // YouTube
         const ytMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
         if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
@@ -63,26 +67,20 @@ function VideoPlayer({ url }: { url: string }) {
         return url;
     };
 
+    const embedUrl = getEmbedUrl(url);
+
     if (isInstagram) {
         return (
-            <div className="mt-6 overflow-hidden rounded-[30px] border-4 border-white/20 shadow-2xl bg-white p-2 flex justify-center">
-                <InstagramEmbed
-                    url={url}
-                    maxWidth={550}
-                    hideCaption={false}
-                    containerTagName='div'
-                    protocol=''
-                    injectScript
-                    onLoading={() => {}}
-                    onSuccess={() => {}}
-                    onAfterRender={() => {}}
-                    onFailure={() => {}}
-                />
+            <div className="mt-6 overflow-hidden rounded-[30px] border-4 border-white/20 shadow-2xl bg-white flex justify-center w-full">
+                <iframe
+                    src={embedUrl}
+                    className="w-full max-w-[550px] aspect-[1/1.2] border-0"
+                    allowTransparency={true}
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                ></iframe>
             </div>
         );
     }
-
-    const embedUrl = getEmbedUrl(url);
 
     return (
         <div className="mt-6 overflow-hidden rounded-[40px] border-4 border-white/20 shadow-2xl bg-black/10 aspect-video relative group">

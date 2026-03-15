@@ -1,0 +1,52 @@
+﻿
+> kinder_hive_hub@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  ┬À serverActions
+
+node.exe : ÔÜá The "middleware" file convention is 
+deprecated. Please use "proxy" instead. Learn more: 
+https://nextjs.org/docs/messages/middleware-to-proxy
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ÔÜá The "middle. 
+   ..leware-to-proxy:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./src/app/components/DashboardClient.tsx:86:11
+Ecmascript file had an error
+[0m [90m 84 |[39m     }
+ [90m 85 |[39m
+[31m[1m>[22m[39m[90m 86 |[39m     [36mconst[39m 
+embedUrl [33m=[39m getEmbedUrl(url)[33m;[39m
+ [90m    |[39m           [31m[1m^[22m[39m[31m[1m^[22m
+[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[
+39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39
+m
+ [90m 87 |[39m
+ [90m 88 |[39m     [36mreturn[39m (
+ [90m 89 |[39m         [33m<[39m[33mdiv[39m 
+className[33m=[39m[32m"mt-6 overflow-hidden rounded-[40px] 
+border-4 border-white/20 shadow-2xl bg-black/10 aspect-video 
+relative group"[39m[33m>[39m[0m
+
+the name `embedUrl` is defined multiple times
+
+Import trace:
+  Server Component:
+    ./src/app/components/DashboardClient.tsx
+    ./src/app/dashboard/padre/page.tsx
+
+
+    at <unknown> 
+(./src/app/components/DashboardClient.tsx:86:11)
