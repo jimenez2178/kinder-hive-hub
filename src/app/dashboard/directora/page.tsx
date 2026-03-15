@@ -140,7 +140,7 @@ export default async function DirectoraPage() {
                     trendData
                 }}
                 previewData={{
-                    comunicado: allComunicados?.[0],
+                    comunicados: allComunicados?.slice(0, 3) || [],
                     galeria: galeria || [],
                     eventos: eventos || [],
                     agradecimientos: agradecimientos || []

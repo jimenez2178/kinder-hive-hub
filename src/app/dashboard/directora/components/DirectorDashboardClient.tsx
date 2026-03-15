@@ -28,7 +28,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         comunicadosCount: number,
         trendData: { month: string, total: number }[]
     },
-    previewData: { comunicado: any, galeria: any[], eventos: any[], agradecimientos: any[] }
+    previewData: { comunicados: any[], galeria: any[], eventos: any[], agradecimientos: any[] }
 }) {
     const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -451,7 +451,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 userName="Padre de Isabella"
                                 saldoPendiente={11000}
                                 estudiantes={estudiantes.slice(0, 1)}
-                                comunicado={previewData.comunicado}
+                                comunicados={previewData.comunicados}
                                 galeria={previewData.galeria}
                                 recibos={[]}
                                 eventos={previewData.eventos}
