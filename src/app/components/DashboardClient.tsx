@@ -245,6 +245,20 @@ export default function DashboardClient({
                         <LogoutButton />
                     </div>
                 </header>
+                
+                {/* ═══ COMUNICADO URGENTE (TOP PRIORITY) ═══ */}
+                {comunicado && comunicado.prioridad === 'alta' && (
+                    <div className="bg-[#ef4444] rounded-[40px] p-8 mb-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[10px] border-white/20">
+                        <div className="flex items-center gap-4 mb-4">
+                            <span className="text-4xl animate-bounce">🚨</span>
+                            <span className="bg-white/20 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                                Aviso Urgente del Colegio
+                            </span>
+                        </div>
+                        <h4 className="text-white font-black text-2xl leading-tight drop-shadow-md">{comunicado.titulo}</h4>
+                        <p className="text-white/90 text-lg font-medium mt-3 leading-relaxed max-w-4xl">{comunicado.contenido}</p>
+                    </div>
+                )}
 
                 {/* PUSH NOTIFICATIONS BANNER */}
                 {showPushBanner && (
@@ -633,8 +647,8 @@ export default function DashboardClient({
                     {/* ═══ COLUMNA DERECHA ═══ */}
                     <div className="space-y-6">
 
-                        {/* COMUNICADO — tarjeta semáforo */}
-                        {comunicado && (
+                        {/* COMUNICADO — tarjeta semáforo (Solo si no es alta, porque alta sale arriba) */}
+                        {comunicado && comunicado.prioridad !== 'alta' && (
                             <div className={`rounded-[32px] p-7 shadow-xl relative overflow-hidden transition-all ${comunicado.prioridad === 'alta'
                                 ? 'bg-[#ef4444] shadow-red-100'
                                 : comunicado.prioridad === 'media'
