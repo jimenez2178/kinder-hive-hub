@@ -28,7 +28,13 @@ export async function middleware(request: NextRequest) {
     );
 
     // Prevent intercepting Next.js internal routes to avoid breaking hydration or actions
-    if (request.nextUrl.pathname.startsWith("/_next") || request.nextUrl.pathname.startsWith("/api") || request.nextUrl.pathname.includes("favicon.ico")) {
+    if (
+        request.nextUrl.pathname.startsWith("/_next") || 
+        request.nextUrl.pathname.startsWith("/api") || 
+        request.nextUrl.pathname.includes("favicon.ico") ||
+        request.nextUrl.pathname.includes("manifest.json") ||
+        request.nextUrl.pathname.includes("sw.js")
+    ) {
         return supabaseResponse;
     }
 
@@ -124,6 +130,6 @@ export const config = {
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          */
-        "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+        "/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
     ],
 };

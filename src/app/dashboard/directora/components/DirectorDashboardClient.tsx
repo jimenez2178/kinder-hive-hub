@@ -58,14 +58,19 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
 
     const handleAction = async (actionFn: (prevState: unknown, formData: FormData) => Promise<{ error?: string, success?: boolean, timestamp?: number }>, formData: FormData) => {
         setIsLoading(true);
-        const result = await actionFn(null, formData);
-        setIsLoading(false);
-
-        if (result?.error) {
-            alert("Error: " + result.error);
-        } else {
-            setActiveModal(null);
-            showToast("¡Registro guardado correctamente!");
+        try {
+            const result = await actionFn(null, formData);
+            if (result?.error) {
+                alert("Error: " + result.error);
+            } else {
+                setActiveModal(null);
+                showToast("¡Registro guardado correctamente!");
+            }
+        } catch (err) {
+            console.error("[handleAction] Unexpected Error:", err);
+            alert("Error crítico: No se pudo conectar con el servidor. Por favor, verifique su sesión.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
