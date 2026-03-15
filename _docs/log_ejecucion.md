@@ -42,3 +42,11 @@
 *   **Middleware**: Implementada l贸gica de "Gating" que verifica `rol` y `estado` en cada petici贸n protegida.
 *   **Login & Registro**: Actualizadas las redirecciones post-acci贸n para respetar los nuevos perfiles de ruta y el flujo de aprobaci贸n.
 *   **Seguridad**: Bloqueo de acceso cruzado (padres no pueden entrar a rutas de directora y viceversa).
+
+## [2026-03-15] Fase: Branding y PWA
+
+### 1. Correcci髇 de Iconos
+*   **Problema**: Aparec韆 el icono de Vercel al instalar la App.
+*   **Soluci髇**: Se reemplazaron `public/icons/icon-192x192.png` y `public/icons/icon-512x512.png` con el logo oficial de KHH.
+*   **Ajuste de Manifiesto**: Actualizado `public/manifest.json` con soporte para iconos `maskable` (PWA Best Practice).
+*   **Backup**: Copiada versi髇 previa a `_backup/icons`.

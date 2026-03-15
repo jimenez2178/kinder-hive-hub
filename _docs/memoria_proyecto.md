@@ -1,6 +1,8 @@
 # Memoria del Proyecto: Kinder Hive Hub
 
-## Estado Actual (Fase de Notificaciones Push)
+## Estado Actual (Fase de Branding y PWA)
+*   **Iconos y Branding**: Iconos de la App actualizados para eliminar el logo de Vercel y mostrar el de Kinder Hive Hub (KHH). Soporte para PWA mejorado en `manifest.json`.
+
 *   **Infraestructura de Notificaciones**:
     *   **Service Worker**: `public/sw.js` creado para gestionar la recepción de notificaciones en segundo plano.
     *   **Manejador de Notificaciones**: Componente `PushNotificationManager.tsx` integrado en el layout global para solicitar permisos y registrar el SW.
