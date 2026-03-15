@@ -105,7 +105,18 @@ export default async function DirectoraPage() {
     const porcentajeCobro = (estudiantes?.length || 0) > 0 ? Math.round((sumaEficiencia / (estudiantes?.length || 0)) * 100) : 0;
 
     // 3. Datos para la Previsualización y Métricas Directas
-    const { data: allComunicados } = await supabase.from("comunicados").select("*").order("created_at", { ascending: false });
+    const { data: allComunicadosRaw } = await supabase.from("comunicados").select("*").order("created_at", { ascending: false });
+    
+    // Priorizamos 'alta' (Urgente) sin importar la fecha, luego ordenamos por fecha descendente
+    const allComunicados = allComunicadosRaw ? [...allComunicadosRaw].sort((a, b) => {
+        const priorityScore: Record<string, number> = { 'alta': 3, 'media': 2, 'baja': 1 };
+        const scoreA = priorityScore[a.prioridad] || 0;
+        const scoreB = priorityScore[b.prioridad] || 0;
+        
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }) : [];
+
     const { data: galeria } = await supabase.from("galeria").select("*").order("created_at", { ascending: false });
     const { data: eventos } = await supabase.from("eventos").select("*").order("fecha", { ascending: true }).limit(3);
     const { data: agradecimientos } = await supabase.from("agradecimientos").select("*").order("created_at", { ascending: false }).limit(2);
