@@ -109,11 +109,11 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     className="rounded-[40px] p-8 mb-10 text-white shadow-2xl shadow-blue-900/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden"
                 >
                     <div className="flex flex-col md:flex-row items-center gap-6 z-10 text-center md:text-left">
-                        <div className="bg-white p-3 rounded-[35px] shadow-2xl flex items-center justify-center">
+                        <div className="bg-white p-1 rounded-[35px] shadow-2xl flex items-center justify-center overflow-hidden">
                             <img
                                 src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
                                 alt="Logo Sagrada Familia"
-                                className="w-[180px] h-auto object-contain transition-transform hover:scale-110 duration-500"
+                                className="w-[240px] h-auto object-contain transition-transform hover:scale-105 duration-500 p-1"
                             />
                         </div>
                         <div>

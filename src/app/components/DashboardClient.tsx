@@ -283,11 +283,11 @@ export default function DashboardClient({
                     <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
                     <div className="flex flex-col md:flex-row items-center gap-6 z-10 text-center md:text-left">
-                        <div className="bg-white p-3 rounded-[22px] shadow-2xl border-4 border-white/70">
+                        <div className="bg-white p-1 rounded-[22px] shadow-2xl border-4 border-white/70 overflow-hidden flex items-center justify-center">
                             <img
                                 src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
                                 alt="Logo Sagrada Familia"
-                                className="w-[145px] h-auto object-contain transition-transform hover:scale-110 duration-500"
+                                className="w-[190px] h-auto object-contain transition-transform hover:scale-105 duration-500 p-1"
                             />
                         </div>
                         <div>
@@ -339,7 +339,7 @@ export default function DashboardClient({
                                                     onDeleteComunicado(com.id);
                                                 }
                                             }}
-                                            className="absolute top-6 right-6 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white transition-all z-20 backdrop-blur-md opacity-0 group-hover:opacity-100 focus:opacity-100 shadow-xl"
+                                            className="absolute top-4 right-4 p-3 bg-red-600 hover:bg-red-700 text-white rounded-full transition-all z-20 shadow-xl"
                                             title="Borrar Aviso"
                                         >
                                             <Trash2 className="h-5 w-5" />
@@ -486,7 +486,7 @@ export default function DashboardClient({
                                         const isThisWeek = eventTime >= today && eventTime < (today + 7 * 24 * 60 * 60 * 1000);
                                         
                                         return (
-                                            <div key={ev.id} className={`flex gap-4 items-start p-5 rounded-3xl border ${isThisWeek ? 'bg-[#F0F4F8]/10 border-[#F0F4F8]/50 shadow-md ring-2 ring-[#F0F4F8]/20 relative overflow-hidden' : 'bg-slate-50 border-slate-100'} hover:bg-white transition-all`}>
+                                            <div key={ev.id} className={`flex gap-6 items-start p-8 rounded-[40px] border ${isThisWeek ? 'bg-[#F0F4F8]/10 border-[#F0F4F8]/50 shadow-md ring-2 ring-[#F0F4F8]/20 relative overflow-hidden' : 'bg-slate-50 border-slate-100'} hover:bg-white transition-all`}>
                                                 {isThisWeek && <div className="absolute top-0 right-0 bg-[#F0F4F8] text-[#020617] text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-lg">¡Esta Semana!</div>}
                                                 <div className={`${isThisWeek ? 'bg-[#F0F4F8] shadow-slate-200' : evtColor + ' shadow-blue-100'} px-4 py-2.5 rounded-2xl text-center min-w-[64px] text-white shrink-0 shadow-lg relative z-10`}>
                                                     <div className={`text-[10px] font-black uppercase tracking-tighter ${isThisWeek ? 'text-slate-900' : 'text-white'}`}>{monthShort}</div>
@@ -494,15 +494,15 @@ export default function DashboardClient({
                                                 </div>
                                                 <div className="flex-1 relative z-10">
                                                     <div className="flex items-center gap-2">
-                                                        <EventIcon className={`h-4 w-4 ${isThisWeek ? 'text-[#F0F4F8]' : iconColor}`} />
-                                                        <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tight">{ev.titulo}</h5>
+                                                        <EventIcon className={`h-5 w-5 ${isThisWeek ? 'text-[#002147]' : iconColor}`} />
+                                                        <h5 className="font-black text-slate-900 text-lg md:text-xl italic uppercase tracking-tighter leading-tight">{ev.titulo}</h5>
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 mt-1.5">
-                                                        <MapPin className="h-3 w-3 text-slate-400" />
-                                                        <p className="text-[10px] font-bold text-slate-500 uppercase">{ev.locacion || 'Centro Educativo'}</p>
+                                                    <div className="flex items-center gap-1.5 mt-2">
+                                                        <MapPin className="h-4 w-4 text-slate-500" />
+                                                        <p className="text-xs font-black text-slate-600 uppercase tracking-wide">{ev.locacion || 'Centro Educativo'}</p>
                                                     </div>
                                                     {ev.descripcion && (
-                                                        <div className={`mt-2 text-[11px] font-bold leading-relaxed p-2.5 rounded-xl border ${isThisWeek ? 'bg-white/80 text-slate-800 border-slate-200' : 'text-slate-500 bg-white/50 border-slate-100'}`}>
+                                                        <div className={`mt-3 text-base md:text-lg font-black leading-relaxed p-5 rounded-[30px] border shadow-sm ${isThisWeek ? 'bg-white text-[#002147] border-blue-100' : 'text-slate-700 bg-white/70 border-slate-200'}`}>
                                                             {ev.descripcion}
                                                         </div>
                                                     )}
