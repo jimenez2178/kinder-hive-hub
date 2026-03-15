@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache";
 import { enviarNotificacionPago } from "@/lib/n8n";
 
 async function getColegioId(supabase: any) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) return null;
+    
     const { data: perfil } = await supabase
         .from("perfiles")
         .select("colegio_id")
-        .eq("id", user.id)
+        .eq("id", data.user.id)
         .single();
     return perfil?.colegio_id;
 }

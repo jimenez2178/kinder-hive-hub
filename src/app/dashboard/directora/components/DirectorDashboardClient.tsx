@@ -466,6 +466,61 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         </div>
                     </CardContent>
                 </Card>
+                
+                {/* --- GESTIÓN DE COMUNICADOS --- */}
+                <Card className="mt-12 rounded-[40px] border-0 shadow-2xl overflow-hidden bg-white">
+                    <CardHeader className="bg-slate-50/50 py-8 px-10 border-b border-slate-100 flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-2xl font-black text-slate-800 italic uppercase tracking-tighter">
+                                Gestión de Comunicados
+                            </CardTitle>
+                            <p className="text-xs font-bold text-slate-400">Total: {localComunicados.length} avisos publicados</p>
+                        </div>
+                        <Button
+                            onClick={() => setActiveModal("comunicado")}
+                            className="rounded-full bg-[#8A2BE2] hover:bg-[#7b23cc] text-white font-black px-6 shadow-md"
+                        >
+                            <Megaphone className="mr-2 h-4 w-4" /> Nuevo Aviso
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {localComunicados.length > 0 ? localComunicados.map((com) => (
+                                <div key={com.id} className="p-6 rounded-3xl border-2 border-slate-50 bg-slate-50/30 flex flex-col justify-between group hover:border-[#8A2BE2]/20 transition-all">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <Badge className={`${
+                                                com.prioridad === 'alta' ? 'bg-red-500' :
+                                                com.prioridad === 'media' ? 'bg-amber-500' : 'bg-[#002147]'
+                                            } text-white font-black uppercase text-[9px] px-3 py-1 rounded-full`}>
+                                                {com.prioridad}
+                                            </Badge>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDeleteComunicado(com.id)}
+                                                className="h-9 w-9 rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition-all"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <h4 className="font-black text-slate-800 text-lg leading-tight mb-2 line-clamp-1">{com.titulo}</h4>
+                                        <p className="text-sm font-medium text-slate-500 line-clamp-2 leading-relaxed">{com.contenido}</p>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-400">
+                                        <span>{new Date(com.created_at).toLocaleDateString('es-DO')}</span>
+                                        {com.video_url && <span className="text-[#8A2BE2] uppercase tracking-widest text-[8px] font-black">Tiene Video</span>}
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="col-span-full py-12 text-center text-slate-400 italic">
+                                    <Megaphone className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                                    <p>No has publicado avisos aún.</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Vista Previa de Padres */}
                 {showPreview && (
