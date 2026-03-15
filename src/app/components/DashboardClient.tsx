@@ -79,33 +79,74 @@ export default function DashboardClient({
     const [showPhotoModal, setShowPhotoModal] = useState(false);
 
     useEffect(() => {
+        console.log("Checking Service Worker support...");
         if ("serviceWorker" in navigator && "PushManager" in window) {
-            navigator.serviceWorker.register("/sw.js").then((reg) => {
-                reg.pushManager.getSubscription().then((sub) => {
-                    if (!sub) {
-                        setShowPushBanner(true);
-                    }
+            navigator.serviceWorker.register("/sw.js")
+                .then((reg) => {
+                    console.log("Service Worker registered successfully:", reg.scope);
+                    reg.pushManager.getSubscription().then((sub) => {
+                        console.log("Current subscription:", sub);
+                        if (!sub) {
+                            setShowPushBanner(true);
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error("Service Worker registration failed:", err);
                 });
-            });
+        } else {
+            console.warn("Push notifications are not supported in this browser.");
         }
     }, []);
 
     const subscribeToPush = async () => {
+        console.log("Initializing push subscription process...");
         try {
+            // Check for VAPID key
+            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            console.log("VAPID Key present:", !!vapidKey);
+            
+            if (!vapidKey) {
+                alert("Error técnico: Falta la llave VAPID de configuración.");
+                return;
+            }
+
+            // 1. Request Permission explicitly
+            console.log("Requesting notification permission...");
+            const permission = await Notification.requestPermission();
+            console.log("Permission result:", permission);
+
+            if (permission !== 'granted') {
+                alert("Para recibir alertas inmediatas, debes permitir las notificaciones en la configuración de tu navegador.");
+                return;
+            }
+
+            // 2. Register/Wait for Service Worker
             const reg = await navigator.serviceWorker.ready;
+            console.log("Service Worker ready for subscription.");
+
+            // 3. Subscribe
             const sub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+                applicationServerKey: vapidKey
             });
+            console.log("Push Subscription successful:", JSON.stringify(sub));
+
+            // 4. Update Database
             const supabase = createClient();
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                await supabase.from('perfiles').update({ push_token: JSON.stringify(sub) }).eq('id', user.id);
+                console.log("Updating push token for user:", user.id);
+                const { error } = await supabase.from('perfiles').update({ push_token: JSON.stringify(sub) }).eq('id', user.id);
+                if (error) console.error("Database update error:", error);
+                else console.log("Database updated successfully.");
             }
+
             setShowPushBanner(false);
-            alert("¡Notificaciones activadas!");
+            alert("¡Genial! Las notificaciones inmediatas han sido activadas con éxito.");
         } catch (error) {
-            console.error(error);
+            console.error("Error in subscribeToPush:", error);
+            alert("No se pudo activar las notificaciones. Asegúrate de que tu navegador soporte PWA y no estés en modo incógnito.");
         }
     };
 

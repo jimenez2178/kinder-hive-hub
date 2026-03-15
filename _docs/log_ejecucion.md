@@ -50,3 +50,8 @@
 *   **Solución**: Se reemplazaron `public/icons/icon-192x192.png` y `public/icons/icon-512x512.png` con el logo oficial de KHH.
 *   **Ajuste de Manifiesto**: Actualizado `public/manifest.json` con soporte para iconos `maskable` (PWA Best Practice).
 *   **Backup**: Copiada versión previa a `_backup/icons`.
+
+### 2. Depuración de Notificaciones Push
+*   **Cambio**: Añadida solicitud explícita de permisos (Permission API) y logs de depuración en `DashboardClient.tsx`.
+*   **Objetivo**: Resolver incidencia donde el botón no reaccionaba en dispositivos móviles.
+*   **Mejora**: Validación de existencia de llaves VAPID antes de intentar la suscripción.
