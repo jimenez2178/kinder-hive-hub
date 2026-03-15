@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+// Sincronización Premium: 2026-03-15
 import { createClient } from "@/utils/supabase/server";
 
 export default async function IndexPage() {
