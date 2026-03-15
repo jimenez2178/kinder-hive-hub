@@ -85,13 +85,25 @@ export default async function DashboardPage() {
         }
     }
 
-    // 4. Comunicado Urgente (Filtrado por Colegio Dinámico)
-    const { data: comunicados } = await supabase
+    // 4. Último Comunicado (Priorizando Urgentes)
+    const { data: rawComunicados } = await supabase
         .from("comunicados")
         .select("*")
         .eq("colegio_id", finalColegioId)
         .order("created_at", { ascending: false })
-        .limit(1);
+        .limit(5);
+
+    const pickComunicado = () => {
+        if (!rawComunicados) return null;
+        const priorityScore: Record<string, number> = { 'alta': 3, 'media': 2, 'baja': 1 };
+        return [...rawComunicados].sort((a, b) => {
+            const scoreA = priorityScore[a.prioridad] || 0;
+            const scoreB = priorityScore[b.prioridad] || 0;
+            if (scoreA !== scoreB) return scoreB - scoreA;
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        })[0];
+    };
+    const comunicado = pickComunicado();
 
     // 5. Fotos de la Galería (Filtrado por Colegio Dinámico)
     const { data: galeria } = await supabase
@@ -137,7 +149,7 @@ export default async function DashboardPage() {
             userName={profile?.nombre || "Padre"}
             saldoPendiente={saldoTotalFamilia}
             estudiantes={estudiantes || []}
-            comunicado={comunicados?.[0]}
+            comunicado={comunicado}
             galeria={galeria || []}
             recibos={recibos || []}
             eventos={eventos || []}
