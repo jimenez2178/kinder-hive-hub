@@ -84,11 +84,11 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                             />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-4xl font-black tracking-tighter italic leading-none">
+                            <h1 className="text-2xl md:text-5xl font-black tracking-tighter italic leading-none drop-shadow-sm">
                                 ¡Bienvenida Directora Carmen Cortorreal! 👋
                             </h1>
-                            <p className="text-[#020617]/80 font-bold text-lg mt-2">
-                                Está en su panel directivo.
+                            <p className="text-[#020617]/80 font-bold text-xl mt-2">
+                                Gestión Institucional · Ciclo 2026-2027
                             </p>
                         </div>
                     </div>
@@ -185,45 +185,45 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
 
                     {/* Tarjeta Púrpura - Estudiantes */}
-                    <Card className="rounded-[35px] bg-[#8A2BE2] text-white border-0 shadow-2xl overflow-hidden relative group">
-                        <CardContent className="p-6">
+                    <Card className="rounded-[40px] bg-[#8A2BE2] text-white border-0 shadow-2xl overflow-hidden relative group">
+                        <CardContent className="p-8">
                             <Users className="absolute -right-4 -bottom-4 h-24 w-24 text-white/10 group-hover:scale-110 transition-transform" />
-                            <p className="text-xs font-black uppercase tracking-widest text-white/70">Total Alumnos</p>
-                            <h3 className="text-5xl font-black mt-2">{estudiantes.length}</h3>
-                            <div className="mt-4 flex items-center gap-2">
-                                <Badge className="bg-white/20 hover:bg-white/30 border-none text-white font-bold">
-                                    +3 este mes
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Total Alumnos</p>
+                            <h3 className="text-6xl font-black mt-2 tracking-tighter">{estudiantes.length}</h3>
+                            <div className="mt-6 flex items-center gap-2">
+                                <Badge className="bg-white/20 hover:bg-white/30 border-none text-white font-bold px-4 py-1 rounded-full">
+                                    COMUNIDAD ACTIVA
                                 </Badge>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Tarjeta Amarilla - Finanzas (DINÁMICA) */}
-                    <Card className="rounded-[35px] bg-[#ffcc00] text-[#020617] border-0 shadow-2xl overflow-hidden relative group">
-                        <CardContent className="p-6">
+                    <Card className="rounded-[40px] bg-[#ffcc00] text-[#020617] border-0 shadow-2xl overflow-hidden relative group">
+                        <CardContent className="p-8">
                             <Wallet className="absolute -right-4 -bottom-4 h-24 w-24 text-black/5 group-hover:scale-110 transition-transform" />
-                            <p className="text-xs font-black uppercase tracking-widest text-black/50">Cobros del Mes</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-black/40">Recaudación Mensual</p>
                             <h3 className="text-4xl font-black mt-2 tracking-tighter">
                                 RD$ {metrics.ingresosDelMes.toLocaleString('es-DO')}
                             </h3>
                             {/* Barra de Progreso de Recaudación */}
                             {metrics.metaTotal > 0 && (
-                                <div className="mt-3">
-                                    <div className="w-full bg-black/10 rounded-full h-2">
+                                <div className="mt-6">
+                                    <div className="w-full bg-black/10 rounded-full h-3 border border-black/5">
                                         <div
-                                            className="bg-[#004aad] h-2 rounded-full transition-all duration-700"
+                                            className="bg-[#004aad] h-full rounded-full transition-all duration-1000 shadow-lg"
                                             style={{ width: `${Math.min(100, Math.round((metrics.ingresosDelMes / metrics.metaTotal) * 100))}%` }}
                                         />
                                     </div>
-                                    <div className="flex items-center justify-between mt-1">
-                                        <p className="text-[10px] font-bold opacity-70 italic text-black">
-                                            {Math.min(100, Math.round((metrics.ingresosDelMes / metrics.metaTotal) * 100))}% de RD$ {metrics.metaTotal.toLocaleString('es-DO')}
+                                    <div className="flex items-center justify-between mt-3">
+                                        <p className="text-[11px] font-black text-black/60 italic uppercase tracking-tighter">
+                                            {Math.min(100, Math.round((metrics.ingresosDelMes / metrics.metaTotal) * 100))}% de la meta
                                         </p>
                                         <button
-                                            onClick={() => alert('Generando reporte de pagos...')}
+                                            onClick={() => setShowReport(true)}
                                             className="text-[10px] font-black uppercase underline hover:text-[#004aad] transition-colors"
                                         >
-                                            Ver Resumen →
+                                            Ver Métricas →
                                         </button>
                                     </div>
                                 </div>
@@ -232,22 +232,22 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     </Card>
 
                     {/* Tarjeta Blanca - Pagos al Día */}
-                    <Card className="rounded-[35px] bg-white border-0 shadow-xl relative overflow-hidden group">
-                        <CardContent className="p-6">
+                    <Card className="rounded-[40px] bg-white border-0 shadow-2xl relative overflow-hidden group">
+                        <CardContent className="p-8">
                             <TrendingUp className="absolute -right-4 -bottom-4 h-24 w-24 text-slate-50 group-hover:scale-110 transition-transform" />
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-400">Pagos al Día</p>
-                            <h3 className="text-5xl font-black mt-2 text-green-600">{metrics.alDia}</h3>
-                            <p className="text-[10px] font-bold mt-2 text-slate-400">{metrics.porcentajeCobro}% de efectividad este mes</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Eficiencia</p>
+                            <h3 className="text-6xl font-black mt-2 text-green-600 tracking-tighter">{metrics.alDia}</h3>
+                            <p className="text-[11px] font-black mt-3 text-slate-500 uppercase italic">{metrics.porcentajeCobro}% de cobro efectivo</p>
                         </CardContent>
                     </Card>
 
                     {/* Tarjeta Blanca - Pendientes */}
-                    <Card className="rounded-[35px] bg-white border-0 shadow-xl relative overflow-hidden group">
-                        <CardContent className="p-6">
+                    <Card className="rounded-[40px] bg-white border-0 shadow-2xl relative overflow-hidden group">
+                        <CardContent className="p-8">
                             <CreditCard className="absolute -right-4 -bottom-4 h-24 w-24 text-red-50 group-hover:scale-110 transition-transform" />
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-400">Por Cobrar</p>
-                            <h3 className="text-5xl font-black mt-2 text-red-500">{metrics.pendientes}</h3>
-                            <p className="text-[10px] font-bold mt-2 text-red-400">Requiere seguimiento</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Por Cobrar</p>
+                            <h3 className="text-6xl font-black mt-2 text-red-500 tracking-tighter">{metrics.pendientes}</h3>
+                            <p className="text-[11px] font-black mt-3 text-red-400 uppercase italic">Seguimiento Requerido</p>
                         </CardContent>
                     </Card>
                 </div>
