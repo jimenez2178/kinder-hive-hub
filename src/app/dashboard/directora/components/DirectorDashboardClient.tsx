@@ -737,16 +737,30 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                 />
                                                 {searchTerm && !selectedStudent && (
                                                     <div className="absolute z-50 w-full mt-2 bg-white rounded-[28px] shadow-2xl border border-slate-100 max-h-48 overflow-y-auto">
-                                                        {filteredEstudiantes.map(e => (
-                                                            <button key={e.id} type="button" className="w-full text-left px-6 py-4 hover:bg-slate-50 font-bold border-b last:border-0" onClick={() => { setSelectedStudent(e); setSearchTerm(e.nombre); }}>
-                                                                {e.nombre} ({e.grado})
-                                                            </button>
-                                                        ))}
+                                                        {filteredEstudiantes.length > 0 ? (
+                                                            filteredEstudiantes.map(e => (
+                                                                <button key={e.id} type="button" className="w-full text-left px-6 py-4 hover:bg-slate-50 font-bold border-b last:border-0 flex justify-between items-center" onClick={() => { setSelectedStudent(e); setSearchTerm(e.nombre); }}>
+                                                                    <span>{e.nombre} ({e.grado})</span>
+                                                                    <div className="bg-[#002147] text-white text-[8px] px-2 py-0.5 rounded-full uppercase">Seleccionar</div>
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <div className="px-6 py-4 text-slate-400 text-sm font-bold">No se encontraron alumnos</div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {selectedStudent && (
+                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-green-500 text-white p-1 rounded-full">
+                                                        <CheckCircle className="h-4 w-4" />
                                                     </div>
                                                 )}
                                             </div>
+                                            {!selectedStudent && searchTerm.length > 2 && (
+                                                <p className="text-[10px] text-amber-600 font-black uppercase mt-1 ml-4 animate-pulse">⚠️ Debe seleccionar un alumno de la lista desplegable</p>
+                                            )}
                                             <input type="hidden" name="estudiante_id" value={selectedStudent?.id || ""} required />
                                             <input type="hidden" name="estado" value="aprobado" />
+
                                         </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2 col-span-2">
@@ -1083,6 +1097,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     </Card>
                 </div>
             )}
+
 
             {/* Notificación Toast Custom */}
             {toast.visible && (

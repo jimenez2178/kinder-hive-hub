@@ -19,6 +19,8 @@ async function getColegioId(supabase: any) {
 export async function addPaymentAction(prevState: unknown, formData: FormData) {
     const supabase = await createClient();
     const estudiante_id = formData.get("estudiante_id") as string;
+    if (!estudiante_id) return { error: "Debe seleccionar un alumno válido de la lista." };
+    
     const montoPorMes = parseFloat(formData.get("monto") as string);
     const metodo_pago = formData.get("metodo_pago") as string;
     const estado = (formData.get("estado") as string) || "aprobado";
