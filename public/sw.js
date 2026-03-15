@@ -1,3 +1,5 @@
+const CACHE_NAME = 'khh-cache-v2';
+
 self.addEventListener('push', function (event) {
     const data = event.data.json();
     const options = {

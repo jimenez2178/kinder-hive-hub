@@ -19,8 +19,8 @@ export async function addPaymentAction(prevState: unknown, formData: FormData) {
     const supabase = await createClient();
     const estudiante_id = formData.get("estudiante_id") as string;
     const montoPorMes = parseFloat(formData.get("monto") as string);
-    const metodo = formData.get("metodo") as string;
-    const estado = formData.get("estado") as string;
+    const metodo_pago = formData.get("metodo_pago") as string;
+    const estado = (formData.get("estado") as string) || "aprobado";
     const fecha = formData.get("fecha") as string || new Date().toISOString().split('T')[0];
     const cantidadMeses = parseInt(formData.get("cantidad_meses") as string) || 1;
     const comprobanteFile = formData.get("comprobante") as File;
@@ -64,7 +64,7 @@ export async function addPaymentAction(prevState: unknown, formData: FormData) {
     const { error } = await supabase.from("pagos").insert({
         estudiante_id,
         monto: montoTotal,
-        metodo,
+        metodo: metodo_pago,
         estado,
         fecha,
         url_comprobante: comprobante_url,
@@ -223,10 +223,13 @@ export async function addComunicadoAction(prevState: unknown, formData: FormData
     const prioridad = formData.get("prioridad") as string; // 'alta', 'media', 'baja'
     const sendPush = formData.get("send_push") === "on";
 
+    const video_url = formData.get("video_url") as string;
+
     const { error } = await supabase.from("comunicados").insert({
         titulo,
         contenido,
         prioridad,
+        video_url: video_url || null,
         colegio_id: await getColegioId(supabase)
     });
 
@@ -343,10 +346,10 @@ export async function approvePaymentAction(pagoId: string) {
         .eq("id", pagoId)
         .single();
 
-    // 2. Actualizar estado a 'saldado' (según enum DB)
+    // 2. Actualizar estado a 'aprobado' (Unificación de contabilidad)
     const { error } = await supabase
         .from("pagos")
-        .update({ estado: 'saldado' }) 
+        .update({ estado: 'aprobado' }) 
         .eq('id', pagoId);
 
     if (error) return { error: error.message };
@@ -366,6 +369,34 @@ export async function approvePaymentAction(pagoId: string) {
             est.nombre
         );
     }
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}
+
+export async function archivePaymentAction(pagoId: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("pagos")
+        .update({ estado: 'archivado' })
+        .eq('id', pagoId);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}
+
+export async function deletePaymentAction(pagoId: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("pagos")
+        .delete()
+        .eq('id', pagoId);
+
+    if (error) return { error: error.message };
 
     revalidatePath("/dashboard/directora");
     revalidatePath("/dashboard/padre");

@@ -39,6 +39,40 @@ import { useState, useEffect } from "react";
 import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction } from "@/app/actions/padre";
 import { createClient } from "@/utils/supabase/client";
 
+function VideoPlayer({ url }: { url: string }) {
+    if (!url) return null;
+
+    const getEmbedUrl = (url: string) => {
+        // YouTube
+        const ytMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+        if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+
+        // Vimeo
+        const vimeoMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com\/|player\.vimeo\.com\/video\/)([0-9]+)/);
+        if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+
+        // Google Drive
+        const driveMatch = url.match(/(?:https?:\/\/)?(?:drive\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/);
+        if (driveMatch) return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+
+        return url;
+    };
+
+    const embedUrl = getEmbedUrl(url);
+
+    return (
+        <div className="mt-6 overflow-hidden rounded-[40px] border-4 border-white/20 shadow-2xl bg-black/10 aspect-video relative group">
+            <iframe
+                src={embedUrl}
+                className="absolute inset-0 w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+            ></iframe>
+            <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/10 rounded-[40px]"></div>
+        </div>
+    );
+}
+
 export default function DashboardClient({
     initialFrase,
     userName,
@@ -214,8 +248,54 @@ export default function DashboardClient({
 
             <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6">
 
+                {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
+                {comunicados.length > 0 && (
+                    <div className="space-y-6 mb-10">
+                        {comunicados.map((com, idx) => {
+                            const p = com.prioridad?.toLowerCase();
+                            const isUrgent = p === 'alta' || p === 'urgente';
+                            const isWarning = p === 'media' || p === 'advertencia';
+                            
+                            return (
+                                <div 
+                                    key={com.id || idx}
+                                    className={`rounded-[40px] p-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[12px] ${
+                                        isUrgent 
+                                            ? 'bg-[#ef4444] border-white/20' 
+                                            : isWarning
+                                                ? 'bg-[#ffcc00] border-black/10'
+                                                : 'bg-[#004aad] border-white/10'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <span className={`text-3xl ${isUrgent ? 'animate-bounce' : ''}`}>
+                                            {isUrgent ? '🚨' : isWarning ? '⚠️' : 'ℹ️'}
+                                        </span>
+                                        <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${
+                                            isWarning ? 'bg-black/10 text-black' : 'bg-white/20 text-white'
+                                        }`}>
+                                            {isUrgent ? 'Urgente / Crítico' : isWarning ? 'Aviso Escolar' : 'Información'}
+                                        </span>
+                                    </div>
+                                    <h4 className={`font-black text-2xl leading-tight drop-shadow-sm ${
+                                        isWarning ? 'text-black' : 'text-white'
+                                    }`}>
+                                        {com.titulo}
+                                    </h4>
+                                    <p className={`text-lg font-medium mt-3 leading-relaxed max-w-4xl ${
+                                        isWarning ? 'text-black/80' : 'text-white/90'
+                                    }`}>
+                                        {com.contenido}
+                                    </p>
+                                    {com.video_url && <VideoPlayer url={com.video_url} />}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
                 {/* ═══ HEADER PREMIUM ═══ */}
-                <header className="bg-[#7ed957] rounded-[40px] p-7 mb-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                <header className="bg-[#F0F4F8] rounded-[40px] p-7 mb-10 shadow-2xl shadow-slate-200/50 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden text-slate-800">
                     {/* Orb decorativo */}
                     <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/20 rounded-full blur-3xl pointer-events-none" />
                     <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-[#004aad]/10 rounded-full blur-2xl pointer-events-none" />
@@ -225,7 +305,7 @@ export default function DashboardClient({
                             <img
                                 src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
                                 alt="Logo Sagrada Familia"
-                                className="h-16 w-16 object-contain"
+                                className="w-[120px] h-auto object-contain"
                             />
                         </div>
                         <div>
@@ -246,42 +326,6 @@ export default function DashboardClient({
                     </div>
                 </header>
                 
-                {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
-                <div className="space-y-6 mb-10">
-                    {comunicados.map((com, idx) => (
-                        <div 
-                            key={com.id || idx}
-                            className={`rounded-[40px] p-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[12px] ${
-                                com.prioridad === 'alta' 
-                                    ? 'bg-[#ef4444] border-white/20' 
-                                    : com.prioridad === 'media'
-                                        ? 'bg-[#ffcc00] border-black/10'
-                                        : 'bg-[#004aad] border-white/10'
-                            }`}
-                        >
-                            <div className="flex items-center gap-4 mb-4">
-                                <span className={`text-3xl ${com.prioridad === 'alta' ? 'animate-bounce' : ''}`}>
-                                    {com.prioridad === 'alta' ? '🚨' : com.prioridad === 'media' ? '⚠️' : 'ℹ️'}
-                                </span>
-                                <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${
-                                    com.prioridad === 'media' ? 'bg-black/10 text-black' : 'bg-white/20 text-white'
-                                }`}>
-                                    {com.prioridad === 'alta' ? 'Urgente / Crítico' : com.prioridad === 'media' ? 'Aviso Escolar' : 'Información'}
-                                </span>
-                            </div>
-                            <h4 className={`font-black text-2xl leading-tight drop-shadow-sm ${
-                                com.prioridad === 'media' ? 'text-black' : 'text-white'
-                            }`}>
-                                {com.titulo}
-                            </h4>
-                            <p className={`text-lg font-medium mt-3 leading-relaxed max-w-4xl ${
-                                com.prioridad === 'media' ? 'text-black/80' : 'text-white/90'
-                            }`}>
-                                {com.contenido}
-                            </p>
-                        </div>
-                    ))}
-                </div>
 
                 {/* PUSH NOTIFICATIONS BANNER */}
                 {showPushBanner && (
@@ -317,7 +361,7 @@ export default function DashboardClient({
                                     RD$ {estudiantes.reduce((acc, est) => acc + (Number(est.cuota_mensual) || 0), 0).toLocaleString('es-DO')}
                                 </div>
                                 <div className="mt-4 flex flex-col gap-2">
-                                    <div className={`inline-flex items-center gap-1.5 text-[10px] font-black px-4 py-1.5 rounded-full w-fit ${currentSaldo > 0 ? 'bg-black text-[#ffcc00]' : 'bg-white text-green-700'}`}>
+                                    <div className={`inline-flex items-center gap-1.5 text-[10px] font-black px-4 py-1.5 rounded-full w-fit ${currentSaldo > 0 ? 'bg-black text-[#ffcc00]' : 'bg-white text-sky-700'}`}>
                                         {currentSaldo > 0 ? `⚠️ PENDIENTE: RD$ ${currentSaldo.toLocaleString()}` : '✓ CUENTA AL DÍA'}
                                     </div>
                                     <p className="text-[9px] font-bold text-black/40 italic uppercase">Referencia para pagos mensuales</p>
@@ -338,7 +382,7 @@ export default function DashboardClient({
                                             <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-4 italic">Ciclo Escolar 2026–2027</p>
                                             <button
                                                 onClick={() => setSelectedStudentForFile(est)}
-                                                className="w-full bg-[#7ed957] hover:bg-white text-[#020617] font-black text-xs py-3 rounded-full shadow-lg transition-all hover:shadow-[#7ed957]/30 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-tighter"
+                                                className="w-full bg-[#F0F4F8] hover:bg-white text-[#020617] font-black text-xs py-3 rounded-full shadow-lg transition-all hover:shadow-[#F0F4F8]/30 active:scale-95 flex items-center justify-center gap-2 uppercase tracking-tighter"
                                             >
                                                 <FileText className="h-4 w-4" /> Ver Ficha Digital
                                             </button>
@@ -351,7 +395,7 @@ export default function DashboardClient({
                         </div>
 
                         {/* PRÓXIMOS EVENTOS (Reubicado debajo de Ficha Digital) */}
-                        <div className="bg-[#7ed957]/10 rounded-[40px] shadow-sm overflow-hidden border-2 border-[#7ed957]/40 p-1 mt-6 ring-4 ring-[#7ed957]/10">
+                        <div className="bg-[#F0F4F8]/10 rounded-[40px] shadow-sm overflow-hidden border-2 border-[#F0F4F8]/40 p-1 mt-6 ring-4 ring-[#F0F4F8]/10">
                             <div className="bg-white rounded-[35px] overflow-hidden">
                                 <div className="px-7 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
                                     <h4 className="text-xl font-black text-[#004aad] uppercase tracking-tight flex items-center gap-3">
@@ -369,7 +413,7 @@ export default function DashboardClient({
                                         const monthShort = date.toLocaleDateString('es-DO', { month: 'short' }).toUpperCase().replace('.', '');
                                         const day = date.getDate();
                                         
-                                        // Highlight this week events using #7ed957
+                                        // Highlight this week events using #F0F4F8
                                         const lowerTitle = ev.titulo.toLowerCase();
                                         let EventIcon = Calendar;
                                         let iconColor = "text-[#004aad]";
@@ -396,15 +440,15 @@ export default function DashboardClient({
                                         const isThisWeek = eventTime >= today && eventTime < (today + 7 * 24 * 60 * 60 * 1000);
                                         
                                         return (
-                                            <div key={ev.id} className={`flex gap-4 items-start p-5 rounded-3xl border ${isThisWeek ? 'bg-[#7ed957]/10 border-[#7ed957]/50 shadow-md ring-2 ring-[#7ed957]/20 relative overflow-hidden' : 'bg-slate-50 border-slate-100'} hover:bg-white transition-all`}>
-                                                {isThisWeek && <div className="absolute top-0 right-0 bg-[#7ed957] text-[#020617] text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-lg">¡Esta Semana!</div>}
-                                                <div className={`${isThisWeek ? 'bg-[#7ed957] shadow-green-200' : evtColor + ' shadow-blue-100'} px-4 py-2.5 rounded-2xl text-center min-w-[64px] text-white shrink-0 shadow-lg relative z-10`}>
-                                                    <div className={`text-[10px] font-black uppercase tracking-tighter ${isThisWeek ? 'text-green-900' : 'text-white'}`}>{monthShort}</div>
-                                                    <div className={`text-2xl font-black leading-none mt-1 ${isThisWeek ? 'text-green-950' : 'text-white'}`}>{day}</div>
+                                            <div key={ev.id} className={`flex gap-4 items-start p-5 rounded-3xl border ${isThisWeek ? 'bg-[#F0F4F8]/10 border-[#F0F4F8]/50 shadow-md ring-2 ring-[#F0F4F8]/20 relative overflow-hidden' : 'bg-slate-50 border-slate-100'} hover:bg-white transition-all`}>
+                                                {isThisWeek && <div className="absolute top-0 right-0 bg-[#F0F4F8] text-[#020617] text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-lg">¡Esta Semana!</div>}
+                                                <div className={`${isThisWeek ? 'bg-[#F0F4F8] shadow-slate-200' : evtColor + ' shadow-blue-100'} px-4 py-2.5 rounded-2xl text-center min-w-[64px] text-white shrink-0 shadow-lg relative z-10`}>
+                                                    <div className={`text-[10px] font-black uppercase tracking-tighter ${isThisWeek ? 'text-slate-900' : 'text-white'}`}>{monthShort}</div>
+                                                    <div className={`text-2xl font-black leading-none mt-1 ${isThisWeek ? 'text-slate-950' : 'text-white'}`}>{day}</div>
                                                 </div>
                                                 <div className="flex-1 relative z-10">
                                                     <div className="flex items-center gap-2">
-                                                        <EventIcon className={`h-4 w-4 ${isThisWeek ? 'text-[#7ed957]' : iconColor}`} />
+                                                        <EventIcon className={`h-4 w-4 ${isThisWeek ? 'text-[#F0F4F8]' : iconColor}`} />
                                                         <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tight">{ev.titulo}</h5>
                                                     </div>
                                                     <div className="flex items-center gap-1.5 mt-1.5">
@@ -412,7 +456,7 @@ export default function DashboardClient({
                                                         <p className="text-[10px] font-bold text-slate-500 uppercase">{ev.locacion || 'Centro Educativo'}</p>
                                                     </div>
                                                     {ev.descripcion && (
-                                                        <div className={`mt-2 text-[11px] font-bold leading-relaxed p-2.5 rounded-xl border ${isThisWeek ? 'bg-white/80 text-green-800 border-green-200' : 'text-slate-500 bg-white/50 border-slate-100'}`}>
+                                                        <div className={`mt-2 text-[11px] font-bold leading-relaxed p-2.5 rounded-xl border ${isThisWeek ? 'bg-white/80 text-slate-800 border-slate-200' : 'text-slate-500 bg-white/50 border-slate-100'}`}>
                                                             {ev.descripcion}
                                                         </div>
                                                     )}
@@ -523,27 +567,27 @@ export default function DashboardClient({
                             </h3>
                             <div className="space-y-4">
                                 {evaluaciones && evaluaciones.length > 0 ? evaluaciones.map((ev: any) => (
-                                    <div key={ev.id} className="bg-gradient-to-br from-slate-800 to-slate-950 p-8 md:p-12 rounded-[55px] shadow-2xl relative overflow-hidden group hover:scale-[1.01] transition-all duration-500 border-4 border-white/10">
+                                    <div key={ev.id} className="bg-[#E1F5FE] p-8 md:p-12 rounded-[55px] shadow-2xl relative overflow-hidden group hover:scale-[1.01] transition-all duration-500 border-4 border-white/40">
                                         {/* Decoración de fondo */}
-                                        <div className="absolute -right-16 -bottom-16 opacity-10 rotate-12 transition-transform group-hover:scale-110 duration-1000">
-                                            <Star className="w-80 h-80 text-white" fill="currentColor" />
+                                        <div className="absolute -right-16 -bottom-16 opacity-5 rotate-12 transition-transform group-hover:scale-110 duration-1000">
+                                            <Star className="w-80 h-80 text-[#004aad]" fill="currentColor" />
                                         </div>
                                         
                                         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                                             {/* Info Estudiante (4 cols) */}
                                             <div className="lg:col-span-4 flex items-center gap-6">
-                                                <div className="h-24 w-24 rounded-[35px] bg-white/20 backdrop-blur-xl flex items-center justify-center border-2 border-white/30 shadow-2xl shrink-0">
-                                                    <Star className="text-white h-12 w-12 drop-shadow-lg" fill="currentColor" />
+                                                <div className="h-24 w-24 rounded-[35px] bg-white/40 backdrop-blur-xl flex items-center justify-center border-2 border-white/60 shadow-2xl shrink-0">
+                                                    <Star className="text-[#004aad] h-12 w-12 drop-shadow-lg" fill="currentColor" />
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <h5 className="font-black text-white text-3xl tracking-tighter leading-none">{ev.estudiantes?.nombre}</h5>
+                                                    <h5 className="font-black text-slate-800 text-3xl tracking-tighter leading-none">{ev.estudiantes?.nombre}</h5>
                                                     <div className="flex flex-wrap gap-2">
                                                         <div className="bg-white px-4 py-1.5 rounded-full shadow-xl">
                                                             <span className="text-slate-800 font-black text-[10px] uppercase tracking-widest">{ev.categoria}</span>
                                                         </div>
                                                         {ev.maestro_nombre && (
-                                                            <div className="bg-black/30 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/10">
-                                                                <span className="text-white/90 font-black text-[9px] uppercase tracking-tighter">🎓 {ev.maestro_nombre}</span>
+                                                            <div className="bg-slate-200/50 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/10">
+                                                                <span className="text-slate-700 font-black text-[9px] uppercase tracking-tighter">🎓 {ev.maestro_nombre}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -551,13 +595,13 @@ export default function DashboardClient({
                                             </div>
 
                                             {/* Observaciones (6 cols) */}
-                                            <div className="lg:col-span-6 lg:border-l lg:border-white/10 lg:pl-10">
+                                            <div className="lg:col-span-6 lg:border-l lg:border-slate-200 lg:pl-10">
                                                 <div className="relative">
-                                                    <div className="absolute -left-6 -top-4 text-6xl text-white/10 font-serif translate-y-2">“</div>
-                                                    <p className="text-white font-bold italic text-xl md:text-2xl leading-relaxed drop-shadow-md">
+                                                    <div className="absolute -left-6 -top-4 text-6xl text-slate-200 font-serif translate-y-2">“</div>
+                                                    <p className="text-slate-700 font-bold italic text-xl leading-relaxed drop-shadow-md">
                                                         {ev.observaciones}
                                                     </p>
-                                                    <div className="absolute -right-2 -bottom-8 text-6xl text-white/10 font-serif rotate-180">“</div>
+                                                    <div className="absolute -right-2 -bottom-8 text-6xl text-slate-200 font-serif rotate-180">“</div>
                                                 </div>
                                             </div>
 
@@ -582,8 +626,8 @@ export default function DashboardClient({
                         <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border-0">
                             <div className="px-8 pt-8 pb-6 bg-slate-50/50 flex items-center justify-between border-b border-slate-100">
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-[#7ed957]/20 p-2.5 rounded-2xl">
-                                        <FileText className="h-5 w-5 text-green-700" />
+                                    <div className="bg-[#F0F4F8]/20 p-2.5 rounded-2xl">
+                                        <FileText className="h-5 w-5 text-sky-700" />
                                     </div>
                                     <div>
                                         <h3 className="text-xl font-black text-slate-800 italic uppercase tracking-tighter">Historial de Pagos</h3>
@@ -616,7 +660,7 @@ export default function DashboardClient({
                                         </div>
                                         <div className="text-right">
                                             <div className="font-black text-slate-900">RD$ {rec.monto?.toLocaleString('es-DO')}</div>
-                                            {rec.estado === 'saldado' ? (
+                                            {rec.estado === 'saldado' || rec.estado === 'aprobado' ? (
                                                 <button
                                                     onClick={() => setSelectedRecibo(rec)}
                                                     className="text-[10px] font-black text-[#8A2BE2] hover:text-[#004aad] uppercase tracking-widest flex items-center gap-1 mt-1 ml-auto transition-colors"
@@ -670,7 +714,7 @@ export default function DashboardClient({
                     {/* ═══ COLUMNA DERECHA ═══ */}
                     <div className="space-y-6">
                         {/* CARD MENSUALIDAD */}
-                        <div className="bg-white rounded-[32px] shadow-xl p-6 border-t-4 border-[#7ed957]">
+                        <div className="bg-white rounded-[32px] shadow-xl p-6 border-t-4 border-[#F0F4F8]">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mensualidad</p>
                             {estudiantes.length > 0 ? (
                                 <div className="space-y-2">
@@ -729,7 +773,7 @@ export default function DashboardClient({
                                     </div>
                                     <div className="flex justify-center items-center gap-4 mt-4 border-t border-[#8A2BE2]/10 pt-4">
                                         <p className="text-[12px] font-black text-[#8A2BE2] uppercase tracking-widest">RECIBO OFICIAL DE PAGO</p>
-                                        <Badge className="bg-green-600 hover:bg-green-600 text-white font-black text-[10px] uppercase border-0">Pagado</Badge>
+                                        <Badge className="bg-sky-600 hover:bg-sky-600 text-white font-black text-[10px] uppercase border-0">Pagado</Badge>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-6 mb-8 py-6 border-y border-slate-100">
@@ -868,8 +912,8 @@ export default function DashboardClient({
                                 </div>
 
                                 {/* Datos de Contacto y Estatus */}
-                                <div className="bg-[#7ed957]/10 rounded-[35px] p-8 border border-[#7ed957]/20">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-green-700 mb-6 flex items-center gap-2">
+                                <div className="bg-[#F0F4F8]/10 rounded-[35px] p-8 border border-[#F0F4F8]/20">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-sky-700 mb-6 flex items-center gap-2">
                                         <Phone className="h-4 w-4" /> Contacto Tutor
                                     </h3>
                                     <div className="space-y-4">
@@ -887,7 +931,7 @@ export default function DashboardClient({
                                         </div>
                                         <div className="pt-2">
                                             {isUpToDate ? (
-                                                <Badge className="px-4 py-2 rounded-full font-black uppercase text-[11px] bg-green-600 text-white border-none shadow-md">
+                                                <Badge className="px-4 py-2 rounded-full font-black uppercase text-[11px] bg-sky-600 text-white border-none shadow-md">
                                                     ✓ Estado: Al Día
                                                 </Badge>
                                             ) : (studentPayments.some((p: any) => p.estado === 'en_revision')) ? (
@@ -927,7 +971,7 @@ export default function DashboardClient({
                                                     </td>
                                                     <td className="px-6 py-4 font-black text-slate-900">RD$ {p.monto?.toLocaleString('es-DO')}</td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <span className="text-[10px] font-black text-green-600 uppercase italic">Saldado ✓</span>
+                                                        <span className="text-[10px] font-black text-sky-600 uppercase italic">Saldado ✓</span>
                                                     </td>
                                                 </tr>
                                             )) : (
@@ -1059,7 +1103,7 @@ export default function DashboardClient({
                             )}
                             {contactTab === "cita" && citaOk && (
                                 <div className="text-center py-8 space-y-4">
-                                    <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                                    <div className="h-20 w-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" className="h-10 w-10"><polyline points="20 6 9 17 4 12" /></svg>
                                     </div>
                                     <h4 className="text-2xl font-black text-slate-800">¡Solicitud Enviada!</h4>
@@ -1157,7 +1201,7 @@ export default function DashboardClient({
                                 <h3 className="text-3xl font-black text-slate-800 italic uppercase tracking-tighter leading-tight mb-4">{selectedPhoto.titulo}</h3>
                                 <p className="text-slate-500 font-bold leading-relaxed mb-8">{selectedPhoto.descripcion || "Sin descripción adicional."}</p>
                                 <div className="pt-8 border-t border-slate-100 flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-2xl bg-[#7ed957] flex items-center justify-center text-white shadow-lg">
+                                    <div className="h-12 w-12 rounded-2xl bg-[#F0F4F8] flex items-center justify-center text-white shadow-lg">
                                         <ImageIcon className="h-6 w-6" />
                                     </div>
                                     <div>
@@ -1173,3 +1217,6 @@ export default function DashboardClient({
         </div>
     );
 }
+
+
+

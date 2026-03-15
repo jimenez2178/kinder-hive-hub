@@ -35,7 +35,7 @@ export default function EsperaPage() {
                             // Recarga forzada ignorando caché
                             window.location.reload();
                         }}
-                        className="w-full bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black py-4 px-6 rounded-2xl shadow-lg hover:scale-[1.02] transition-all"
+                        className="w-full bg-[#F0F4F8] hover:bg-[#6ec54a] text-[#020617] font-black py-4 px-6 rounded-2xl shadow-lg hover:scale-[1.02] transition-all"
                     >
                         Ya fui aprobado, entrar ahora
                     </button>
@@ -55,3 +55,4 @@ export default function EsperaPage() {
         </div>
     );
 }
+

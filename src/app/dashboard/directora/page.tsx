@@ -32,7 +32,7 @@ export default async function DirectoraPage() {
     const { data: pagosRevision } = await supabase
         .from("pagos")
         .select("*, estudiantes(nombre)")
-        .or("estado.eq.en_revision,estado.eq.pendiente")
+        .or("estado.eq.en_revision,estado.eq.pendiente,estado.eq.rechazado")
         .order("fecha", { ascending: false });
 
     // 2. Cálculos Financieros del Mes Actual y Tendencia 3 Meses
@@ -64,7 +64,7 @@ export default async function DirectoraPage() {
         .lte("fecha", month0.end);
 
     const filterPagosByRange = (pagosArr: any[], start: string, end: string) => {
-        return pagosArr?.filter(p => p.fecha >= start && p.fecha <= end && p.estado === "saldado") || [];
+        return pagosArr?.filter(p => p.fecha >= start && p.fecha <= end && p.estado === "aprobado") || [];
     };
 
     const pagosM0 = filterPagosByRange(allRecentPagos || [], month0.start, month0.end);

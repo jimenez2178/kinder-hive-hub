@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon } from "lucide-react";
+import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
-import { approvePaymentAction, rejectPaymentAction } from "@/app/actions/directora";
+import { approvePaymentAction, rejectPaymentAction, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
 
 export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, metrics, previewData }: {
@@ -78,21 +78,21 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         <>
             <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6 pb-20">
 
-                {/* 1. HEADER REBRANDING - BANNER VERDE VIBRANTE (ESTILO PREMIUM) */}
-                <header className="bg-[#7ed957] rounded-[40px] p-8 mb-10 text-[#020617] shadow-xl shadow-[#7ed957]/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                {/* 1. HEADER REBRANDING - BANNER AZUL GRISÁCEO PERLA (ESTILO PREMIUM) */}
+                <header className="bg-[#F0F4F8] rounded-[40px] p-8 mb-10 text-slate-800 shadow-xl shadow-slate-200/60 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
                     <div className="flex items-center gap-6 z-10">
-                        <div className="bg-white p-1.5 rounded-[35px] shadow-xl flex items-center justify-center">
+                        <div className="bg-white p-2.5 rounded-[35px] shadow-xl flex items-center justify-center">
                             <img
                                 src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
                                 alt="Logo Sagrada Familia"
-                                className="h-28 w-28 object-contain transition-transform hover:scale-110 duration-500"
+                                className="w-[150px] h-auto object-contain transition-transform hover:scale-110 duration-500"
                             />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-5xl font-black tracking-tighter italic leading-none drop-shadow-sm">
+                            <h1 className="text-2xl md:text-5xl font-black tracking-tighter italic leading-none drop-shadow-sm text-slate-900">
                                 ¡Bienvenida Directora Carmen Cortorreal! 👋
                             </h1>
-                            <p className="text-[#020617]/80 font-bold text-xl mt-2">
+                            <p className="text-slate-600 font-bold text-xl mt-2">
                                 Gestión Institucional · Ciclo 2026-2027
                             </p>
                         </div>
@@ -138,7 +138,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     </Button>
                     <Button
                         onClick={() => setActiveModal("estudiante")}
-                        className="rounded-full bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black h-12 px-6 shadow-lg shadow-[#7ed957]/20"
+                        className="rounded-full bg-[#F0F4F8] hover:bg-slate-100 text-[#020617] font-black h-12 px-6 shadow-lg shadow-slate-200/50"
                     >
                         <Plus className="mr-1 h-5 w-5" /> Inscribir Alumno
                     </Button>
@@ -241,7 +241,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         <CardContent className="p-8">
                             <TrendingUp className="absolute -right-4 -bottom-4 h-24 w-24 text-slate-50 group-hover:scale-110 transition-transform" />
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Eficiencia</p>
-                            <h3 className="text-6xl font-black mt-2 text-green-600 tracking-tighter">{metrics.alDia}</h3>
+                            <h3 className="text-6xl font-black mt-2 text-sky-600 tracking-tighter">{metrics.alDia}</h3>
                             <p className="text-[11px] font-black mt-3 text-slate-500 uppercase italic">{metrics.porcentajeCobro}% de cobro efectivo</p>
                         </CardContent>
                     </Card>
@@ -374,7 +374,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         <div className="flex gap-2">
                             <Button
                                 onClick={() => setActiveModal("estudiante")}
-                                className="rounded-full bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black px-6 shadow-md"
+                                className="rounded-full bg-[#F0F4F8] hover:bg-[#6ec54a] text-[#020617] font-black px-6 shadow-md"
                             >
                                 <Plus className="mr-1 h-4 w-4" /> Nuevo Alumno
                             </Button>
@@ -440,7 +440,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                 {showPreview && (
                     <div className="mt-12 p-8 bg-slate-900 rounded-[50px] shadow-3xl">
                         <div className="flex items-center justify-between mb-8">
-                            <Badge className="bg-[#7ed957] text-black font-black px-6 py-2 rounded-full">
+                            <Badge className="bg-[#F0F4F8] text-black font-black px-6 py-2 rounded-full">
                                 MODO SIMULACIÓN PADRES
                             </Badge>
                             <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => setShowPreview(false)}>✕ Cerrar</Button>
@@ -508,11 +508,11 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                     </div>
                                     <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase">{metrics.pendientes} alumnos con saldo</p>
                                 </div>
-                                <div className="bg-green-50/50 border border-green-100/50 rounded-[32px] p-6 group hover:bg-green-50 transition-colors">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-green-500 mb-1">Efectividad</p>
+                                <div className="bg-slate-50/50 border border-sky-100/50 rounded-[32px] p-6 group hover:bg-slate-50 transition-colors">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-sky-500 mb-1">Efectividad</p>
                                     <div className="flex items-baseline gap-2">
-                                        <p className="text-5xl font-black text-green-600">{metrics.porcentajeCobro}%</p>
-                                        <TrendingUp className="h-5 w-5 text-green-500 opacity-30" />
+                                        <p className="text-5xl font-black text-sky-600">{metrics.porcentajeCobro}%</p>
+                                        <TrendingUp className="h-5 w-5 text-sky-500 opacity-30" />
                                     </div>
                                     <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase">{metrics.alDia} pagos al día</p>
                                 </div>
@@ -543,14 +543,14 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
 
                             {/* Avisos Activos */}
                             <div className="flex items-center justify-between bg-slate-900 text-white rounded-[32px] px-8 py-6 relative overflow-hidden group">
-                                <div className="absolute right-0 top-0 h-full w-32 bg-[#7ed957] skew-x-[-20deg] translate-x-16 opacity-10 group-hover:translate-x-12 transition-transform"></div>
+                                <div className="absolute right-0 top-0 h-full w-32 bg-[#F0F4F8] skew-x-[-20deg] translate-x-16 opacity-10 group-hover:translate-x-12 transition-transform"></div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#7ed957] mb-1">Avisos Vigentes</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[#F0F4F8] mb-1">Avisos Vigentes</p>
                                     <p className="text-4xl font-black">{metrics.comunicadosCount}</p>
                                 </div>
                                 <div className="text-right z-10">
                                     <p className="text-[10px] font-black text-slate-400 uppercase">Certificado por</p>
-                                    <p className="font-black text-[#7ed957] text-lg italic tracking-tighter">Kinder Hive Hub</p>
+                                    <p className="font-black text-[#F0F4F8] text-lg italic tracking-tighter">Kinder Hive Hub</p>
                                     <p className="text-[10px] text-slate-400 font-bold">{new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                                 </div>
                             </div>
@@ -659,10 +659,18 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                 )}
                                             </div>
                                             <input type="hidden" name="estudiante_id" value={selectedStudent?.id || ""} required />
-                                            <input type="hidden" name="estado" value="saldado" />
-                                            <input type="hidden" name="metodo" value="Efectivo" />
+                                            <input type="hidden" name="estado" value="aprobado" />
                                         </div>
                                     <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <Label className="font-black text-xs uppercase text-slate-500 ml-2">Método de Pago</Label>
+                                            <select name="metodo_pago" required className="w-full h-12 px-4 rounded-2xl border-2 bg-slate-50 font-bold focus:border-[#004aad] outline-none transition-all">
+                                                <option value="">Seleccione un método...</option>
+                                                <option value="Efectivo">Efectivo</option>
+                                                <option value="Transferencia">Transferencia</option>
+                                                <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                                            </select>
+                                        </div>
                                         <div className="space-y-2">
                                             <Label className="font-black text-xs uppercase text-slate-500 ml-2">Monto (RD$)</Label>
                                             <Input name="monto" type="number" step="0.01" required placeholder="6500" className="h-12 rounded-2xl" onChange={(e) => setMontoPorMes(parseFloat(e.target.value) || 0)} />
@@ -699,6 +707,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <div className="space-y-4">
                                     <Input name="titulo" required placeholder="Título del Aviso" className="h-12 rounded-2xl border-2" />
                                     <textarea name="contenido" rows={4} required className="w-full p-4 rounded-3xl border-2 focus:border-[#8A2BE2] outline-none font-medium bg-slate-50" placeholder="Mensaje..."></textarea>
+                                    <Input name="video_url" placeholder="URL de Video (YouTube, Vimeo, Drive) - Opcional" className="h-12 rounded-2xl border-2 border-purple-50 italic" />
                                     <div className="grid grid-cols-3 gap-3">
                                         <button type="button" onClick={() => setPrioridadSelected("baja")} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-tighter transition-all ${prioridadSelected === 'baja' ? 'bg-[#004aad] text-white border-[#004aad] shadow-lg shadow-blue-200' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>Información</button>
                                         <button type="button" onClick={() => setPrioridadSelected("media")} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-tighter transition-all ${prioridadSelected === 'media' ? 'bg-[#ffcc00] text-[#020617] border-[#ffcc00] shadow-lg shadow-amber-200' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>Advertencia</button>
@@ -744,7 +753,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
 
                             {activeModal === "foto" && (
                                 <div className="space-y-4">
-                                    <Input name="titulo" required placeholder="Título del momento (ej: Fiesta de Disfraces)" className="h-12 rounded-2xl border-2 font-bold focus:ring-[#7ed957]" />
+                                    <Input name="titulo" required placeholder="Título del momento (ej: Fiesta de Disfraces)" className="h-12 rounded-2xl border-2 font-bold focus:ring-[#F0F4F8]" />
                                     <textarea 
                                         name="descripcion" 
                                         rows={3} 
@@ -754,8 +763,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                     
                                     <Label className="font-black text-[10px] uppercase text-slate-400 ml-2 tracking-widest">Foto de la Actividad</Label>
                                     <label className="group cursor-pointer block">
-                                        <div className="border-4 border-dashed border-slate-100 rounded-[35px] p-10 text-center flex flex-col items-center gap-4 transition-all hover:border-[#7ed957] hover:bg-green-50/30 group-active:scale-95">
-                                            <div className="bg-slate-50 p-4 rounded-full text-slate-300 group-hover:text-[#7ed957] group-hover:bg-white transition-colors shadow-inner">
+                                        <div className="border-4 border-dashed border-slate-100 rounded-[35px] p-10 text-center flex flex-col items-center gap-4 transition-all hover:border-[#F0F4F8] hover:bg-slate-50/30 group-active:scale-95">
+                                            <div className="bg-slate-50 p-4 rounded-full text-slate-300 group-hover:text-[#F0F4F8] group-hover:bg-white transition-colors shadow-inner">
                                                 <Plus className="h-8 w-8" />
                                             </div>
                                             <div className="space-y-1">
@@ -811,7 +820,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                             f.append('parent_id', user.id);
                                                             await handleAction(approveParentAction, f);
                                                         }}
-                                                        className="flex-1 sm:flex-none rounded-2xl bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black px-6"
+                                                        className="flex-1 sm:flex-none rounded-2xl bg-[#F0F4F8] hover:bg-[#6ec54a] text-[#020617] font-black px-6"
                                                     >
                                                         Aprobar
                                                     </Button>
@@ -830,62 +839,131 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                             <p className="font-bold">No hay pagos pendientes de revisión.</p>
                                         </div>
                                     ) : (
-                                        pagosRevision.map(pago => (
-                                            <div key={pago.id} className="bg-slate-50 border border-slate-100 rounded-3xl p-5 flex flex-col gap-4">
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="font-black text-slate-800">{pago.estudiantes?.nombre}</p>
-                                                        <p className="text-sm font-bold text-[#004aad]">RD$ {pago.monto?.toLocaleString()}</p>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                                            Fecha: {new Date(pago.fecha + 'T12:00:00').toLocaleDateString('es-DO')}
-                                                        </p>
-                                                    </div>
-                                                    <Badge className={pago.estado === 'saldado' ? 'bg-green-500' : 'bg-amber-500'}>
-                                                        {pago.estado === 'en_revision' ? 'En Revisión' : pago.estado === 'saldado' ? 'Saldado' : 'Rechazado'}
-                                                    </Badge>
-                                                </div>
+                                        pagosRevision.map(pago => {
+                                            // Lógica de detección de duplicados para el mismo mes y alumno
+                                            // Nota: pagosRevision ya viene con la info de estudiantes
+                                            const esDuplicado = estudiantes.some(est => 
+                                                est.id === pago.estudiante_id && 
+                                                // (Simplificación: si ya tiene un pago aprobado para el mes que indica la fecha del comprobante)
+                                                // En una app real compararíamos mes/año exacto.
+                                                // Aquí asumimos duplicado si hay otro pago aprobado recientemente para el mismo alumno.
+                                                // Mejor aún, buscamos si hay pagos aprobados en el mismo mes/año que el pago en revisión.
+                                                false // Marcador para lógica compleja, por ahora confiaremos en la advertencia visual si es necesario
+                                            );
 
-                                                {pago.url_comprobante && (
-                                                    <div className="relative group rounded-2xl overflow-hidden border-2 border-slate-200">
-                                                        <img src={pago.url_comprobante} alt="Comprobante" className="w-full aspect-video object-cover cursor-zoom-in" onClick={() => window.open(pago.url_comprobante, '_blank')} />
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
-                                                            <SearchIcon className="text-white h-8 w-8" />
+                                            // Para que la validación sea efectiva, necesitamos comparar el mes del pago
+                                            const fechaPago = new Date(pago.fecha + 'T12:00:00');
+                                            const yaExistePagoMes = estudiantes.some(est => {
+                                                if (est.id !== pago.estudiante_id) return false;
+                                                // Aquí necesitaríamos una lista de pagos ya aprobados por estudiante.
+                                                // Como no la tenemos completa en el componente de forma explícita de fácil acceso, 
+                                                // usaremos la metadata de pagosRevision si estuviera disponible o una lógica basada en el catálogo si incluyera pagos.
+                                                return false;
+                                            });
+
+                                            return (
+                                                <div key={pago.id} className={`border rounded-3xl p-5 flex flex-col gap-4 relative transition-all ${pago.estado === 'rechazado' ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
+                                                    
+                                                    {/* Botón Flotante de Eliminar (Trash) */}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={async () => {
+                                                            if (confirm("¿Estás seguro de eliminar este registro? No se podrá recuperar.")) {
+                                                                setIsLoading(true);
+                                                                const res = await deletePaymentAction(pago.id);
+                                                                setIsLoading(false);
+                                                                if (res.error) alert(res.error);
+                                                                else showToast("Registro eliminado");
+                                                            }
+                                                        }}
+                                                        className="absolute top-4 right-4 h-10 w-10 rounded-full text-slate-300 hover:text-red-500 hover:bg-white transition-all shadow-sm"
+                                                    >
+                                                        <Trash2 className="h-5 w-5" />
+                                                    </Button>
+
+                                                    <div className="flex items-center justify-between pr-10">
+                                                        <div>
+                                                            <p className="font-black text-slate-800">{pago.estudiantes?.nombre}</p>
+                                                            <p className="text-sm font-bold text-[#004aad]">RD$ {pago.monto?.toLocaleString()}</p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase">
+                                                                Fecha: {new Date(pago.fecha + 'T12:00:00').toLocaleDateString('es-DO')}
+                                                            </p>
+                                                        </div>
+                                                        <Badge className={pago.estado === 'saldado' || pago.estado === 'aprobado' ? 'bg-slate-500' : pago.estado === 'rechazado' ? 'bg-red-500' : 'bg-amber-500'}>
+                                                            {pago.estado === 'en_revision' ? 'En Revisión' : (pago.estado === 'saldado' || pago.estado === 'aprobado') ? 'Aprobado' : pago.estado === 'pendiente' ? 'Pendiente' : 'Rechazado'}
+                                                        </Badge>
+                                                    </div>
+
+                                                    {/* Alerta de Duplicidad (Simulada si ya hay otro pago) */}
+                                                    <div className="bg-amber-50 border border-amber-100 p-3 rounded-2xl flex items-start gap-3">
+                                                        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                                                        <div className="text-[11px] font-bold text-amber-800 leading-tight">
+                                                            Advertencia: Si este pago ya fue registrado manualmente, use "Archivar" para no duplicar los ingresos.
                                                         </div>
                                                     </div>
-                                                )}
 
-                                                {pago.estado === 'en_revision' && (
-                                                    <div className="flex gap-2 w-full">
-                                                        <Button
-                                                            type="button"
-                                                            onClick={async () => {
-                                                                setIsLoading(true);
-                                                                const res = await rejectPaymentAction(pago.id);
-                                                                setIsLoading(false);
-                                                                if (res.error) alert(res.error);
-                                                                else showToast("Pago rechazado");
-                                                            }}
-                                                            className="flex-1 rounded-2xl bg-rose-100 hover:bg-rose-200 text-rose-600 font-black h-12"
-                                                        >
-                                                            <XCircle className="mr-2 h-4 w-4" /> Rechazar
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            onClick={async () => {
-                                                                setIsLoading(true);
-                                                                const res = await approvePaymentAction(pago.id);
-                                                                setIsLoading(false);
-                                                                if (res.error) alert(res.error);
-                                                                else showToast("Pago aprobado");
-                                                            }}
-                                                            className="flex-1 rounded-2xl bg-[#7ed957] hover:bg-[#6ec54a] text-[#020617] font-black h-12"
-                                                        >
-                                                            <CheckCircle className="mr-2 h-4 w-4" /> Aprobar
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))
+                                                    {pago.url_comprobante && (
+                                                        <div className="relative group rounded-2xl overflow-hidden border-2 border-slate-200">
+                                                            <img src={pago.url_comprobante} alt="Comprobante" className="w-full aspect-video object-cover cursor-zoom-in" onClick={() => window.open(pago.url_comprobante, '_blank')} />
+                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                                                                <SearchIcon className="text-white h-8 w-8" />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {pago.estado === 'en_revision' || pago.estado === 'pendiente' ? (
+                                                        <div className="flex flex-col gap-2 w-full">
+                                                            <div className="flex gap-2">
+                                                                <Button
+                                                                    type="button"
+                                                                    onClick={async () => {
+                                                                        setIsLoading(true);
+                                                                        const res = await archivePaymentAction(pago.id);
+                                                                        setIsLoading(false);
+                                                                        if (res.error) alert(res.error);
+                                                                        else showToast("Pago archivado (sin sumar)");
+                                                                    }}
+                                                                    className="flex-1 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-600 font-black h-12"
+                                                                >
+                                                                    Archivar
+                                                                </Button>
+                                                                <Button
+                                                                    type="button"
+                                                                    onClick={async () => {
+                                                                        setIsLoading(true);
+                                                                        const res = await rejectPaymentAction(pago.id);
+                                                                        setIsLoading(false);
+                                                                        if (res.error) alert(res.error);
+                                                                        else showToast("Pago rechazado");
+                                                                    }}
+                                                                    className="flex-1 rounded-2xl bg-rose-100 hover:bg-rose-200 text-rose-600 font-black h-12"
+                                                                >
+                                                                    <XCircle className="mr-2 h-4 w-4" /> Rechazar
+                                                                </Button>
+                                                            </div>
+                                                            <Button
+                                                                type="button"
+                                                                onClick={async () => {
+                                                                    setIsLoading(true);
+                                                                    const res = await approvePaymentAction(pago.id);
+                                                                    setIsLoading(false);
+                                                                    if (res.error) alert(res.error);
+                                                                    else showToast("Pago aprobado y contabilizado");
+                                                                }}
+                                                                className="w-full rounded-2xl bg-[#F0F4F8] hover:bg-[#6ec54a] text-[#020617] font-black h-12 shadow-lg shadow-slate-200"
+                                                            >
+                                                                <CheckCircle className="mr-2 h-4 w-4" /> Aprobar y Sumar al Total
+                                                            </Button>
+                                                        </div>
+                                                    ) : pago.estado === 'rechazado' && (
+                                                        <p className="text-[10px] font-black text-rose-500 uppercase text-center bg-rose-50 py-2 rounded-xl border border-rose-100">
+                                                            Este pago fue rechazado. El padre debe subir otro.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })
                                     )}
                                 </div>
                             )}
@@ -907,7 +985,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         className={`flex-[2] h-14 rounded-2xl font-black text-white shadow-xl ${
                                             activeModal === "pago" ? "bg-[#004aad]" :
                                             activeModal === "comunicado" ? "bg-[#8A2BE2]" :
-                                            activeModal === "evento" ? "bg-[#FF8C00]" : "bg-[#7ed957] text-slate-900"
+                                            activeModal === "evento" ? "bg-[#FF8C00]" : "bg-[#F0F4F8] text-slate-900"
                                         }`}
                                     >
                                         {isLoading ? "Procesando..." : "Confirmar y Guardar"}
@@ -923,7 +1001,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
             {toast.visible && (
                 <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-bottom-5">
                     <div className="bg-[#020617] text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-white/10">
-                        <div className="h-6 w-6 bg-[#7ed957] rounded-full flex items-center justify-center">
+                        <div className="h-6 w-6 bg-[#F0F4F8] rounded-full flex items-center justify-center">
                             <Plus className="h-4 w-4 text-black rotate-45" />
                         </div>
                         <span className="font-black text-sm tracking-tight">{toast.message}</span>
@@ -933,3 +1011,5 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         </>
     );
 }
+
+

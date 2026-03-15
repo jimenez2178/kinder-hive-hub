@@ -85,18 +85,22 @@ export default async function DashboardPage() {
         }
     }
 
-    // 4. Comunicados (Ordenados por importancia y fecha)
+    // 4. Comunicados (Ordenados por importancia y fecha) - Cache disabled
     const { data: rawComunicados } = await supabase
         .from("comunicados")
         .select("*")
         .eq("colegio_id", finalColegioId)
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(10); // Aumentamos límite para asegurar capturar todos los rangos
 
     const sortedComunicados = rawComunicados ? [...rawComunicados].sort((a, b) => {
-        const priorityScore: Record<string, number> = { 'alta': 3, 'media': 2, 'baja': 1 };
-        const scoreA = priorityScore[a.prioridad] || 0;
-        const scoreB = priorityScore[b.prioridad] || 0;
+        const priorityScore: Record<string, number> = { 
+            'alta': 3, 'urgente': 3, 
+            'media': 2, 'advertencia': 2, 
+            'baja': 1, 'informacion': 1, 'información': 1 
+        };
+        const scoreA = priorityScore[a.prioridad?.toLowerCase()] || 0;
+        const scoreB = priorityScore[b.prioridad?.toLowerCase()] || 0;
         if (scoreA !== scoreB) return scoreB - scoreA;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }) : [];
