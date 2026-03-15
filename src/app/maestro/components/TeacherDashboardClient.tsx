@@ -67,10 +67,10 @@ export function TeacherDashboardClient({
     return (
         <>
             <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6">
-                {/* Header Section - Neutral Slate Theme */}
-                <header className="bg-gradient-to-r from-slate-800 to-slate-950 rounded-[32px] p-8 mb-10 text-white shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+                {/* Header Section - Oxford Blue Theme */}
+                <header className="bg-gradient-to-r from-[#002147] to-[#001025] rounded-[32px] p-8 mb-10 text-white shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
                     <div className="flex items-center gap-5 z-10">
-                        <div className="bg-white p-1 rounded-2xl shadow-lg border-2 border-white">
+                        <div className="bg-white p-2 rounded-2xl shadow-lg border-2 border-white">
                             <img
                                 src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
                                 alt="Logo Sagrada Familia"
@@ -78,16 +78,16 @@ export function TeacherDashboardClient({
                             />
                         </div>
                         <div>
-                            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white drop-shadow-sm flex items-center gap-3">
+                            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white drop-shadow-lg flex items-center gap-3 italic">
                                 Panel del Maestro 🎓
                             </h1>
-                            <p className="text-white/70 mt-1 font-medium text-lg uppercase tracking-wider text-[12px]">
+                            <p className="text-blue-100/70 mt-1 font-bold text-sm uppercase tracking-wider">
                                 {maestroNombre} • Sagrada Familia
                             </p>
                         </div>
                     </div>
 
-                    <div className="z-10 bg-white/10 p-2 rounded-[32px] backdrop-blur-md">
+                    <div className="z-10 bg-white/10 p-2 rounded-[32px] backdrop-blur-md border border-white/10">
                         <LogoutButton />
                     </div>
 

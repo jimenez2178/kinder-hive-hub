@@ -28,7 +28,8 @@ import {
     Clock,
     Plus,
     Wallet,
-    ExternalLink
+    ExternalLink,
+    Instagram as InstagramIcon
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +39,13 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { useState, useEffect } from "react";
 import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction } from "@/app/actions/padre";
 import { createClient } from "@/utils/supabase/client";
+// @ts-ignore
+import InstagramEmbed from 'react-instagram-embed';
 
 function VideoPlayer({ url }: { url: string }) {
     if (!url) return null;
+
+    const isInstagram = url.includes("instagram.com");
 
     const getEmbedUrl = (url: string) => {
         // YouTube
@@ -57,6 +62,25 @@ function VideoPlayer({ url }: { url: string }) {
 
         return url;
     };
+
+    if (isInstagram) {
+        return (
+            <div className="mt-6 overflow-hidden rounded-[30px] border-4 border-white/20 shadow-2xl bg-white p-2 flex justify-center">
+                <InstagramEmbed
+                    url={url}
+                    maxWidth={550}
+                    hideCaption={false}
+                    containerTagName='div'
+                    protocol=''
+                    injectScript
+                    onLoading={() => {}}
+                    onSuccess={() => {}}
+                    onAfterRender={() => {}}
+                    onFailure={() => {}}
+                />
+            </div>
+        );
+    }
 
     const embedUrl = getEmbedUrl(url);
 
@@ -248,6 +272,46 @@ export default function DashboardClient({
 
             <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6">
 
+                {/* ═══ HEADER PREMIUM OXFORD LOOK (FORZADO V3) ═══ */}
+                <header 
+                    style={{ backgroundColor: '#002147' }}
+                    className="rounded-[40px] p-7 mb-10 shadow-2xl shadow-blue-900/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden text-white"
+                >
+                    {/* Orb decorativo */}
+                    <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="flex flex-col md:flex-row items-center gap-6 z-10 text-center md:text-left">
+                        <div className="bg-white p-3 rounded-[22px] shadow-2xl border-4 border-white/70">
+                            <img
+                                src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
+                                alt="Logo Sagrada Familia"
+                                className="w-[145px] h-auto object-contain transition-transform hover:scale-110 duration-500"
+                            />
+                        </div>
+                        <div>
+                            <h1 
+                                style={{ color: '#FFFFFF' }}
+                                className="text-3xl md:text-5xl font-black italic tracking-tight leading-tight drop-shadow-lg"
+                            >
+                                ¡Hola, {userName}! 👋
+                            </h1>
+                            <p className="text-blue-100/70 font-semibold mt-1 text-sm">
+                                Portal Familiar · Pre-escolar Sagrada Familia
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row items-center gap-3 z-10">
+                        <span className="bg-white/10 text-white text-[10px] font-black px-4 py-2 rounded-full border border-white/20 backdrop-blur-sm uppercase tracking-widest">
+                            Ciclo 2026–2027
+                        </span>
+                        <div className="bg-white/5 p-1.5 rounded-full backdrop-blur-md">
+                            <LogoutButton />
+                        </div>
+                    </div>
+                </header>
+
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
                 {comunicados.length > 0 && (
                     <div className="space-y-6 mb-10">
@@ -264,7 +328,7 @@ export default function DashboardClient({
                                             ? 'bg-[#ef4444] border-white/20' 
                                             : isWarning
                                                 ? 'bg-[#ffcc00] border-black/10'
-                                                : 'bg-[#004aad] border-white/10'
+                                                : 'bg-[#002147] border-white/10'
                                     }`}
                                 >
                                     <div className="flex items-center gap-4 mb-4">
@@ -293,38 +357,6 @@ export default function DashboardClient({
                         })}
                     </div>
                 )}
-
-                {/* ═══ HEADER PREMIUM ═══ */}
-                <header className="bg-[#F0F4F8] rounded-[40px] p-7 mb-10 shadow-2xl shadow-slate-200/50 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden text-slate-800">
-                    {/* Orb decorativo */}
-                    <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-[#004aad]/10 rounded-full blur-2xl pointer-events-none" />
-
-                    <div className="flex items-center gap-5 z-10">
-                        <div className="bg-white p-2.5 rounded-[22px] shadow-xl border-4 border-white/70">
-                            <img
-                                src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
-                                alt="Logo Sagrada Familia"
-                                className="w-[120px] h-auto object-contain"
-                            />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-black italic text-[#020617] tracking-tight leading-tight drop-shadow-sm">
-                                ¡Hola, {userName}!
-                            </h1>
-                            <p className="text-[#020617]/70 font-semibold mt-0.5 text-sm">
-                                Portal Familiar · Pre-escolar Sagrada Familia
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 z-10">
-                        <span className="bg-[#020617]/10 text-[#020617] text-xs font-black px-4 py-1.5 rounded-full border border-[#020617]/15">
-                            Ciclo 2026–2027
-                        </span>
-                        <LogoutButton />
-                    </div>
-                </header>
                 
 
                 {/* PUSH NOTIFICATIONS BANNER */}
@@ -398,7 +430,7 @@ export default function DashboardClient({
                         <div className="bg-[#F0F4F8]/10 rounded-[40px] shadow-sm overflow-hidden border-2 border-[#F0F4F8]/40 p-1 mt-6 ring-4 ring-[#F0F4F8]/10">
                             <div className="bg-white rounded-[35px] overflow-hidden">
                                 <div className="px-7 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
-                                    <h4 className="text-xl font-black text-[#004aad] uppercase tracking-tight flex items-center gap-3">
+                                    <h4 className="text-xl font-black text-[#002147] uppercase tracking-tight flex items-center gap-3">
                                         <Calendar className="h-5 w-5 text-[#8A2BE2]" />
                                         Próximos Eventos
                                     </h4>
@@ -416,8 +448,8 @@ export default function DashboardClient({
                                         // Highlight this week events using #F0F4F8
                                         const lowerTitle = ev.titulo.toLowerCase();
                                         let EventIcon = Calendar;
-                                        let iconColor = "text-[#004aad]";
-                                        let evtColor = "bg-[#004aad]";
+                                        let iconColor = "text-[#002147]";
+                                        let evtColor = "bg-[#002147]";
                                         
                                         if (lowerTitle.includes('evaluacion') || lowerTitle.includes('examen') || lowerTitle.includes('evaluación')) {
                                             EventIcon = Edit3;
@@ -461,7 +493,7 @@ export default function DashboardClient({
                                                         </div>
                                                     )}
                                                     {(lowerTitle.includes('piscina') || lowerTitle.includes('aqua')) && (
-                                                        <div className="mt-2 inline-flex items-center gap-1.5 bg-[#0099ff]/10 text-[#004aad] px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-[#0099ff]/30">
+                                                        <div className="mt-2 inline-flex items-center gap-1.5 bg-[#0099ff]/10 text-[#002147] px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-[#0099ff]/30">
                                                             <span>💧 Contribución: RD$ 200.00</span>
                                                         </div>
                                                     )}
@@ -502,7 +534,7 @@ export default function DashboardClient({
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                         <div className="p-6 flex flex-col flex-1 bg-white">
-                                            <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tighter leading-tight mb-2 group-hover:text-[#004aad] transition-colors">{img.titulo}</h5>
+                                            <h5 className="font-black text-slate-800 text-sm italic uppercase tracking-tighter leading-tight mb-2 group-hover:text-[#002147] transition-colors">{img.titulo}</h5>
                                             {img.descripcion && (
                                                 <p className="text-[11px] font-medium text-slate-500 leading-relaxed line-clamp-2 md:line-clamp-3">{img.descripcion}</p>
                                             )}
@@ -570,24 +602,24 @@ export default function DashboardClient({
                                     <div key={ev.id} className="bg-[#E1F5FE] p-8 md:p-12 rounded-[55px] shadow-2xl relative overflow-hidden group hover:scale-[1.01] transition-all duration-500 border-4 border-white/40">
                                         {/* Decoración de fondo */}
                                         <div className="absolute -right-16 -bottom-16 opacity-5 rotate-12 transition-transform group-hover:scale-110 duration-1000">
-                                            <Star className="w-80 h-80 text-[#004aad]" fill="currentColor" />
+                                            <Star className="w-80 h-80 text-[#002147]" fill="currentColor" />
                                         </div>
                                         
                                         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                                             {/* Info Estudiante (4 cols) */}
                                             <div className="lg:col-span-4 flex items-center gap-6">
                                                 <div className="h-24 w-24 rounded-[35px] bg-white/40 backdrop-blur-xl flex items-center justify-center border-2 border-white/60 shadow-2xl shrink-0">
-                                                    <Star className="text-[#004aad] h-12 w-12 drop-shadow-lg" fill="currentColor" />
+                                                    <Star className="text-[#002147] h-12 w-12 drop-shadow-lg" fill="currentColor" />
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <h5 className="font-black text-slate-800 text-3xl tracking-tighter leading-none">{ev.estudiantes?.nombre}</h5>
+                                                    <h5 className="font-black text-[#002147] text-3xl tracking-tighter leading-none">{ev.estudiantes?.nombre}</h5>
                                                     <div className="flex flex-wrap gap-2">
                                                         <div className="bg-white px-4 py-1.5 rounded-full shadow-xl">
-                                                            <span className="text-slate-800 font-black text-[10px] uppercase tracking-widest">{ev.categoria}</span>
+                                                            <span className="text-[#002147] font-black text-[10px] uppercase tracking-widest">{ev.categoria}</span>
                                                         </div>
                                                         {ev.maestro_nombre && (
-                                                            <div className="bg-slate-200/50 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/10">
-                                                                <span className="text-slate-700 font-black text-[9px] uppercase tracking-tighter">🎓 {ev.maestro_nombre}</span>
+                                                            <div className="bg-[#002147]/10 backdrop-blur-lg px-4 py-1.5 rounded-full border border-[#002147]/10">
+                                                                <span className="text-[#002147] font-black text-[9px] uppercase tracking-tighter">🎓 {ev.maestro_nombre}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -595,19 +627,19 @@ export default function DashboardClient({
                                             </div>
 
                                             {/* Observaciones (6 cols) */}
-                                            <div className="lg:col-span-6 lg:border-l lg:border-slate-200 lg:pl-10">
+                                            <div className="lg:col-span-6 lg:border-l lg:border-[#002147]/10 lg:pl-10">
                                                 <div className="relative">
-                                                    <div className="absolute -left-6 -top-4 text-6xl text-slate-200 font-serif translate-y-2">“</div>
-                                                    <p className="text-slate-700 font-bold italic text-xl leading-relaxed drop-shadow-md">
+                                                    <div className="absolute -left-6 -top-4 text-6xl text-[#002147]/10 font-serif translate-y-2">“</div>
+                                                    <p className="text-[#002147] font-bold italic text-xl leading-relaxed drop-shadow-sm">
                                                         {ev.observaciones}
                                                     </p>
-                                                    <div className="absolute -right-2 -bottom-8 text-6xl text-slate-200 font-serif rotate-180">“</div>
+                                                    <div className="absolute -right-2 -bottom-8 text-6xl text-[#002147]/10 font-serif rotate-180">“</div>
                                                 </div>
                                             </div>
 
                                             {/* Fecha (2 cols) */}
                                             <div className="lg:col-span-2 flex justify-center lg:justify-end">
-                                                <div className="bg-white/10 backdrop-blur-md p-6 rounded-[40px] text-center border border-white/20 shadow-xl min-w-[140px]">
+                                                <div className="bg-[#002147] p-6 rounded-[40px] text-center border border-white/20 shadow-xl min-w-[140px]">
                                                     <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] block mb-2">REGISTRO</span>
                                                     <span className="text-2xl font-black text-white uppercase italic tracking-tighter">{new Date(ev.created_at).toLocaleDateString('es-DO', { day: 'numeric', month: 'short' }).replace('.', '')}</span>
                                                 </div>
@@ -663,7 +695,7 @@ export default function DashboardClient({
                                             {rec.estado === 'saldado' || rec.estado === 'aprobado' ? (
                                                 <button
                                                     onClick={() => setSelectedRecibo(rec)}
-                                                    className="text-[10px] font-black text-[#8A2BE2] hover:text-[#004aad] uppercase tracking-widest flex items-center gap-1 mt-1 ml-auto transition-colors"
+                                                    className="text-[10px] font-black text-[#8A2BE2] hover:text-[#002147] uppercase tracking-widest flex items-center gap-1 mt-1 ml-auto transition-colors"
                                                 >
                                                     <Printer className="h-3 w-3" /> Ver Recibo
                                                 </button>
@@ -677,7 +709,7 @@ export default function DashboardClient({
                                                             href={rec.url_comprobante} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            className="text-[9px] font-bold text-[#004aad] hover:underline flex items-center gap-0.5"
+                                                            className="text-[9px] font-bold text-[#002147] hover:underline flex items-center gap-0.5"
                                                         >
                                                             Ver Foto <ExternalLink className="w-2.5 h-2.5" />
                                                         </a>
@@ -693,7 +725,7 @@ export default function DashboardClient({
                                                         disabled={uploadingPagoId === rec.id}
                                                     />
                                                     <div className="flex flex-col items-end gap-1">
-                                                        <Badge className="bg-[#004aad] hover:bg-[#003785] cursor-pointer text-white font-black text-[9px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-1 min-w-[120px]">
+                                                        <Badge className="bg-[#002147] hover:bg-[#003785] cursor-pointer text-white font-black text-[9px] uppercase hover:scale-105 transition-transform flex items-center justify-center gap-1 min-w-[120px]">
                                                             {uploadingPagoId === rec.id ? "Subiendo..." : <><UploadCloud className="w-3 h-3" /> Subir Comprobante</>}
                                                         </Badge>
                                                         {rec.estado === 'rechazado' && (
@@ -721,7 +753,7 @@ export default function DashboardClient({
                                     {estudiantes.map(est => (
                                         <div key={est.id} className="flex items-center justify-between">
                                             <span className="text-sm font-bold text-slate-600 truncate pr-2">{est.nombre}</span>
-                                            <span className="font-black text-[#004aad] shrink-0">
+                                            <span className="font-black text-[#002147] shrink-0">
                                                 RD$ {est.cuota_mensual ? Number(est.cuota_mensual).toLocaleString('es-DO') : '—'}
                                             </span>
                                         </div>
@@ -766,7 +798,7 @@ export default function DashboardClient({
                             <div className="border-4 border-slate-50 p-8 rounded-[32px] print:border-2 print:p-6">
                                 <div className="text-center mb-6">
                                     <img src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png" alt="Logo" className="h-24 w-24 mx-auto mb-2 object-contain" />
-                                    <h1 className="text-xl font-black text-[#004aad] uppercase leading-tight tracking-tighter">Pre-escolar Psicopedagógico De la Sagrada Familia</h1>
+                                    <h1 className="text-xl font-black text-[#002147] uppercase leading-tight tracking-tighter">Pre-escolar Psicopedagógico De la Sagrada Familia</h1>
                                     <div className="text-[11px] font-mono text-slate-500 mt-1 space-y-0.5">
                                         <p>RNC: 131596152</p>
                                         <p>Alma Rosa I, Santo Domingo Este</p>
@@ -797,7 +829,7 @@ export default function DashboardClient({
                                         <span className="text-[9px] font-black text-[#FF1493] uppercase block mt-1">Folio N°: REC-{(selectedRecibo.id || '000').substring(0, 8).toUpperCase()}</span>
                                     </div>
                                 </div>
-                                <div className="bg-[#004aad] p-6 rounded-2xl text-white shadow-lg space-y-3">
+                                <div className="bg-[#002147] p-6 rounded-2xl text-white shadow-lg space-y-3">
                                     <div className="flex justify-between items-center">
                                         <div>
                                             <p className="text-[9px] font-bold uppercase opacity-80">Método de Pago</p>
@@ -906,7 +938,7 @@ export default function DashboardClient({
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Cuota Mensual</span>
-                                            <span className="text-lg font-black text-[#004aad]">RD$ {selectedStudentForFile.cuota_mensual ? Number(selectedStudentForFile.cuota_mensual).toLocaleString('es-DO') : "—"}</span>
+                                            <span className="text-lg font-black text-[#002147]">RD$ {selectedStudentForFile.cuota_mensual ? Number(selectedStudentForFile.cuota_mensual).toLocaleString('es-DO') : "—"}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1029,7 +1061,7 @@ export default function DashboardClient({
             {showContact && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
                     <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
-                        <div className="bg-gradient-to-r from-[#004aad] to-[#8A2BE2] p-8 text-white relative">
+                        <div className="bg-gradient-to-r from-[#002147] to-[#8A2BE2] p-8 text-white relative">
                             <button onClick={() => setShowContact(false)} className="absolute top-5 right-5 text-white/60 hover:text-white transition-colors text-2xl font-black">✕</button>
                             <div className="flex items-center gap-4">
                                 <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
@@ -1053,8 +1085,8 @@ export default function DashboardClient({
                                             <p className="text-xs font-bold text-slate-400">Respuesta en minutos</p>
                                         </div>
                                     </a>
-                                    <a href={`mailto:admin@sagradafamilia.edu.do?subject=Consulta sobre ${encodeURIComponent(estudiantes[0]?.nombre || 'alumno')}&body=Estimada dirección,%0A%0ASoy ${encodeURIComponent(userName)} y quisiera...`} className="flex items-center gap-4 p-5 bg-[#004aad]/10 hover:bg-[#004aad]/20 rounded-[24px] transition-all group cursor-pointer">
-                                        <div className="h-14 w-14 bg-[#004aad] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <a href={`mailto:admin@sagradafamilia.edu.do?subject=Consulta sobre ${encodeURIComponent(estudiantes[0]?.nombre || 'alumno')}&body=Estimada dirección,%0A%0ASoy ${encodeURIComponent(userName)} y quisiera...`} className="flex items-center gap-4 p-5 bg-[#002147]/10 hover:bg-[#002147]/20 rounded-[24px] transition-all group cursor-pointer">
+                                        <div className="h-14 w-14 bg-[#002147] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="h-7 w-7"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                         </div>
                                         <div>
@@ -1120,7 +1152,7 @@ export default function DashboardClient({
             {showReportarModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
                     <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="bg-gradient-to-r from-[#8A2BE2] to-[#004aad] p-8 text-white">
+                        <div className="bg-gradient-to-r from-[#8A2BE2] to-[#002147] p-8 text-white">
                             <h3 className="text-2xl font-black tracking-tighter italic uppercase">Reportar Transferencia</h3>
                             <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Notificar depósito o transferencia bancaria</p>
                         </div>

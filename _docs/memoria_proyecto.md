@@ -16,6 +16,8 @@
 
 ## Reglas de Marca
 *   Acentuación Push: Púrpura (#8A2BE2).
+*   Header Premium: Azul Marino Oxford (#002147) con Texto Blanco.
+*   Bloques de Reporte: Azul Cielo Suave (#E1F5FE) con Texto Navy.
 
 ## Decisiones Técnicas
 *   Se optó por una arquitectura desacoplada: el frontend registra el token y el backend (acciones del servidor) dispara la lógica de envío.

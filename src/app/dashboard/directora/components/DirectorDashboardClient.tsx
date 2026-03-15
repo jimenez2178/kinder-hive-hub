@@ -78,37 +78,43 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         <>
             <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6 pb-20">
 
-                {/* 1. HEADER REBRANDING - BANNER AZUL GRISÁCEO PERLA (ESTILO PREMIUM) */}
-                <header className="bg-[#F0F4F8] rounded-[40px] p-8 mb-10 text-slate-800 shadow-xl shadow-slate-200/60 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-                    <div className="flex items-center gap-6 z-10">
-                        <div className="bg-white p-2.5 rounded-[35px] shadow-xl flex items-center justify-center">
+                {/* 1. HEADER REBRANDING - BANNER AZUL MARINO OXFORD (FORZADO V3) */}
+                <header 
+                    style={{ backgroundColor: '#002147' }}
+                    className="rounded-[40px] p-8 mb-10 text-white shadow-2xl shadow-blue-900/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden"
+                >
+                    <div className="flex flex-col md:flex-row items-center gap-6 z-10 text-center md:text-left">
+                        <div className="bg-white p-3 rounded-[35px] shadow-2xl flex items-center justify-center">
                             <img
                                 src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
                                 alt="Logo Sagrada Familia"
-                                className="w-[150px] h-auto object-contain transition-transform hover:scale-110 duration-500"
+                                className="w-[180px] h-auto object-contain transition-transform hover:scale-110 duration-500"
                             />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-5xl font-black tracking-tighter italic leading-none drop-shadow-sm text-slate-900">
+                            <h1 
+                                style={{ color: '#FFFFFF' }}
+                                className="text-2xl md:text-5xl font-black tracking-tighter italic leading-none drop-shadow-lg"
+                            >
                                 ¡Bienvenida Directora Carmen Cortorreal! 👋
                             </h1>
-                            <p className="text-slate-600 font-bold text-xl mt-2">
+                            <p className="text-blue-100/80 font-bold text-xl mt-2">
                                 Gestión Institucional · Ciclo 2026-2027
                             </p>
                         </div>
                     </div>
 
-                    <div className="z-10 flex flex-col items-end gap-2">
-                        <div className="bg-black/5 p-2 rounded-[32px] backdrop-blur-sm">
+                    <div className="z-10 flex flex-col items-center md:items-end gap-2">
+                        <div className="bg-white/10 p-2 rounded-[32px] backdrop-blur-md border border-white/10">
                             <LogoutButton />
                         </div>
-                        <Badge className="bg-white/40 text-black border-none font-black px-4 py-1 rounded-full">
+                        <Badge className="bg-blue-400/20 text-blue-100 border-blue-400/30 font-black px-4 py-1 rounded-full backdrop-blur-sm">
                             Ciclo 2026-2027
                         </Badge>
                     </div>
 
                     {/* Decoración abstracta de fondo */}
-                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-3xl"></div>
+                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
                 </header>
 
                 {/* 2. ACCIONES RÁPIDAS - BOTONES REDONDEADOS */}
@@ -121,7 +127,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     </Button>
                     <Button
                         onClick={() => setActiveModal("pago")}
-                        className="rounded-full bg-[#004aad] hover:bg-[#003785] text-white font-black h-12 px-6 shadow-lg shadow-[#004aad]/20"
+                        className="rounded-full bg-[#002147] hover:bg-[#003785] text-white font-black h-12 px-6 shadow-lg shadow-[#002147]/20"
                     >
                         <CreditCard className="mr-2 h-5 w-5" /> Registrar Pago
                     </Button>
@@ -216,7 +222,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <div className="mt-6">
                                     <div className="w-full bg-black/10 rounded-full h-3 border border-black/5">
                                         <div
-                                            className="bg-[#004aad] h-full rounded-full transition-all duration-1000 shadow-lg"
+                                            className="bg-[#002147] h-full rounded-full transition-all duration-1000 shadow-lg"
                                             style={{ width: `${Math.min(100, Math.round((metrics.ingresosDelMes / metrics.metaTotal) * 100))}%` }}
                                         />
                                     </div>
@@ -226,7 +232,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         </p>
                                         <button
                                             onClick={() => setShowReport(true)}
-                                            className="text-[10px] font-black uppercase underline hover:text-[#004aad] transition-colors"
+                                            className="text-[10px] font-black uppercase underline hover:text-[#002147] transition-colors"
                                         >
                                             Ver Métricas →
                                         </button>
@@ -266,8 +272,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <h3 className="text-2xl font-black text-slate-800 italic uppercase tracking-tighter">Historial de Ingresos</h3>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Análisis de flujo de caja</p>
                             </div>
-                            <div className="h-12 w-12 bg-[#004aad]/10 rounded-2xl flex items-center justify-center">
-                                <BarChart3 className="text-[#004aad] h-6 w-6" />
+                            <div className="h-12 w-12 bg-[#002147]/10 rounded-2xl flex items-center justify-center">
+                                <BarChart3 className="text-[#002147] h-6 w-6" />
                             </div>
                         </div>
 
@@ -306,7 +312,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                             <Heart className="h-32 w-32 text-[#FF1493]" fill="currentColor" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-[#004aad] flex items-center gap-2 mb-1">
+                            <h3 className="text-xl font-black text-[#002147] flex items-center gap-2 mb-1">
                                 Próximas Fiestas 🎂
                             </h3>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Comunidad Sagrada Familia</p>
@@ -525,11 +531,11 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Alcance de Meta Mensual</p>
                                         <p className="text-sm font-bold text-slate-400">Comparativa Ingresos vs Meta</p>
                                     </div>
-                                    <p className="text-2xl font-black text-[#004aad]">{Math.min(100, Math.round((metrics.ingresosDelMes / (metrics.metaTotal || 1)) * 100))}%</p>
+                                    <p className="text-2xl font-black text-[#002147]">{Math.min(100, Math.round((metrics.ingresosDelMes / (metrics.metaTotal || 1)) * 100))}%</p>
                                 </div>
                                 <div className="w-full bg-white rounded-full h-5 p-1 border border-slate-100 shadow-inner">
                                     <div
-                                        className="h-full rounded-full bg-gradient-to-r from-[#004aad] to-[#8A2BE2] transition-all duration-1000 relative"
+                                        className="h-full rounded-full bg-gradient-to-r from-[#002147] to-[#8A2BE2] transition-all duration-1000 relative"
                                         style={{ width: `${Math.min(100, Math.round((metrics.ingresosDelMes / (metrics.metaTotal || 1)) * 100))}%` }}
                                     >
                                         <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
@@ -635,13 +641,13 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         <div className="space-y-2">
                                             <Label className="font-black text-xs uppercase text-slate-500 ml-2">Buscar Alumno</Label>
                                             <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#004aad] transition-colors">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#002147] transition-colors">
                                                     <Search className="h-5 w-5" />
                                                 </div>
                                                 <input
                                                     type="text"
                                                     placeholder="Nombre del alumno..."
-                                                    className="w-full h-14 pl-12 pr-4 rounded-3xl border-2 border-slate-100 focus:border-[#004aad] outline-none font-bold text-slate-700 bg-slate-50"
+                                                    className="w-full h-14 pl-12 pr-4 rounded-3xl border-2 border-slate-100 focus:border-[#002147] outline-none font-bold text-slate-700 bg-slate-50"
                                                     value={searchTerm}
                                                     onChange={(e) => {
                                                         setSearchTerm(e.target.value);
@@ -664,7 +670,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2 col-span-2">
                                             <Label className="font-black text-xs uppercase text-slate-500 ml-2">Método de Pago</Label>
-                                            <select name="metodo_pago" required className="w-full h-12 px-4 rounded-2xl border-2 bg-slate-50 font-bold focus:border-[#004aad] outline-none transition-all">
+                                            <select name="metodo_pago" required className="w-full h-12 px-4 rounded-2xl border-2 bg-slate-50 font-bold focus:border-[#002147] outline-none transition-all">
                                                 <option value="">Seleccione un método...</option>
                                                 <option value="Efectivo">Efectivo</option>
                                                 <option value="Transferencia">Transferencia</option>
@@ -697,7 +703,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         name="descripcion" 
                                         rows={3} 
                                         required 
-                                        className="w-full p-4 rounded-3xl border-2 focus:border-[#004aad] outline-none font-medium bg-slate-50" 
+                                        className="w-full p-4 rounded-3xl border-2 focus:border-[#002147] outline-none font-medium bg-slate-50" 
                                         placeholder="Escribe los detalles del evento aquí (punto de encuentro, qué llevar, etc.)..."
                                     ></textarea>
                                 </div>
@@ -709,7 +715,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                     <textarea name="contenido" rows={4} required className="w-full p-4 rounded-3xl border-2 focus:border-[#8A2BE2] outline-none font-medium bg-slate-50" placeholder="Mensaje..."></textarea>
                                     <Input name="video_url" placeholder="URL de Video (YouTube, Vimeo, Drive) - Opcional" className="h-12 rounded-2xl border-2 border-purple-50 italic" />
                                     <div className="grid grid-cols-3 gap-3">
-                                        <button type="button" onClick={() => setPrioridadSelected("baja")} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-tighter transition-all ${prioridadSelected === 'baja' ? 'bg-[#004aad] text-white border-[#004aad] shadow-lg shadow-blue-200' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>Información</button>
+                                        <button type="button" onClick={() => setPrioridadSelected("baja")} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-tighter transition-all ${prioridadSelected === 'baja' ? 'bg-[#002147] text-white border-[#002147] shadow-lg shadow-blue-200' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>Información</button>
                                         <button type="button" onClick={() => setPrioridadSelected("media")} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-tighter transition-all ${prioridadSelected === 'media' ? 'bg-[#ffcc00] text-[#020617] border-[#ffcc00] shadow-lg shadow-amber-200' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>Advertencia</button>
                                         <button type="button" onClick={() => setPrioridadSelected("alta")} className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase tracking-tighter transition-all ${prioridadSelected === 'alta' ? 'bg-[#ef4444] text-white border-[#ef4444] shadow-lg shadow-red-200' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>Urgente</button>
                                     </div>
@@ -720,7 +726,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                             {activeModal === "estudiante" && (
                                 <div className="space-y-6">
                                     <div className="space-y-3">
-                                        <Label className="font-black text-xs uppercase text-[#004aad] ml-1">Datos del Alumno</Label>
+                                        <Label className="font-black text-xs uppercase text-[#002147] ml-1">Datos del Alumno</Label>
                                         <div className="grid grid-cols-2 gap-3">
                                             <Input name="nombre" required placeholder="Nombre Completo" className="h-12 rounded-2xl border-2" />
                                             <Input name="grado" required placeholder="Grado" className="h-12 rounded-2xl border-2" />
@@ -885,7 +891,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                     <div className="flex items-center justify-between pr-10">
                                                         <div>
                                                             <p className="font-black text-slate-800">{pago.estudiantes?.nombre}</p>
-                                                            <p className="text-sm font-bold text-[#004aad]">RD$ {pago.monto?.toLocaleString()}</p>
+                                                            <p className="text-sm font-bold text-[#002147]">RD$ {pago.monto?.toLocaleString()}</p>
                                                             <p className="text-[10px] font-bold text-slate-400 uppercase">
                                                                 Fecha: {new Date(pago.fecha + 'T12:00:00').toLocaleDateString('es-DO')}
                                                             </p>
@@ -983,7 +989,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         type="submit"
                                         disabled={isLoading}
                                         className={`flex-[2] h-14 rounded-2xl font-black text-white shadow-xl ${
-                                            activeModal === "pago" ? "bg-[#004aad]" :
+                                            activeModal === "pago" ? "bg-[#002147]" :
                                             activeModal === "comunicado" ? "bg-[#8A2BE2]" :
                                             activeModal === "evento" ? "bg-[#FF8C00]" : "bg-[#F0F4F8] text-slate-900"
                                         }`}
