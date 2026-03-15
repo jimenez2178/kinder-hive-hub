@@ -72,7 +72,7 @@ export default async function DashboardPage() {
                 .from("pagos")
                 .select("monto")
                 .eq("estudiante_id", est.id)
-                .eq("estado", "saldado")
+                .or("estado.eq.saldado,estado.eq.aprobado")
                 .gte("fecha", startDate)
                 .lte("fecha", endDate);
 

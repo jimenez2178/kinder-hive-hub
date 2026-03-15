@@ -23,8 +23,9 @@ export async function addPaymentAction(prevState: unknown, formData: FormData) {
     
     const montoPorMes = parseFloat(formData.get("monto") as string);
     const metodo_pago = formData.get("metodo_pago") as string;
-    const estado = (formData.get("estado") as string) || "aprobado";
+    const estado = (formData.get("estado") as string) || "saldado";
     const fecha = formData.get("fecha") as string || new Date().toISOString().split('T')[0];
+
     const cantidadMeses = parseInt(formData.get("cantidad_meses") as string) || 1;
     const comprobanteFile = formData.get("comprobante") as File;
 
@@ -349,11 +350,12 @@ export async function approvePaymentAction(pagoId: string) {
         .eq("id", pagoId)
         .single();
 
-    // 2. Actualizar estado a 'aprobado' (Unificación de contabilidad)
+    // 2. Actualizar estado a 'saldado' (Unificación de contabilidad)
     const { error } = await supabase
         .from("pagos")
-        .update({ estado: 'aprobado' }) 
+        .update({ estado: 'saldado' }) 
         .eq('id', pagoId);
+
 
     if (error) return { error: error.message };
 
