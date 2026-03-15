@@ -29,7 +29,8 @@ import {
     Plus,
     Wallet,
     ExternalLink,
-    Instagram as InstagramIcon
+    Instagram as InstagramIcon,
+    Trash2
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +106,8 @@ export default function DashboardClient({
     recibos = [],
     eventos = [],
     agradecimientos = [],
-    evaluaciones = []
+    evaluaciones = [],
+    onDeleteComunicado
 }: {
     initialFrase: string,
     userName: string,
@@ -116,7 +118,8 @@ export default function DashboardClient({
     recibos?: any[],
     eventos?: any[],
     agradecimientos?: any[],
-    evaluaciones?: any[]
+    evaluaciones?: any[],
+    onDeleteComunicado?: (id: string) => Promise<void>
 }) {
     const [frase] = useState(initialFrase);
     const [currentSaldo] = useState(saldoPendiente);
@@ -321,7 +324,7 @@ export default function DashboardClient({
                             return (
                                 <div 
                                     key={com.id || idx}
-                                    className={`rounded-[40px] p-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[12px] ${
+                                    className={`rounded-[40px] p-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[12px] group ${
                                         isUrgent 
                                             ? 'bg-[#ef4444] border-white/20' 
                                             : isWarning
@@ -329,6 +332,19 @@ export default function DashboardClient({
                                                 : 'bg-[#002147] border-white/10'
                                     }`}
                                 >
+                                    {onDeleteComunicado && (
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm("¿Estás seguro de que deseas borrar este aviso?")) {
+                                                    onDeleteComunicado(com.id);
+                                                }
+                                            }}
+                                            className="absolute top-6 right-6 p-3 bg-white/20 hover:bg-white/40 rounded-full text-white transition-all z-20 backdrop-blur-md opacity-0 group-hover:opacity-100 focus:opacity-100 shadow-xl"
+                                            title="Borrar Aviso"
+                                        >
+                                            <Trash2 className="h-5 w-5" />
+                                        </button>
+                                    )}
                                     <div className="flex items-center gap-4 mb-4">
                                         <span className={`text-3xl ${isUrgent ? 'animate-bounce' : ''}`}>
                                             {isUrgent ? '🚨' : isWarning ? '⚠️' : 'ℹ️'}

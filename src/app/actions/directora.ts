@@ -417,3 +417,14 @@ export async function rejectPaymentAction(pagoId: string) {
     return { success: true };
 }
 
+export async function deleteComunicadoAction(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase.from("comunicados").delete().eq("id", id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}
+

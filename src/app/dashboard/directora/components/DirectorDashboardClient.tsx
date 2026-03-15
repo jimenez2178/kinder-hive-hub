@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction } from "@/app/actions/directora";
+import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle } from "lucide-react";
@@ -54,6 +54,31 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
     const showToast = (message: string) => {
         setToast({ message, visible: true });
         setTimeout(() => setToast({ message: "", visible: false }), 4000);
+    };
+
+    // --- Gestión de Comunicados (Optimista) ---
+    const [localComunicados, setLocalComunicados] = useState(previewData.comunicados);
+
+    useEffect(() => {
+        setLocalComunicados(previewData.comunicados);
+    }, [previewData.comunicados]);
+
+    const handleDeleteComunicado = async (id: string) => {
+        const previousComunicados = [...localComunicados];
+        setLocalComunicados(localComunicados.filter(c => c.id !== id));
+        
+        try {
+            const res = await deleteComunicadoAction(id);
+            if (res.error) {
+                alert("Error al borrar: " + res.error);
+                setLocalComunicados(previousComunicados);
+            } else {
+                showToast("Aviso eliminado correctamente");
+            }
+        } catch (err) {
+            console.error(err);
+            setLocalComunicados(previousComunicados);
+        }
     };
 
     const handleAction = async (actionFn: (prevState: unknown, formData: FormData) => Promise<{ error?: string, success?: boolean, timestamp?: number }>, formData: FormData) => {
@@ -457,7 +482,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 userName="Padre de Isabella"
                                 saldoPendiente={11000}
                                 estudiantes={estudiantes.slice(0, 1)}
-                                comunicados={previewData.comunicados}
+                                comunicados={localComunicados}
+                                onDeleteComunicado={handleDeleteComunicado}
                                 galeria={previewData.galeria}
                                 recibos={[]}
                                 eventos={previewData.eventos}
