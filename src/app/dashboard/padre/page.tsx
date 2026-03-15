@@ -85,7 +85,7 @@ export default async function DashboardPage() {
         }
     }
 
-    // 4. Último Comunicado (Priorizando Urgentes)
+    // 4. Comunicados (Ordenados por importancia y fecha)
     const { data: rawComunicados } = await supabase
         .from("comunicados")
         .select("*")
@@ -93,17 +93,13 @@ export default async function DashboardPage() {
         .order("created_at", { ascending: false })
         .limit(5);
 
-    const pickComunicado = () => {
-        if (!rawComunicados) return null;
+    const sortedComunicados = rawComunicados ? [...rawComunicados].sort((a, b) => {
         const priorityScore: Record<string, number> = { 'alta': 3, 'media': 2, 'baja': 1 };
-        return [...rawComunicados].sort((a, b) => {
-            const scoreA = priorityScore[a.prioridad] || 0;
-            const scoreB = priorityScore[b.prioridad] || 0;
-            if (scoreA !== scoreB) return scoreB - scoreA;
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        })[0];
-    };
-    const comunicado = pickComunicado();
+        const scoreA = priorityScore[a.prioridad] || 0;
+        const scoreB = priorityScore[b.prioridad] || 0;
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }) : [];
 
     // 5. Fotos de la Galería (Filtrado por Colegio Dinámico)
     const { data: galeria } = await supabase
@@ -149,7 +145,7 @@ export default async function DashboardPage() {
             userName={profile?.nombre || "Padre"}
             saldoPendiente={saldoTotalFamilia}
             estudiantes={estudiantes || []}
-            comunicado={comunicado}
+            comunicados={sortedComunicados}
             galeria={galeria || []}
             recibos={recibos || []}
             eventos={eventos || []}

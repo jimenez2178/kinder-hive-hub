@@ -44,7 +44,7 @@ export default function DashboardClient({
     userName,
     saldoPendiente,
     estudiantes,
-    comunicado,
+    comunicados = [],
     galeria = [],
     recibos = [],
     eventos = [],
@@ -55,7 +55,7 @@ export default function DashboardClient({
     userName: string,
     saldoPendiente: number,
     estudiantes: any[],
-    comunicado: any,
+    comunicados?: any[],
     galeria?: any[],
     recibos?: any[],
     eventos?: any[],
@@ -246,19 +246,42 @@ export default function DashboardClient({
                     </div>
                 </header>
                 
-                {/* ═══ COMUNICADO URGENTE (TOP PRIORITY) ═══ */}
-                {comunicado && comunicado.prioridad === 'alta' && (
-                    <div className="bg-[#ef4444] rounded-[40px] p-8 mb-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[10px] border-white/20">
-                        <div className="flex items-center gap-4 mb-4">
-                            <span className="text-4xl animate-bounce">🚨</span>
-                            <span className="bg-white/20 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-                                Aviso Urgente del Colegio
-                            </span>
+                {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
+                <div className="space-y-6 mb-10">
+                    {comunicados.map((com, idx) => (
+                        <div 
+                            key={com.id || idx}
+                            className={`rounded-[40px] p-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[12px] ${
+                                com.prioridad === 'alta' 
+                                    ? 'bg-[#ef4444] border-white/20' 
+                                    : com.prioridad === 'media'
+                                        ? 'bg-[#ffcc00] border-black/10'
+                                        : 'bg-[#004aad] border-white/10'
+                            }`}
+                        >
+                            <div className="flex items-center gap-4 mb-4">
+                                <span className={`text-3xl ${com.prioridad === 'alta' ? 'animate-bounce' : ''}`}>
+                                    {com.prioridad === 'alta' ? '🚨' : com.prioridad === 'media' ? '⚠️' : 'ℹ️'}
+                                </span>
+                                <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${
+                                    com.prioridad === 'media' ? 'bg-black/10 text-black' : 'bg-white/20 text-white'
+                                }`}>
+                                    {com.prioridad === 'alta' ? 'Urgente / Crítico' : com.prioridad === 'media' ? 'Aviso Escolar' : 'Información'}
+                                </span>
+                            </div>
+                            <h4 className={`font-black text-2xl leading-tight drop-shadow-sm ${
+                                com.prioridad === 'media' ? 'text-black' : 'text-white'
+                            }`}>
+                                {com.titulo}
+                            </h4>
+                            <p className={`text-lg font-medium mt-3 leading-relaxed max-w-4xl ${
+                                com.prioridad === 'media' ? 'text-black/80' : 'text-white/90'
+                            }`}>
+                                {com.contenido}
+                            </p>
                         </div>
-                        <h4 className="text-white font-black text-2xl leading-tight drop-shadow-md">{comunicado.titulo}</h4>
-                        <p className="text-white/90 text-lg font-medium mt-3 leading-relaxed max-w-4xl">{comunicado.contenido}</p>
-                    </div>
-                )}
+                    ))}
+                </div>
 
                 {/* PUSH NOTIFICATIONS BANNER */}
                 {showPushBanner && (
@@ -646,29 +669,6 @@ export default function DashboardClient({
 
                     {/* ═══ COLUMNA DERECHA ═══ */}
                     <div className="space-y-6">
-
-                        {/* COMUNICADO — tarjeta semáforo (Solo si no es alta, porque alta sale arriba) */}
-                        {comunicado && comunicado.prioridad !== 'alta' && (
-                            <div className={`rounded-[32px] p-7 shadow-xl relative overflow-hidden transition-all ${comunicado.prioridad === 'alta'
-                                ? 'bg-[#ef4444] shadow-red-100'
-                                : comunicado.prioridad === 'media'
-                                    ? 'bg-[#ffcc00] shadow-amber-100'
-                                    : 'bg-[#004aad] shadow-blue-100'
-                                }`}>
-                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-white/40 rounded-l-full" />
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-xl">
-                                        {comunicado.prioridad === 'alta' ? '🚨' : comunicado.prioridad === 'media' ? '⚠️' : 'ℹ️'}
-                                    </span>
-                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${comunicado.prioridad === 'media' ? 'bg-black/10 text-black' : 'bg-white/20 text-white'}`}>
-                                        {comunicado.prioridad === 'alta' ? 'Urgente / Crítico' : comunicado.prioridad === 'media' ? 'Advertencia Escolar' : 'Información'}
-                                    </span>
-                                </div>
-                                <h4 className={`font-black text-lg leading-tight ${comunicado.prioridad === 'media' ? 'text-black' : 'text-white'}`}>{comunicado.titulo}</h4>
-                                <p className={`text-sm font-medium mt-2 leading-relaxed ${comunicado.prioridad === 'media' ? 'text-black/80' : 'text-white/85'}`}>{comunicado.contenido}</p>
-                            </div>
-                        )}
-
                         {/* CARD MENSUALIDAD */}
                         <div className="bg-white rounded-[32px] shadow-xl p-6 border-t-4 border-[#7ed957]">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mensualidad</p>
