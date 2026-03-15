@@ -28,3 +28,20 @@ export async function enviarNotificacionPago(nombrePadre: string, monto: number,
         console.error("Error al enviar notificación a n8n:", error);
     }
 }
+
+export async function enviarNotificacionRegistro(email: string, nombreCompleto: string) {
+    try {
+        await fetch("https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/registro-padre", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email,
+                nombreCompleto,
+                fecha: new Date().toLocaleDateString('es-DO'),
+                mensaje: `Nueva solicitud de registro: ${nombreCompleto} (${email}). Pendiente de aprobación en el panel administrativo.`
+            })
+        });
+    } catch (error) {
+        console.error("Error al enviar notificación de registro a n8n:", error);
+    }
+}

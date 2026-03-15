@@ -2,6 +2,8 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { enviarNotificacionRegistro } from "@/lib/n8n";
+
 
 export type RegisterState = {
     error?: string;
@@ -54,10 +56,12 @@ export async function registerAction(prevState: RegisterState | null, formData: 
 
     console.log(`[REGISTER] Auth user created: ${authData.user.id}. Creating profile...`);
 
-    // 3. Create or update the profile in 'perfiles' table
-    // El trigger 'on_auth_user_created' ya se encargó de esto de forma segura.
-    // Intentamos un upsert de respaldo, pero si falla por RLS (sesión pendiente de refresco)
-    // y el usuario ya existe en Auth, continuamos pues el perfil ya fue creado por el trigger.
+    // 3. Trigger Notification to Director
+    await enviarNotificacionRegistro(email, nombreCompleto);
+
+    // 4. Create or update the profile in 'perfiles' table
+    // El trigger 'handle_new_user' ya se encargó de esto de forma segura.
+    // Hacemos el upsert como refuerzo, pero ignoramos errores de RLS pues el trigger es el maestro.
     const { error: profileError } = await supabase
         .from("perfiles")
         .upsert({
@@ -72,10 +76,10 @@ export async function registerAction(prevState: RegisterState | null, formData: 
 
     if (profileError && !profileError.message.includes("row-level security")) {
         console.error(`[REGISTER] Profile error: ${profileError.message}`);
-        return { error: `Error parcial al configurar perfil: ${profileError.message}. Intente iniciar sesión.` };
     }
 
-    console.log(`[REGISTER] Profile created successfully for ${email}. Redirecting to /espera...`);
+    console.log(`[REGISTER] Registration successful for ${email}. Redirecting to /espera...`);
+
 
     // 3. Redirect to espera
     redirect("/espera");

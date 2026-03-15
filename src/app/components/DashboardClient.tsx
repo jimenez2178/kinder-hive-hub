@@ -283,11 +283,11 @@ export default function DashboardClient({
                     <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
                     <div className="flex flex-col md:flex-row items-center gap-6 z-10 text-center md:text-left">
-                        <div className="bg-white p-1 rounded-[22px] shadow-2xl border-4 border-white/70 overflow-hidden flex items-center justify-center">
+                        <div className="bg-white p-0 rounded-[28px] shadow-2xl border-4 border-white/70 overflow-hidden flex items-center justify-center">
                             <img
                                 src="https://informativolatelefonica.com/wp-content/uploads/2026/03/LOGO.png"
                                 alt="Logo Sagrada Familia"
-                                className="w-[190px] h-auto object-contain transition-transform hover:scale-105 duration-500 p-1"
+                                className="w-[220px] h-auto object-contain transition-transform hover:scale-105 duration-500"
                             />
                         </div>
                         <div>
@@ -485,33 +485,39 @@ export default function DashboardClient({
                                         const eventTime = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
                                         const isThisWeek = eventTime >= today && eventTime < (today + 7 * 24 * 60 * 60 * 1000);
                                         
+                                        const dayName = date.toLocaleDateString('es-DO', { weekday: 'long' });
+                                        const capitalizedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+                                        const fullDateStr = `${capitalizedDay}, ${day} de ${monthShort.toUpperCase()}`;
+                                        
                                         return (
-                                            <div key={ev.id} className={`flex gap-6 items-start p-8 rounded-[40px] border ${isThisWeek ? 'bg-[#F0F4F8]/10 border-[#F0F4F8]/50 shadow-md ring-2 ring-[#F0F4F8]/20 relative overflow-hidden' : 'bg-slate-50 border-slate-100'} hover:bg-white transition-all`}>
-                                                {isThisWeek && <div className="absolute top-0 right-0 bg-[#F0F4F8] text-[#020617] text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-lg">¡Esta Semana!</div>}
-                                                <div className={`${isThisWeek ? 'bg-[#F0F4F8] shadow-slate-200' : evtColor + ' shadow-blue-100'} px-4 py-2.5 rounded-2xl text-center min-w-[64px] text-white shrink-0 shadow-lg relative z-10`}>
-                                                    <div className={`text-[10px] font-black uppercase tracking-tighter ${isThisWeek ? 'text-slate-900' : 'text-white'}`}>{monthShort}</div>
-                                                    <div className={`text-2xl font-black leading-none mt-1 ${isThisWeek ? 'text-slate-950' : 'text-white'}`}>{day}</div>
-                                                </div>
-                                                <div className="flex-1 relative z-10">
-                                                    <div className="flex items-center gap-2">
-                                                        <EventIcon className={`h-5 w-5 ${isThisWeek ? 'text-[#002147]' : iconColor}`} />
-                                                        <h5 className="font-black text-slate-900 text-lg md:text-xl italic uppercase tracking-tighter leading-tight">{ev.titulo}</h5>
+                                            <div key={ev.id} className="bg-white p-8 rounded-[40px] shadow-xl border border-slate-100 flex flex-col gap-6 relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
+                                                {/* Header Oxford */}
+                                                <div>
+                                                    <h5 className="font-black text-[#002147] text-2xl md:text-3xl italic uppercase tracking-tighter leading-none mb-2">
+                                                        {ev.titulo}
+                                                    </h5>
+                                                    <div className="flex items-center gap-2 text-slate-500 font-bold text-sm tracking-tight capitalize">
+                                                        <Calendar className="h-4 w-4 text-[#8A2BE2]" />
+                                                        {fullDateStr} {ev.locacion ? ` — ${ev.locacion}` : ''}
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 mt-2">
-                                                        <MapPin className="h-4 w-4 text-slate-500" />
-                                                        <p className="text-xs font-black text-slate-600 uppercase tracking-wide">{ev.locacion || 'Centro Educativo'}</p>
-                                                    </div>
-                                                    {ev.descripcion && (
-                                                        <div className={`mt-3 text-base md:text-lg font-black leading-relaxed p-5 rounded-[30px] border shadow-sm ${isThisWeek ? 'bg-white text-[#002147] border-blue-100' : 'text-slate-700 bg-white/70 border-slate-200'}`}>
-                                                            {ev.descripcion}
-                                                        </div>
-                                                    )}
-                                                    {(lowerTitle.includes('piscina') || lowerTitle.includes('aqua')) && (
-                                                        <div className="mt-2 inline-flex items-center gap-1.5 bg-[#0099ff]/10 text-[#002147] px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-[#0099ff]/30">
-                                                            <span>💧 Contribución: RD$ 200.00</span>
-                                                        </div>
-                                                    )}
                                                 </div>
+
+                                                {/* Body */}
+                                                {ev.descripcion && (
+                                                    <div className="text-slate-600 text-base md:text-lg font-medium leading-relaxed">
+                                                        {ev.descripcion}
+                                                    </div>
+                                                )}
+
+                                                {/* Footer / Contribution */}
+                                                {(lowerTitle.includes('piscina') || lowerTitle.includes('aqua')) && (
+                                                    <div className="flex justify-end mt-2">
+                                                        <div className="bg-[#002147] text-white px-6 py-3 rounded-2xl text-xs font-black tracking-widest uppercase shadow-lg shadow-blue-900/20 flex items-center gap-2">
+                                                            <Waves className="h-4 w-4" />
+                                                            Contribución: RD$ 200.00
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     }) : (
