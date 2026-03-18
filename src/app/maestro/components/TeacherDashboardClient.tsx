@@ -226,8 +226,10 @@ export function TeacherDashboardClient({
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
-                                                <form action={deleteFormAction}>
+                                                <form action={async (formData) => {
+                                                    const res = await deleteNotaAction(null, formData);
+                                                    if(res.error) alert(res.error);
+                                                }}>
                                                     <input type="hidden" name="id" value={ev.id} />
                                                     <button 
                                                         type="submit"

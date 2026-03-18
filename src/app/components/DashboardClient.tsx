@@ -136,6 +136,7 @@ export default function DashboardClient({
     const [isReporting, setIsReporting] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [hiddenAvisos, setHiddenAvisos] = useState<string[]>([]);
 
     useEffect(() => {
         console.log("Checking Service Worker support...");
@@ -314,9 +315,9 @@ export default function DashboardClient({
                 </header>
 
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
-                {comunicados.length > 0 && (
+                {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).length > 0 && (
                     <div className="space-y-6 mb-10">
-                        {comunicados.slice(0, 3).map((com, idx) => {
+                        {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).slice(0, 3).map((com, idx) => {
                             const p = com.prioridad?.toLowerCase();
                             const isUrgent = p === 'alta' || p === 'urgente';
                             const isWarning = p === 'media' || p === 'advertencia';
@@ -332,17 +333,25 @@ export default function DashboardClient({
                                                 : 'bg-[#002147] border-white/10'
                                     }`}
                                 >
-                                    {onDeleteComunicado && (
+                                    {onDeleteComunicado ? (
                                         <button
                                             onClick={() => {
-                                                if (window.confirm("¿Estás seguro de que deseas borrar este aviso?")) {
+                                                if (window.confirm("¿Estás seguro de que deseas borrar este aviso globalmente?")) {
                                                     onDeleteComunicado(com.id);
                                                 }
                                             }}
                                             className="absolute top-4 right-4 p-3 bg-red-600 hover:bg-red-700 text-white rounded-full transition-all z-20 shadow-xl"
-                                            title="Borrar Aviso"
+                                            title="Borrar Aviso (Global)"
                                         >
                                             <Trash2 className="h-5 w-5" />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => setHiddenAvisos([...hiddenAvisos, com.id])}
+                                            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-20 backdrop-blur-md"
+                                            title="Marcar como leído / Ocultar"
+                                        >
+                                            <span className="text-xs font-black uppercase tracking-widest px-2">Entendido ✕</span>
                                         </button>
                                     )}
                                     <div className="flex items-center gap-4 mb-4">
