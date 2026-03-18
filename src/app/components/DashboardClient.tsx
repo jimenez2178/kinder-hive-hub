@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoutButton } from "@/components/LogoutButton";
 import { useState, useEffect } from "react";
-import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction } from "@/app/actions/padre";
+import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction, marcarAvisoLeidoAction } from "@/app/actions/padre";
 import { createClient } from "@/utils/supabase/client";
 
 function VideoPlayer({ url }: { url: string }) {
@@ -352,9 +352,8 @@ export default function DashboardClient({
                                             onClick={async () => {
                                                 // Optimistic: ocultar inmediatamente en UI
                                                 setHiddenAvisos(prev => [...prev, com.id]);
-                                                // Persistir en BD via server action
+                                                // Persistir en BD via server action (import estático seguro)
                                                 try {
-                                                    const { marcarAvisoLeidoAction } = await import("@/app/actions/padre");
                                                     await marcarAvisoLeidoAction(com.id);
                                                 } catch (e) {
                                                     console.error("Error al marcar aviso como leído:", e);
