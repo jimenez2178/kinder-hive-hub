@@ -19,12 +19,20 @@ export async function addNotaAction(prevState: unknown, formData: FormData) {
         .eq("id", user.id)
         .single();
 
+    const notas: Record<string, string> = {};
+    const categoriasBase = ["Salud", "Matemáticas", "Ciencias", "Lectura", "Conducta", "Motricidad"];
+    categoriasBase.forEach(cat => {
+        const val = formData.get(`nota_${cat}`) as string;
+        if (val) notas[cat] = val;
+    });
+
     const { error } = await supabase.from("evaluaciones").insert({
         estudiante_id,
         maestro_id: user.id,
         colegio_id: profile?.colegio_id,
         categoria,
         observaciones,
+        notas,
         fecha: new Date().toISOString().split('T')[0]
     });
 

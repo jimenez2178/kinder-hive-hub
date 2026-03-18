@@ -14,7 +14,9 @@ interface Evaluation {
     id: string;
     estudiante_id: string;
     maestro_id: string;
-    maestro_nombre: string;
+    maestro_nombre?: string;
+    perfiles?: { nombre_completo: string };
+    notas?: Record<string, string>;
     categoria: string;
     observaciones: string;
     fecha: string;
@@ -132,26 +134,26 @@ export function TeacherDashboardClient({
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Categoría</Label>
-                                        <select name="categoria" required className="flex w-full h-14 rounded-[24px] border-2 border-slate-200 bg-slate-50 px-6 font-bold shadow-inner focus:outline-none focus:border-slate-800 transition-all">
-                                            <option value="">Seleccione...</option>
-                                            <option value="Lectura">📖 Lectura y Comprensión</option>
-                                            <option value="Motricidad">🎨 Motricidad</option>
-                                            <option value="Atencion">🎯 Atención</option>
-                                            <option value="Conducta">😇 Conducta</option>
-                                            <option value="General">🌟 General</option>
-                                            <option value="Tareas">📝 Tareas</option>
-                                            <option value="Salud">🩺 Salud</option>
-                                            <option value="Deportes">⚽ Deportes</option>
-                                            <option value="Matemáticas">🔢 Matemáticas</option>
-                                            <option value="Ciencias">🔬 Ciencias</option>
-                                            <option value="Almuerzo">🍽️ Almuerzo</option>
-                                            <option value="Desayuno">🥐 Desayuno</option>
-                                            <option value="Meriendas">🥪 Meriendas</option>
-                                            <option value="Avances">📈 Avances</option>
-                                            <option value="Otros">📌 Otros</option>
-                                        </select>
+                                        <Label className="font-black text-[#002147] text-sm uppercase tracking-widest">Desempeño por Área</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                            {["Salud", "Matemáticas", "Ciencias", "Lectura", "Conducta", "Motricidad"].map((cat) => (
+                                                <div key={cat} className="space-y-1 bg-white p-3 rounded-[20px] border-2 border-slate-100 shadow-sm">
+                                                    <Label className="font-black text-slate-800 text-[10px] uppercase tracking-widest">{cat}</Label>
+                                                    <select
+                                                        name={`nota_${cat}`}
+                                                        className="w-full bg-slate-50 border border-slate-200 text-xs font-bold rounded-xl h-10 px-2 mt-1 focus:border-[#002147] transition-all"
+                                                    >
+                                                        <option value="">No Eval.</option>
+                                                        <option value="Excelente">🌟 Excelente</option>
+                                                        <option value="Bueno">✅ Bueno</option>
+                                                        <option value="En Proceso">⏳ Progreso</option>
+                                                        <option value="Requiere Apoyo">🌱 Apoyo</option>
+                                                    </select>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
+                                    <input type="hidden" name="categoria" value="Múltiple" />
 
                                     <div className="space-y-3">
                                         <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Comentario Académico</Label>
@@ -230,11 +232,21 @@ export function TeacherDashboardClient({
                                             </div>
 
                                             <div className="relative bg-slate-50 p-6 rounded-[28px] border border-slate-100">
+                                                {ev.notas && Object.keys(ev.notas).length > 0 && (
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4 pb-4 border-b border-slate-200/60">
+                                                        {Object.entries(ev.notas).map(([cat, val]) => (
+                                                            <div key={cat} className="flex flex-col">
+                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{cat}</span>
+                                                                <span className="text-xs font-bold text-slate-700 truncate">{String(val)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 <div className="absolute -left-2 -top-2 text-4xl text-slate-200 font-serif translate-y-2 opacity-50">“</div>
                                                 <p className="text-slate-600 font-bold italic text-base leading-relaxed relative z-10">
                                                     {ev.observaciones}
                                                 </p>
-                                                <div className="absolute right-4 bottom-0 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                <div className="absolute right-4 bottom-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2">
                                                     ✍️ Maestro: {ev.perfiles?.nombre_completo || maestroNombre}
                                                 </div>
                                             </div>

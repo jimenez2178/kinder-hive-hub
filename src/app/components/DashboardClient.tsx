@@ -655,11 +655,21 @@ export default function DashboardClient({
                                                 </div>
                                             </div>
 
-                                            {/* Observaciones (6 cols) */}
+                                            {/* Observaciones y Notas (6 cols) */}
                                             <div className="lg:col-span-6 lg:border-l lg:border-[#002147]/10 lg:pl-10">
-                                                <div className="relative">
+                                                {ev.notas && Object.keys(ev.notas).length > 0 && (
+                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+                                                        {Object.entries(ev.notas).map(([cat, val]) => (
+                                                            <div key={cat} className="flex flex-col bg-white/60 backdrop-blur-md rounded-xl p-2 border border-white/40 shadow-sm">
+                                                                <span className="text-[9px] font-black text-[#002147]/50 uppercase tracking-widest">{cat}</span>
+                                                                <span className="text-xs font-black text-[#002147] truncate">{String(val)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div className="relative mt-2">
                                                     <div className="absolute -left-6 -top-4 text-6xl text-[#002147]/10 font-serif translate-y-2">“</div>
-                                                    <p className="text-[#002147] font-bold italic text-xl leading-relaxed drop-shadow-sm">
+                                                    <p className="text-[#002147] font-bold italic text-base md:text-lg leading-relaxed drop-shadow-sm">
                                                         {ev.observaciones}
                                                     </p>
                                                     <div className="absolute -right-2 -bottom-8 text-6xl text-[#002147]/10 font-serif rotate-180">“</div>
