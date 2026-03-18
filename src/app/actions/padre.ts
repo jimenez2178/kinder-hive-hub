@@ -70,3 +70,20 @@ export async function reportarPagoAction(data: { estudiante_id: string, monto: n
     revalidatePath("/dashboard/padre");
     return { success: true };
 }
+
+export async function marcarAvisoLeidoAction(avisoId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: "No autorizado" };
+
+    // Insertar con upsert para evitar duplicados (hay constraint UNIQUE)
+    const { error } = await supabase
+        .from("avisos_leidos")
+        .upsert({ user_id: user.id, aviso_id: avisoId }, { onConflict: "user_id,aviso_id" });
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}

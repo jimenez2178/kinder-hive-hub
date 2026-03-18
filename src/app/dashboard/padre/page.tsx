@@ -85,15 +85,26 @@ export default async function DashboardPage() {
         }
     }
 
-    // 4. Comunicados (Ordenados por importancia y fecha) - Cache disabled
+    // 4. Comunicados NO leídos por este usuario (Filtro persistente via BD)
+    // Primero obtenemos los IDs de avisos ya leídos por este padre
+    const { data: avisosLeidos } = await supabase
+        .from("avisos_leidos")
+        .select("aviso_id")
+        .eq("user_id", user.id);
+
+    const avisosLeidosIds = avisosLeidos?.map(al => al.aviso_id) || [];
+
     const { data: rawComunicados } = await supabase
         .from("comunicados")
         .select("*")
         .eq("colegio_id", finalColegioId)
         .order("created_at", { ascending: false })
-        .limit(10); // Aumentamos límite para asegurar capturar todos los rangos
+        .limit(10);
 
-    const sortedComunicados = rawComunicados ? [...rawComunicados].sort((a, b) => {
+    // Excluir los ya leídos del lado del servidor
+    const comunicadosFiltrados = rawComunicados?.filter(c => !avisosLeidosIds.includes(c.id)) || [];
+
+    const sortedComunicados = [...comunicadosFiltrados].sort((a, b) => {
         const priorityScore: Record<string, number> = { 
             'alta': 3, 'urgente': 3, 
             'media': 2, 'advertencia': 2, 
@@ -103,7 +114,7 @@ export default async function DashboardPage() {
         const scoreB = priorityScore[b.prioridad?.toLowerCase()] || 0;
         if (scoreA !== scoreB) return scoreB - scoreA;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    }) : [];
+    });
 
     // 5. Fotos de la Galería (Filtrado por Colegio Dinámico)
     const { data: galeria } = await supabase

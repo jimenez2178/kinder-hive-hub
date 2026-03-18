@@ -70,3 +70,10 @@
 *   **Schema JSON**: Se anadio el campo 'notas' tipo JSONB a Evaluaciones para catalogar items individuales.
 *   **Frontend Maestro**: Se elimino el selector lineal y se implemento una cuadricula estetica (Oxford v3) que recoge niveles de Salud, Matematicas, Ciencias... etc. Y se configuro para enrutar datos al action addNota.
 *   **Frontend Padre**: Se adapto DashboardClient para parsear el JSON y escupir grid de minitarjetas mostrando {cat: result} por encima del descargo de profesor, usando colores azul marino y transparencias blur.
+
+## [2026-03-18] Modulo de Calificaciones Numericas
+*   **BD**: Tabla calificaciones con columnas: id, estudiante_id, maestro_id, colegio_id, asignatura, nota_mes, nota_prueba, nota_final, comentario_especifico, periodo. RLS activo con politicas para maestros y padres.
+*   **Server Actions**: ddCalificacionAction y deleteCalificacionAction en /app/actions/maestro.ts.
+*   **TeacherDashboardClient**: Tabs para alternar entre 'Registro de Calificaciones' y 'Evaluacion General'. Form con selector de alumno, periodo, asignatura, 3 notas numericas y comentario.
+*   **DashboardClient**: Nueva seccion 'Boletin de Calificaciones' con tabla (Asignatura, Mes, Prueba, Final, Comentario). La data llega desde /dashboard/padre/page.tsx.
+*   **Build**: Compilado correctamente. Push a main exitoso.

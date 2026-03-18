@@ -52,7 +52,7 @@ export function TeacherDashboardClient({
     const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: "", visible: false });
     const [isLoading, setIsLoading] = useState(false);
     const [search, setSearch] = useState("");
-    const [activeTab, setActiveTab] = useState<"notas" | "calificaciones">("calificaciones");
+    const [activeTab, setActiveTab] = useState<"notas" | "calificaciones" | "progreso">("calificaciones");
     
     // No necesitamos useActionState para delete, llamamos la acción directamente.
 
@@ -111,8 +111,9 @@ export function TeacherDashboardClient({
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
                 </header>
 
-                <div className="flex gap-4 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 max-w-fit mx-auto">
-                    <button onClick={() => setActiveTab("calificaciones")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'calificaciones' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Registro de Calificaciones</button>
+                <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 max-w-fit mx-auto">
+                    <button onClick={() => setActiveTab("calificaciones")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'calificaciones' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Calificaciones</button>
+                    <button onClick={() => setActiveTab("progreso")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'progreso' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Progreso Académico</button>
                     <button onClick={() => setActiveTab("notas")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'notas' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Evaluación General</button>
                 </div>
 
@@ -122,7 +123,7 @@ export function TeacherDashboardClient({
                         <Card className="rounded-[40px] border-0 shadow-2xl bg-white sticky top-8">
                             <CardHeader className="pb-4 pt-8 px-8 border-b border-slate-50 mb-4">
                                 <CardTitle className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                                    <FileEdit className="text-slate-800" /> {activeTab === "calificaciones" ? "Nuevas Calificaciones" : "Evaluación General"}
+                                    <FileEdit className="text-slate-800" /> {activeTab === "calificaciones" ? "Nuevas Calificaciones" : activeTab === "progreso" ? "Progreso Académico" : "Evaluación General"}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-8 pb-8 pt-4">
@@ -265,6 +266,77 @@ export function TeacherDashboardClient({
                                     </Button>
                                 </form>
                                 )}
+
+                                {activeTab === "progreso" && (
+                                <form id="progreso-form" action={handleSubtmit} className="space-y-6">
+                                    <div className="space-y-3">
+                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">¿A quién evaluamos?</Label>
+                                        <select
+                                            name="estudiante_id"
+                                            required
+                                            className="flex w-full h-14 rounded-[24px] border-2 border-slate-200 bg-slate-50 px-6 font-bold focus:outline-none focus:border-slate-800 transition-all cursor-pointer"
+                                        >
+                                            <option value="">Selecciona alumno...</option>
+                                            {filteredEstudiantes.map(e => (
+                                                <option key={e.id} value={e.id}>{e.nombre} — {e.grado}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Área de Desempeño</Label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {[
+                                                { label: "Lectura", emoji: "📖" },
+                                                { label: "Motricidad", emoji: "✍️" },
+                                                { label: "Deporte", emoji: "⚽" },
+                                                { label: "Salud", emoji: "🩺" },
+                                                { label: "Recreo", emoji: "🛝" },
+                                                { label: "Canto", emoji: "🎵" },
+                                                { label: "Música", emoji: "🎼" },
+                                                { label: "Comportamiento", emoji: "😇" },
+                                                { label: "Participación", emoji: "🙋" },
+                                                { label: "Matemáticas", emoji: "🔢" },
+                                                { label: "Lenguaje", emoji: "💬" },
+                                                { label: "Arte", emoji: "🎨" },
+                                                { label: "Tareas", emoji: "📝" },
+                                                { label: "General", emoji: "🌟" },
+                                            ].map(cat => (
+                                                <label key={cat.label} className="flex items-center gap-3 bg-slate-50 rounded-2xl p-3 border-2 border-slate-100 has-[:checked]:border-[#002147] has-[:checked]:bg-[#002147]/5 cursor-pointer transition-all">
+                                                    <input
+                                                        type="radio"
+                                                        name="categoria"
+                                                        value={cat.label}
+                                                        className="accent-[#002147] h-4 w-4 shrink-0"
+                                                        required
+                                                    />
+                                                    <span className="text-lg">{cat.emoji}</span>
+                                                    <span className="font-bold text-slate-700 text-sm">{cat.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Observaciones del Progreso</Label>
+                                        <textarea
+                                            name="observaciones"
+                                            required
+                                            rows={4}
+                                            placeholder="Describe el progreso observado en esta área..."
+                                            className="flex w-full rounded-[24px] border-2 border-slate-200 bg-slate-50 p-6 font-medium shadow-inner focus:outline-none focus:border-slate-800 transition-all resize-none"
+                                        ></textarea>
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full bg-[#002147] hover:bg-slate-800 text-white h-16 rounded-[24px] text-lg font-black tracking-widest uppercase transition-all shadow-xl active:scale-[0.98]"
+                                    >
+                                        {isLoading ? "Enviando..." : "Guardar Progreso"} <Send className="ml-2 h-5 w-5" />
+                                    </Button>
+                                </form>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -273,11 +345,11 @@ export function TeacherDashboardClient({
                     <div className="lg:col-span-12 xl:col-span-7">
                         <div className="bg-slate-800/5 rounded-[40px] p-4 md:p-8">
                             <h2 className="text-2xl font-black text-slate-800 px-6 py-4 flex items-center gap-2 tracking-tighter shadow-sm mb-6 bg-white rounded-3xl w-fit">
-                                <Clock className="text-[#002147]" /> {activeTab === "calificaciones" ? "Historial Numérico" : "Historial de Reportes"}
+                                <Clock className="text-[#002147]" /> {activeTab === "calificaciones" ? "Historial Numérico" : activeTab === "progreso" ? "Historial de Progreso" : "Historial de Reportes"}
                             </h2>
 
                             <div className="space-y-6">
-                                {activeTab === "notas" && (initialEvaluaciones.length > 0 ? initialEvaluaciones.map((ev: Evaluation) => (
+                                {(activeTab === "notas" || activeTab === "progreso") && (initialEvaluaciones.length > 0 ? initialEvaluaciones.map((ev: Evaluation) => (
                                     <div key={ev.id} className="bg-white p-8 rounded-[40px] shadow-lg border-2 border-white hover:border-[#002147]/10 transition-all group overflow-hidden relative">
                                         <div className="flex flex-col sm:flex-row gap-6 relative z-10 w-full">
                                             {/* Column Date */}

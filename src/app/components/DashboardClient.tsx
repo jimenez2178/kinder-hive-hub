@@ -349,7 +349,17 @@ export default function DashboardClient({
                                         </button>
                                     ) : (
                                         <button
-                                            onClick={() => setHiddenAvisos([...hiddenAvisos, com.id])}
+                                            onClick={async () => {
+                                                // Optimistic: ocultar inmediatamente en UI
+                                                setHiddenAvisos(prev => [...prev, com.id]);
+                                                // Persistir en BD via server action
+                                                try {
+                                                    const { marcarAvisoLeidoAction } = await import("@/app/actions/padre");
+                                                    await marcarAvisoLeidoAction(com.id);
+                                                } catch (e) {
+                                                    console.error("Error al marcar aviso como leído:", e);
+                                                }
+                                            }}
                                             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-20 backdrop-blur-md"
                                             title="Marcar como leído / Ocultar"
                                         >
