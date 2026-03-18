@@ -27,7 +27,7 @@ export default async function MaestroPage() {
     // Fetch comments left by this teacher
     const { data: evaluaciones } = await supabase
         .from("evaluaciones")
-        .select("*, estudiantes(nombre)")
+        .select("*, estudiantes(nombre), perfiles!evaluaciones_maestro_id_fkey(nombre_completo)")
         .eq("maestro_id", user.id)
         .order("created_at", { ascending: false });
 

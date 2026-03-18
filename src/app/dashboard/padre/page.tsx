@@ -139,7 +139,7 @@ export default async function DashboardPage() {
     // 9. Evaluaciones Académicas
     const { data: evaluaciones } = await supabase
         .from("evaluaciones")
-        .select("*, estudiantes(nombre)")
+        .select("*, estudiantes(nombre), perfiles!evaluaciones_maestro_id_fkey(nombre_completo)")
         .in("estudiante_id", estudiantes?.map(e => e.id) || [])
         .order("created_at", { ascending: false });
 

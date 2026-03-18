@@ -646,9 +646,9 @@ export default function DashboardClient({
                                                         <div className="bg-white px-4 py-1.5 rounded-full shadow-xl">
                                                             <span className="text-[#002147] font-black text-[10px] uppercase tracking-widest">{ev.categoria}</span>
                                                         </div>
-                                                        {ev.maestro_nombre && (
+                                                        {ev.perfiles?.nombre_completo && (
                                                             <div className="bg-[#002147]/10 backdrop-blur-lg px-4 py-1.5 rounded-full border border-[#002147]/10">
-                                                                <span className="text-[#002147] font-black text-[9px] uppercase tracking-tighter">🎓 {ev.maestro_nombre}</span>
+                                                                <span className="text-[#002147] font-black text-[9px] uppercase tracking-tighter">🎓 {ev.perfiles.nombre_completo}</span>
                                                             </div>
                                                         )}
                                                     </div>

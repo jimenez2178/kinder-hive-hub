@@ -154,18 +154,6 @@ export function TeacherDashboardClient({
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Nombre del Maestro</Label>
-                                        <Input
-                                            type="text"
-                                            name="maestro_nombre"
-                                            defaultValue={maestroNombre}
-                                            required
-                                            placeholder="Ej. Profesora Marta..."
-                                            className="h-14 rounded-[24px] border-2 border-slate-200 bg-white px-6 font-bold focus:border-slate-800 transition-colors"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-3">
                                         <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Comentario Académico</Label>
                                         <textarea
                                             name="observaciones"
@@ -247,7 +235,7 @@ export function TeacherDashboardClient({
                                                     {ev.observaciones}
                                                 </p>
                                                 <div className="absolute right-4 bottom-0 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                                    ✍️ Maestro: {ev.maestro_nombre}
+                                                    ✍️ Maestro: {ev.perfiles?.nombre_completo || maestroNombre}
                                                 </div>
                                             </div>
                                         </div>

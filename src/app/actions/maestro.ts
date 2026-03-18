@@ -13,20 +13,16 @@ export async function addNotaAction(prevState: unknown, formData: FormData) {
     const categoria = formData.get("categoria") as string;
     const observaciones = formData.get("observaciones") as string;
 
-    // Obtener nombre del maestro/maestra
     const { data: profile } = await supabase
         .from("perfiles")
-        .select("nombre_completo")
+        .select("nombre_completo, colegio_id")
         .eq("id", user.id)
         .single();
-
-    const maestro_nombre_input = formData.get("maestro_nombre") as string;
-    const maestro_nombre = maestro_nombre_input || profile?.nombre_completo || "Maestro(a)";
 
     const { error } = await supabase.from("evaluaciones").insert({
         estudiante_id,
         maestro_id: user.id,
-        maestro_nombre,
+        colegio_id: profile?.colegio_id,
         categoria,
         observaciones,
         fecha: new Date().toISOString().split('T')[0]
