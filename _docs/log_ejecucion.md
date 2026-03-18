@@ -55,3 +55,9 @@
 *   **Cambio**: Añadida solicitud explícita de permisos (Permission API) y logs de depuración en `DashboardClient.tsx`.
 *   **Objetivo**: Resolver incidencia donde el botón no reaccionaba en dispositivos móviles.
 *   **Mejora**: Validación de existencia de llaves VAPID antes de intentar la suscripción.
+
+## [2026-03-18] Mejoras en UI y CRUD de Avisos
+*   **Dashboard Padres**: Se limito la vista de comunicados a los 3 mas recientes.
+*   **UI Pagos**: Se hizo el historial scrollable en movil (overflow-x-auto) y se ajusto el contenedor del recibo (flex wrap/col) para que no se corte el balance.
+*   **Evaluaciones**: Se agregaron nuevas categorias (Salud, Deportes, etc.) y campo de Maestro obligatorio en TeacherDashboardClient y addNotaAction.
+*   **Avisos Admin**: Se anadio el boton 'Vaciar Avisos' mediante clearComunicadosAction en DirectorDashboardClient.

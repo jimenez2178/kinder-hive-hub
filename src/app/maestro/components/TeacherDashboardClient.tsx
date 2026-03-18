@@ -141,7 +141,28 @@ export function TeacherDashboardClient({
                                             <option value="Conducta">😇 Conducta</option>
                                             <option value="General">🌟 General</option>
                                             <option value="Tareas">📝 Tareas</option>
+                                            <option value="Salud">🩺 Salud</option>
+                                            <option value="Deportes">⚽ Deportes</option>
+                                            <option value="Matemáticas">🔢 Matemáticas</option>
+                                            <option value="Ciencias">🔬 Ciencias</option>
+                                            <option value="Almuerzo">🍽️ Almuerzo</option>
+                                            <option value="Desayuno">🥐 Desayuno</option>
+                                            <option value="Meriendas">🥪 Meriendas</option>
+                                            <option value="Avances">📈 Avances</option>
+                                            <option value="Otros">📌 Otros</option>
                                         </select>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Nombre del Maestro</Label>
+                                        <Input
+                                            type="text"
+                                            name="maestro_nombre"
+                                            defaultValue={maestroNombre}
+                                            required
+                                            placeholder="Ej. Profesora Marta..."
+                                            className="h-14 rounded-[24px] border-2 border-slate-200 bg-white px-6 font-bold focus:border-slate-800 transition-colors"
+                                        />
                                     </div>
 
                                     <div className="space-y-3">

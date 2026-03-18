@@ -316,7 +316,7 @@ export default function DashboardClient({
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
                 {comunicados.length > 0 && (
                     <div className="space-y-6 mb-10">
-                        {comunicados.map((com, idx) => {
+                        {comunicados.slice(0, 3).map((com, idx) => {
                             const p = com.prioridad?.toLowerCase();
                             const isUrgent = p === 'alta' || p === 'urgente';
                             const isWarning = p === 'media' || p === 'advertencia';
@@ -850,14 +850,14 @@ export default function DashboardClient({
                                     </div>
                                 </div>
                                 <div className="bg-[#002147] p-6 rounded-2xl text-white shadow-lg space-y-3">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                         <div>
                                             <p className="text-[9px] font-bold uppercase opacity-80">Método de Pago</p>
-                                            <p className="font-black uppercase text-sm">{selectedRecibo.metodo}</p>
+                                            <p className="font-black uppercase text-[13px] sm:text-sm">{selectedRecibo.metodo}</p>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-left sm:text-right w-full sm:w-auto">
                                             <p className="text-[9px] font-bold uppercase opacity-80">Monto Total</p>
-                                            <p className="font-black uppercase text-sm font-mono">RD$ {selectedRecibo.monto?.toLocaleString()}</p>
+                                            <p className="font-black uppercase text-base sm:text-lg font-mono break-all sm:break-normal">RD$ {selectedRecibo.monto?.toLocaleString()}</p>
                                         </div>
                                     </div>
                                     {selectedRecibo.concepto && (
@@ -1003,8 +1003,8 @@ export default function DashboardClient({
                             {/* HISTORIAL FINANCIERO */}
                             <div className="mb-10">
                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4 px-4">Historial Reciente de Pagos</h3>
-                                <div className="border border-slate-100 rounded-[35px] overflow-hidden shadow-sm">
-                                    <table className="w-full text-sm">
+                                <div className="border border-slate-100 rounded-[35px] overflow-hidden shadow-sm overflow-x-auto w-full">
+                                    <table className="w-full text-sm min-w-[500px]">
                                         <thead>
                                             <tr className="bg-slate-50 border-b border-slate-100 text-left">
                                                 <th className="px-6 py-4 font-black text-slate-500 uppercase text-[9px]">Fecha</th>

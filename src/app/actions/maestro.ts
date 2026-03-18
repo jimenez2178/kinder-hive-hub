@@ -20,7 +20,8 @@ export async function addNotaAction(prevState: unknown, formData: FormData) {
         .eq("id", user.id)
         .single();
 
-    const maestro_nombre = profile?.nombre_completo || "Maestro(a)";
+    const maestro_nombre_input = formData.get("maestro_nombre") as string;
+    const maestro_nombre = maestro_nombre_input || profile?.nombre_completo || "Maestro(a)";
 
     const { error } = await supabase.from("evaluaciones").insert({
         estudiante_id,

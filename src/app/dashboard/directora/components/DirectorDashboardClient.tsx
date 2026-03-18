@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction } from "@/app/actions/directora";
+import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction, clearComunicadosAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle } from "lucide-react";
@@ -78,6 +78,25 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         } catch (err) {
             console.error(err);
             setLocalComunicados(previousComunicados);
+        }
+    };
+
+    const handleClearComunicados = async () => {
+        if (!confirm("¿Estás seguro de que deseas eliminar TODOS los avisos activos del panel? Esta acción no se puede deshacer.")) return;
+        
+        setIsLoading(true);
+        try {
+            const res = await clearComunicadosAction();
+            if (res.error) {
+                alert("Error al vaciar avisos: " + res.error);
+            } else {
+                setLocalComunicados([]);
+                showToast("Todos los avisos han sido eliminados.");
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -476,12 +495,20 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                             </CardTitle>
                             <p className="text-xs font-bold text-slate-400">Total: {localComunicados.length} avisos publicados</p>
                         </div>
-                        <Button
-                            onClick={() => setActiveModal("comunicado")}
-                            className="rounded-full bg-[#8A2BE2] hover:bg-[#7b23cc] text-white font-black px-6 shadow-md"
-                        >
-                            <Megaphone className="mr-2 h-4 w-4" /> Nuevo Aviso
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={handleClearComunicados}
+                                className="rounded-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-black px-4 shadow-md transition-all"
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" /> Vaciar Avisos
+                            </Button>
+                            <Button
+                                onClick={() => setActiveModal("comunicado")}
+                                className="rounded-full bg-[#8A2BE2] hover:bg-[#7b23cc] text-white font-black px-6 shadow-md"
+                            >
+                                <Megaphone className="mr-2 h-4 w-4" /> Nuevo Aviso
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className="p-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
