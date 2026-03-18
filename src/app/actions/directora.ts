@@ -433,3 +433,31 @@ export async function deleteComunicadoAction(id: string) {
     return { success: true };
 }
 
+export async function clearComunicadosAction() {
+    const supabase = await createClient();
+    
+    // Obtener colegio_id
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "No autorizado" };
+    
+    const { data: perfil } = await supabase
+        .from("perfiles")
+        .select("colegio_id")
+        .eq("id", user.id)
+        .single();
+        
+    if (!perfil?.colegio_id) return { error: "No se encontró el colegio" };
+
+    const { error } = await supabase
+        .from("comunicados")
+        .delete()
+        .eq("colegio_id", perfil.colegio_id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}
+
+
