@@ -143,6 +143,13 @@ export default async function DashboardPage() {
         .in("estudiante_id", estudiantes?.map(e => e.id) || [])
         .order("created_at", { ascending: false });
 
+    // Fetch Boletin de Calificaciones
+    const { data: calificaciones } = await supabase
+        .from("calificaciones")
+        .select("*, estudiantes(nombre), perfiles(nombre_completo)")
+        .in("estudiante_id", estudiantes?.map(e => e.id) || [])
+        .order("created_at", { ascending: false });
+
     return (
         <DashboardClient
             initialFrase={fraseDelDia}
@@ -155,6 +162,7 @@ export default async function DashboardPage() {
             eventos={eventos || []}
             agradecimientos={agradecimientos || []}
             evaluaciones={evaluaciones || []}
+            calificaciones={calificaciones || []}
         />
     );
 }

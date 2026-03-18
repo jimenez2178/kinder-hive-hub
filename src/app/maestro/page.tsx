@@ -31,11 +31,19 @@ export default async function MaestroPage() {
         .eq("maestro_id", user.id)
         .order("created_at", { ascending: false });
 
+    // Fetch grades left by this teacher
+    const { data: calificaciones } = await supabase
+        .from("calificaciones")
+        .select("*, estudiantes(nombre), perfiles(nombre_completo)")
+        .eq("maestro_id", user.id)
+        .order("created_at", { ascending: false });
+
     return (
         <div className="min-h-screen bg-slate-50 pb-12">
             <TeacherDashboardClient
                 estudiantes={estudiantes || []}
                 evaluaciones={evaluaciones || []}
+                calificaciones={calificaciones || []}
                 maestroNombre={maestroNombre}
             />
         </div>

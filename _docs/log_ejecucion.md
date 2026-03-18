@@ -65,3 +65,8 @@
 ## [2026-03-18] Migracion hacia SaaS y Normalizacion de BD
 *   **Arquitectura SaaS y RLS**: Se añadio el campo colegio_id a evaluaciones e inserto la tabla padres_estudiantes migrando datos antiguos. Tambien se securizaron las tablas mediante Row Level Security validado contra user_colegio_id.
 *   **Normalizacion de Maestro**: Se vinculo el UUID maestro_id a perfiles y en el Frontend/App Router y el DashboardClient/TeacherDashboardClient se extrae via JOIN SQL. Ahora maestro_nombre ya no es texto libre sino que hereda la identidad real del perfil.
+
+## [2026-03-18] Modulo Multi-Evaluaciones para Docentes
+*   **Schema JSON**: Se anadio el campo 'notas' tipo JSONB a Evaluaciones para catalogar items individuales.
+*   **Frontend Maestro**: Se elimino el selector lineal y se implemento una cuadricula estetica (Oxford v3) que recoge niveles de Salud, Matematicas, Ciencias... etc. Y se configuro para enrutar datos al action addNota.
+*   **Frontend Padre**: Se adapto DashboardClient para parsear el JSON y escupir grid de minitarjetas mostrando {cat: result} por encima del descargo de profesor, usando colores azul marino y transparencias blur.

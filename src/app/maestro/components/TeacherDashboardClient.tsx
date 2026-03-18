@@ -1,14 +1,28 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { addNotaAction, deleteNotaAction } from "@/app/actions/maestro";
+import { addNotaAction, deleteNotaAction, addCalificacionAction, deleteCalificacionAction } from "@/app/actions/maestro";
 import { LogoutButton } from "@/components/LogoutButton";
-import { Send, FileEdit, Trash2, User, GraduationCap, Clock } from "lucide-react";
+import { Send, FileEdit, Trash2, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+export interface Calificacion {
+    id: string;
+    estudiante_id: string;
+    maestro_id: string;
+    perfiles?: { nombre_completo: string };
+    asignatura: string;
+    nota_mes: number;
+    nota_prueba: number;
+    nota_final: number;
+    comentario_especifico: string;
+    periodo: string;
+    created_at: string;
+    estudiantes?: { nombre: string };
+}
 
 interface Evaluation {
     id: string;
@@ -27,17 +41,20 @@ interface Evaluation {
 export function TeacherDashboardClient({ 
     estudiantes, 
     evaluaciones: initialEvaluaciones, 
+    calificaciones: initialCalificaciones,
     maestroNombre 
 }: { 
     estudiantes: { id: string, nombre: string, grado: string }[],
     evaluaciones: Evaluation[],
+    calificaciones: Calificacion[],
     maestroNombre: string
 }) {
     const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: "", visible: false });
     const [isLoading, setIsLoading] = useState(false);
     const [search, setSearch] = useState("");
+    const [activeTab, setActiveTab] = useState<"notas" | "calificaciones">("calificaciones");
     
-    const [deleteState, deleteFormAction] = useActionState(deleteNotaAction, null);
+    // No necesitamos useActionState para delete, llamamos la acción directamente.
 
     const showToast = (message: string) => {
         setToast({ message, visible: true });
@@ -59,10 +76,8 @@ export function TeacherDashboardClient({
         if (result?.error) {
             alert("⚠️ ERROR: " + result.error);
         } else {
-            showToast("✨ ¡Evaluación guardada con éxito!");
-            setSearch("");
-            const form = document.getElementById('eval-form') as HTMLFormElement;
-            if (form) form.reset();
+            showToast("¡Evaluación enviada con éxito! 🎉");
+            (document.getElementById("eval-form") as HTMLFormElement).reset();
         }
     };
 
@@ -96,16 +111,22 @@ export function TeacherDashboardClient({
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
                 </header>
 
+                <div className="flex gap-4 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 max-w-fit mx-auto">
+                    <button onClick={() => setActiveTab("calificaciones")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'calificaciones' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Registro de Calificaciones</button>
+                    <button onClick={() => setActiveTab("notas")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'notas' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Evaluación General</button>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* Columna Izquierda: Formulario (7 cols) */}
+                    {/* Columna Izquierda: Formulario (5 cols) */}
                     <div className="lg:col-span-12 xl:col-span-5">
                         <Card className="rounded-[40px] border-0 shadow-2xl bg-white sticky top-8">
                             <CardHeader className="pb-4 pt-8 px-8 border-b border-slate-50 mb-4">
                                 <CardTitle className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                                    <FileEdit className="text-slate-800" /> Nueva Evaluación
+                                    <FileEdit className="text-slate-800" /> {activeTab === "calificaciones" ? "Nuevas Calificaciones" : "Evaluación General"}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-8 pb-8 pt-4">
+                                {activeTab === "notas" && (
                                 <form id="eval-form" action={handleSubtmit} className="space-y-6">
                                     <div className="space-y-3">
                                         <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">¿A quién evaluamos?</Label>
@@ -134,26 +155,23 @@ export function TeacherDashboardClient({
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label className="font-black text-[#002147] text-sm uppercase tracking-widest">Desempeño por Área</Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                            {["Salud", "Matemáticas", "Ciencias", "Lectura", "Conducta", "Motricidad"].map((cat) => (
-                                                <div key={cat} className="space-y-1 bg-white p-3 rounded-[20px] border-2 border-slate-100 shadow-sm">
-                                                    <Label className="font-black text-slate-800 text-[10px] uppercase tracking-widest">{cat}</Label>
-                                                    <select
-                                                        name={`nota_${cat}`}
-                                                        className="w-full bg-slate-50 border border-slate-200 text-xs font-bold rounded-xl h-10 px-2 mt-1 focus:border-[#002147] transition-all"
-                                                    >
-                                                        <option value="">No Eval.</option>
-                                                        <option value="Excelente">🌟 Excelente</option>
-                                                        <option value="Bueno">✅ Bueno</option>
-                                                        <option value="En Proceso">⏳ Progreso</option>
-                                                        <option value="Requiere Apoyo">🌱 Apoyo</option>
-                                                    </select>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Categoría del Avance</Label>
+                                        <select name="categoria" required className="flex w-full h-14 rounded-[24px] border-2 border-slate-200 bg-slate-50 px-6 font-bold shadow-inner focus:outline-none focus:border-slate-800 transition-all">
+                                            <option value="">Seleccione...</option>
+                                            <option value="Conducta">😇 Conducta</option>
+                                            <option value="General">🌟 General</option>
+                                            <option value="Tareas">📝 Tareas</option>
+                                            <option value="Salud">🩺 Salud</option>
+                                            <option value="Deportes">⚽ Deportes</option>
+                                            <option value="Matemáticas">🔢 Matemáticas</option>
+                                            <option value="Ciencias">🔬 Ciencias</option>
+                                            <option value="Almuerzo">🍽️ Almuerzo</option>
+                                            <option value="Desayuno">🥐 Desayuno</option>
+                                            <option value="Meriendas">🥪 Meriendas</option>
+                                            <option value="Avances">📈 Avances</option>
+                                            <option value="Otros">📌 Otros</option>
+                                        </select>
                                     </div>
-                                    <input type="hidden" name="categoria" value="Múltiple" />
 
                                     <div className="space-y-3">
                                         <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Comentario Académico</Label>
@@ -169,95 +187,191 @@ export function TeacherDashboardClient({
                                     <Button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full h-14 rounded-[24px] bg-slate-900 hover:bg-black text-white font-black text-lg shadow-xl mt-4 transition-transform hover:-translate-y-1 active:translate-y-0"
+                                        className="w-full bg-[#002147] hover:bg-slate-800 text-white h-16 rounded-[24px] text-lg font-black tracking-widest uppercase transition-all shadow-xl active:scale-[0.98]"
                                     >
-                                        {isLoading ? "Enviando..." : (
-                                            <>
-                                                <Send className="mr-2 h-5 w-5" /> Guardar Evaluación
-                                            </>
-                                        )}
+                                        {isLoading ? "Enviando..." : "Guardar Evaluación"} <Send className="ml-2 h-5 w-5" />
                                     </Button>
                                 </form>
+                                )}
+
+                                {activeTab === "calificaciones" && (
+                                <form id="calif-form" action={async (formData) => {
+                                        setIsLoading(true);
+                                        const result = await addCalificacionAction(null, formData);
+                                        setIsLoading(false);
+                                        if (result?.error) alert("⚠️ ERROR: " + result.error);
+                                        else { showToast("¡Calificación guardada!"); (document.getElementById("calif-form") as HTMLFormElement).reset(); }
+                                    }} className="space-y-6">
+                                    <div className="space-y-3">
+                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Alumno</Label>
+                                        <select
+                                            name="estudiante_id"
+                                            required
+                                            className="flex w-full h-14 rounded-[24px] border-2 border-slate-200 bg-slate-50 px-6 font-bold focus:outline-none focus:border-slate-800 transition-all cursor-pointer"
+                                        >
+                                            <option value="">Selecciona alumno...</option>
+                                            {filteredEstudiantes.map(e => (
+                                                <option key={e.id} value={e.id}>{e.nombre} — {e.grado}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-3">
+                                            <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Periodo</Label>
+                                            <Input type="text" name="periodo" placeholder="Ej. Ene-Mar 2026" required className="h-14 rounded-[24px]" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Asignatura</Label>
+                                            <select name="asignatura" required className="flex w-full h-14 rounded-[24px] border-2 border-slate-200 bg-slate-50 px-6 font-bold focus:outline-none focus:border-slate-800">
+                                                <option value="">Selecciona...</option>
+                                                {["Historia", "Lenguaje", "Matematicas", "Ciencias", "Arte", "Manualidades", "Tecnologia", "Robotica", "Etica", "Musica", "Canto", "Otros"].map(a => (
+                                                    <option key={a} value={a}>{a}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase text-[#002147] tracking-widest">Nota Mes</Label>
+                                            <Input type="number" step="0.1" name="nota_mes" required className="h-12 rounded-[16px] text-center font-black" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase text-[#002147] tracking-widest">Prueba</Label>
+                                            <Input type="number" step="0.1" name="nota_prueba" required className="h-12 rounded-[16px] text-center font-black" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase text-[#002147] tracking-widest">Final</Label>
+                                            <Input type="number" step="0.1" name="nota_final" required className="h-12 rounded-[16px] text-center font-black" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Comentario</Label>
+                                        <textarea
+                                            name="comentario_especifico"
+                                            rows={3}
+                                            className="flex w-full rounded-[24px] border-2 border-slate-200 bg-slate-50 p-6 font-medium focus:border-slate-800 transition-all resize-none"
+                                        ></textarea>
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full bg-[#002147] hover:bg-slate-800 text-white h-16 rounded-[24px] text-lg font-black tracking-widest uppercase transition-all shadow-xl active:scale-[0.98]"
+                                    >
+                                        {isLoading ? "Enviando..." : "Registrar Calificación"} <Send className="ml-2 h-5 w-5" />
+                                    </Button>
+                                </form>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
 
-                    {/* Columna Derecha: Historial Reubicado (5 cols) */}
+                    {/* Columna Derecha: Historial (7 cols) */}
                     <div className="lg:col-span-12 xl:col-span-7">
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between px-2">
-                                <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                                    <span className="bg-slate-100 p-2 rounded-2xl">
-                                        <GraduationCap className="h-6 w-6 text-slate-800" />
-                                    </span>
-                                    Mis Comentarios Recientes
-                                </h3>
-                                <div className="bg-white px-4 py-1.5 rounded-full border shadow-sm text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                    {initialEvaluaciones.length} Registros
-                                </div>
-                            </div>
+                        <div className="bg-slate-800/5 rounded-[40px] p-4 md:p-8">
+                            <h2 className="text-2xl font-black text-slate-800 px-6 py-4 flex items-center gap-2 tracking-tighter shadow-sm mb-6 bg-white rounded-3xl w-fit">
+                                <Clock className="text-[#002147]" /> {activeTab === "calificaciones" ? "Historial Numérico" : "Historial de Reportes"}
+                            </h2>
 
-                            <div className="grid grid-cols-1 gap-6">
-                                {initialEvaluaciones.length > 0 ? initialEvaluaciones.map((ev) => (
-                                    <div key={ev.id} className="bg-white rounded-[40px] p-8 shadow-xl border-2 border-slate-50 relative overflow-hidden group hover:border-slate-200 transition-all duration-300">
-                                        <div className="relative z-10">
-                                            <div className="flex items-start justify-between mb-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="bg-slate-100 h-14 w-14 rounded-[20px] flex items-center justify-center">
-                                                        <User className="h-6 w-6 text-slate-400" />
-                                                    </div>
-                                                    <div>
-                                                        <h5 className="font-black text-slate-800 text-lg leading-tight uppercase tracking-tighter italic">{ev.estudiantes?.nombre}</h5>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <span className="bg-slate-800 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest">{ev.categoria}</span>
-                                                            <span className="text-slate-300 text-[10px] items-center flex gap-1 font-bold">
-                                                                <Clock className="h-3 w-3" /> {new Date(ev.created_at).toLocaleDateString('es-DO')}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <form action={async (formData) => {
-                                                    const res = await deleteNotaAction(null, formData);
-                                                    if(res.error) alert(res.error);
-                                                }}>
-                                                    <input type="hidden" name="id" value={ev.id} />
-                                                    <button 
-                                                        type="submit"
-                                                        className="bg-red-50 hover:bg-red-100 text-red-600 p-3 rounded-2xl transition-all active:scale-95 group-hover:shadow-md"
-                                                        title="Eliminar Comentario"
-                                                    >
-                                                        <Trash2 className="h-5 w-5" />
-                                                    </button>
-                                                </form>
+                            <div className="space-y-6">
+                                {activeTab === "notas" && (initialEvaluaciones.length > 0 ? initialEvaluaciones.map((ev: Evaluation) => (
+                                    <div key={ev.id} className="bg-white p-8 rounded-[40px] shadow-lg border-2 border-white hover:border-[#002147]/10 transition-all group overflow-hidden relative">
+                                        <div className="flex flex-col sm:flex-row gap-6 relative z-10 w-full">
+                                            {/* Column Date */}
+                                            <div className="flex-none bg-slate-50 border border-slate-100 p-4 rounded-[28px] text-center w-[120px] shadow-sm flex flex-col justify-center shrink-0">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pb-1">Ingreso</span>
+                                                <span className="text-xl font-black text-[#002147] capitalize leading-none mb-1">
+                                                    {new Date(ev.created_at).toLocaleDateString("es-DO", { day: '2-digit', month: 'short' })}
+                                                </span>
+                                                <span className="text-xs font-bold text-slate-400 bg-white rounded-full py-1 px-2 border border-slate-100 mt-2">
+                                                    {new Date(ev.created_at).getFullYear()}
+                                                </span>
                                             </div>
 
-                                            <div className="relative bg-slate-50 p-6 rounded-[28px] border border-slate-100">
-                                                {ev.notas && Object.keys(ev.notas).length > 0 && (
-                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4 pb-4 border-b border-slate-200/60">
-                                                        {Object.entries(ev.notas).map(([cat, val]) => (
-                                                            <div key={cat} className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{cat}</span>
-                                                                <span className="text-xs font-bold text-slate-700 truncate">{String(val)}</span>
-                                                            </div>
-                                                        ))}
+                                            {/* Column Info */}
+                                            <div className="flex-1 space-y-4">
+                                                <div className="flex gap-2 justify-between items-start">
+                                                    <div>
+                                                        <h5 className="font-black text-slate-800 text-2xl tracking-tighter leading-tight break-words">{ev.estudiantes?.nombre}</h5>
+                                                        <div className="inline-flex mt-2 items-center px-3 py-1 rounded-full bg-[#002147] text-white text-[10px] font-black tracking-widest uppercase truncate max-w-[200px]">
+                                                            {ev.categoria}
+                                                        </div>
                                                     </div>
-                                                )}
-                                                <div className="absolute -left-2 -top-2 text-4xl text-slate-200 font-serif translate-y-2 opacity-50">“</div>
-                                                <p className="text-slate-600 font-bold italic text-base leading-relaxed relative z-10">
-                                                    {ev.observaciones}
-                                                </p>
-                                                <div className="absolute right-4 bottom-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2">
-                                                    ✍️ Maestro: {ev.perfiles?.nombre_completo || maestroNombre}
+                                                    <div className="flex-none">
+                                                        <form action={async (formData) => {
+                                                            const result = await deleteNotaAction(null, formData);
+                                                            if (result?.error) alert(result.error);
+                                                            else showToast("Eliminado con éxito");
+                                                        }}>
+                                                            <input type="hidden" name="id" value={ev.id} />
+                                                            <button 
+                                                                type="submit"
+                                                                className="bg-red-50 hover:bg-red-100 text-red-600 p-3 rounded-2xl transition-all active:scale-95 group-hover:shadow-md shrink-0"
+                                                            >
+                                                                <Trash2 className="h-5 w-5" />
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <div className="relative bg-slate-50 p-6 rounded-[28px] border border-slate-100">
+                                                    <div className="absolute -left-2 -top-2 text-4xl text-slate-200 font-serif translate-y-2 opacity-50">“</div>
+                                                    <p className="text-slate-600 font-bold italic text-base leading-relaxed relative z-10">
+                                                        {ev.observaciones}
+                                                    </p>
+                                                    <div className="absolute right-4 bottom-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2">
+                                                        ✍️ Maestro: {ev.perfiles?.nombre_completo || maestroNombre}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                )) : (
-                                    <div className="bg-white rounded-[40px] border-4 border-dashed border-slate-100 p-20 text-center">
-                                        <FileEdit className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                        <p className="text-slate-400 font-bold italic">Aún no has registrado evaluaciones académicas.</p>
+                                )) : <div className="bg-white rounded-[40px] p-20 text-center"><p className="text-slate-400 font-bold italic">Aún no hay reportes.</p></div>)}
+
+                                {activeTab === "calificaciones" && (initialCalificaciones.length > 0 ? initialCalificaciones.map((cal: Calificacion) => (
+                                    <div key={cal.id} className="bg-white p-6 rounded-[30px] shadow-lg border-l-8 border-l-[#002147] transition-all flex flex-col xl:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="pr-4">
+                                                    <h5 className="font-black text-[#002147] text-xl uppercase tracking-tighter leading-none">{cal.estudiantes?.nombre}</h5>
+                                                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 inline-block">{cal.periodo} • {cal.asignatura}</span>
+                                                </div>
+                                                <form action={async (formData) => {
+                                                            const result = await deleteCalificacionAction(null, formData);
+                                                            if (result?.error) alert(result.error);
+                                                            else showToast("Eliminado con éxito");
+                                                        }}>
+                                                    <input type="hidden" name="id" value={cal.id} />
+                                                    <button type="submit" className="text-red-300 bg-red-50 rounded-xl hover:text-red-500 transition-colors p-2 shrink-0"><Trash2 className="h-4 w-4"/></button>
+                                                </form>
+                                            </div>
+                                            
+                                            {cal.comentario_especifico && (
+                                                <p className="text-sm text-slate-600 font-medium italic bg-slate-50 border border-slate-100 rounded-2xl p-4 leading-relaxed line-clamp-2">"{cal.comentario_especifico}"</p>
+                                            )}
+                                        </div>
+
+                                        <div className="xl:w-48 bg-slate-50 rounded-2xl p-4 border border-slate-100 flex xl:flex-col justify-around xl:justify-center items-center gap-2 lg:gap-4 shrink-0 mt-4 xl:mt-0">
+                                            <div className="text-center w-full">
+                                                <div className="text-[9px] font-black uppercase text-slate-400 tracking-wider">MES</div>
+                                                <div className="text-xl font-black text-[#002147]">{cal.nota_mes}</div>
+                                            </div>
+                                            <div className="h-8 w-px xl:w-full xl:h-px bg-slate-200"></div>
+                                            <div className="text-center w-full">
+                                                <div className="text-[9px] font-black uppercase text-slate-400 tracking-wider">PRUEBA</div>
+                                                <div className="text-xl font-black text-[#002147]">{cal.nota_prueba}</div>
+                                            </div>
+                                            <div className="h-8 w-px xl:w-full xl:h-px bg-slate-200"></div>
+                                            <div className="text-center w-full">
+                                                <div className="text-[9px] font-black uppercase text-slate-400 tracking-wider">FINAL</div>
+                                                <div className="text-2xl font-black text-green-600 bg-green-50 rounded-xl">{cal.nota_final}</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
+                                )) : <div className="bg-white rounded-[40px] p-20 text-center"><p className="text-slate-400 font-bold italic">Aún no hay calificaciones.</p></div>)}
                             </div>
                         </div>
                     </div>

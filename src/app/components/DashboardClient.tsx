@@ -107,6 +107,7 @@ export default function DashboardClient({
     eventos = [],
     agradecimientos = [],
     evaluaciones = [],
+    calificaciones = [],
     onDeleteComunicado
 }: {
     initialFrase: string,
@@ -119,6 +120,7 @@ export default function DashboardClient({
     eventos?: any[],
     agradecimientos?: any[],
     evaluaciones?: any[],
+    calificaciones?: any[],
     onDeleteComunicado?: (id: string) => Promise<void>
 }) {
     const [frase] = useState(initialFrase);
@@ -655,21 +657,11 @@ export default function DashboardClient({
                                                 </div>
                                             </div>
 
-                                            {/* Observaciones y Notas (6 cols) */}
+                                            {/* Observaciones (6 cols) */}
                                             <div className="lg:col-span-6 lg:border-l lg:border-[#002147]/10 lg:pl-10">
-                                                {ev.notas && Object.keys(ev.notas).length > 0 && (
-                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
-                                                        {Object.entries(ev.notas).map(([cat, val]) => (
-                                                            <div key={cat} className="flex flex-col bg-white/60 backdrop-blur-md rounded-xl p-2 border border-white/40 shadow-sm">
-                                                                <span className="text-[9px] font-black text-[#002147]/50 uppercase tracking-widest">{cat}</span>
-                                                                <span className="text-xs font-black text-[#002147] truncate">{String(val)}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                <div className="relative mt-2">
+                                                <div className="relative">
                                                     <div className="absolute -left-6 -top-4 text-6xl text-[#002147]/10 font-serif translate-y-2">“</div>
-                                                    <p className="text-[#002147] font-bold italic text-base md:text-lg leading-relaxed drop-shadow-sm">
+                                                    <p className="text-[#002147] font-bold italic text-xl leading-relaxed drop-shadow-sm">
                                                         {ev.observaciones}
                                                     </p>
                                                     <div className="absolute -right-2 -bottom-8 text-6xl text-[#002147]/10 font-serif rotate-180">“</div>
@@ -688,6 +680,55 @@ export default function DashboardClient({
                                 )) : (
                                     <div className="h-20 bg-white rounded-[28px] border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 italic font-bold text-sm">
                                         Aún no hay reportes académicos disponibles.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* BOLETÍN DE CALIFICACIONES */}
+                        <div className="space-y-4 pt-4">
+                            <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 px-1">
+                                <span className="bg-[#002147]/10 p-1.5 rounded-lg text-[#002147]">
+                                    <BookOpen className="h-4 w-4" />
+                                </span>
+                                Boletín de Calificaciones
+                            </h3>
+                            <div className="space-y-4">
+                                {calificaciones && calificaciones.length > 0 ? (
+                                    <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border-2 border-slate-100">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-[#002147] text-white">
+                                                        <th className="p-4 pl-8 font-black text-xs uppercase tracking-widest rounded-tl-[38px]">Asignatura</th>
+                                                        <th className="p-4 font-black text-xs uppercase tracking-widest text-center">Mes</th>
+                                                        <th className="p-4 font-black text-xs uppercase tracking-widest text-center">Prueba</th>
+                                                        <th className="p-4 font-black text-xs uppercase tracking-widest text-center">Final</th>
+                                                        <th className="p-4 pr-8 font-black text-xs uppercase tracking-widest rounded-tr-[38px]">Comentario</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {calificaciones.map((cal: any, idx: number) => (
+                                                        <tr key={cal.id} className={`border-b border-slate-50 transition-colors hover:bg-slate-50/80 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                                                            <td className="p-4 pl-8">
+                                                                <div className="font-black text-[#002147] text-base">{cal.asignatura}</div>
+                                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{cal.periodo}</div>
+                                                            </td>
+                                                            <td className="p-4 text-center font-black text-slate-700">{cal.nota_mes || "-"}</td>
+                                                            <td className="p-4 text-center font-black text-slate-700">{cal.nota_prueba || "-"}</td>
+                                                            <td className="p-4 text-center font-black text-lg text-green-600 bg-green-50/50">{cal.nota_final || "-"}</td>
+                                                            <td className="p-4 pr-8 text-sm font-medium text-slate-500 italic max-w-[250px] truncate" title={cal.comentario_especifico}>
+                                                                {cal.comentario_especifico || "Sin observaciones."}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-20 bg-white rounded-[28px] border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 italic font-bold text-sm">
+                                        Aún no hay calificaciones reportadas.
                                     </div>
                                 )}
                             </div>
