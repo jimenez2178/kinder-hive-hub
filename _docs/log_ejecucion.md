@@ -77,3 +77,11 @@
 *   **TeacherDashboardClient**: Tabs para alternar entre 'Registro de Calificaciones' y 'Evaluacion General'. Form con selector de alumno, periodo, asignatura, 3 notas numericas y comentario.
 *   **DashboardClient**: Nueva seccion 'Boletin de Calificaciones' con tabla (Asignatura, Mes, Prueba, Final, Comentario). La data llega desde /dashboard/padre/page.tsx.
 *   **Build**: Compilado correctamente. Push a main exitoso.
+
+
+## [2026-03-18] Sistema de Registro con Aprobación Previa
+- **Base de Datos**: Se agregaron las columnas estado_aprobacion y nombre_alumno en la tabla perfiles.
+- **Registro**: Se agregó campo nombre_alumno; ahora registro inicializa el estado_aprobacion como pendiente.
+- **Middleware**: Se actualizaron las redirecciones de acceso a evaluar estado_aprobacion en vez de estado.
+- **Dashboard (Admin)**: Se actualizó listado de Solicitudes Pendientes. Ahora los usuarios no solo cambian de estado, sino que se auto-vinculan al estudiante existente a través de la relación padres_estudiantes y actualizando el padre_id.
+

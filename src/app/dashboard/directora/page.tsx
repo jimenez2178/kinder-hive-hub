@@ -24,9 +24,9 @@ export default async function DirectoraPage() {
     // 1c. Catálogo de Cuentas Pendientes (Nuevos Padres)
     const { data: usuariosPendientes } = await supabase
         .from("perfiles")
-        .select("id, nombre, nombre_completo, created_at")
+        .select("id, nombre, nombre_completo, nombre_alumno, created_at")
         .eq("rol", "padre")
-        .eq("estado", "pendiente");
+        .eq("estado_aprobacion", "pendiente");
 
     // 1d. Pagos para revisión de comprobantes
     const { data: pagosRevision } = await supabase

@@ -17,6 +17,7 @@ export async function registerAction(prevState: RegisterState | null, formData: 
     
     const password = formData.get("password") as string;
     const nombreCompleto = (formData.get("nombre_completo") as string)?.trim();
+    const nombreAlumno = (formData.get("nombre_alumno") as string)?.trim();
     
     // Usamos el prefijo del correo electrónico como "nombre" obligatoriamente para que luego
     // la función "addEstudianteAction" (que vincula al padre a través del email) lo pueda encontrar.
@@ -71,6 +72,8 @@ export async function registerAction(prevState: RegisterState | null, formData: 
             nombre_completo: nombreCompleto,
             rol: "padre",
             estado: "pendiente",
+            estado_aprobacion: "pendiente",
+            nombre_alumno: nombreAlumno,
             colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992" 
         }, { onConflict: 'id' });
 

@@ -68,7 +68,7 @@ export function TeacherDashboardClient({
         e.grado.toLowerCase().includes(search.toLowerCase())
     );
 
-    const handleSubtmit = async (formData: FormData) => {
+    const handleSubmit = async (formData: FormData) => {
         setIsLoading(true);
         const result = await addNotaAction(null, formData);
         setIsLoading(false);
@@ -77,7 +77,10 @@ export function TeacherDashboardClient({
             alert("⚠️ ERROR: " + result.error);
         } else {
             showToast("¡Evaluación enviada con éxito! 🎉");
-            (document.getElementById("eval-form") as HTMLFormElement).reset();
+            // Resetear el formulario correcto según el tab activo
+            const formId = activeTab === "progreso" ? "progreso-form" : "eval-form";
+            const form = document.getElementById(formId) as HTMLFormElement | null;
+            if (form) form.reset();
         }
     };
 
@@ -114,7 +117,7 @@ export function TeacherDashboardClient({
                 <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 max-w-fit mx-auto">
                     <button onClick={() => setActiveTab("calificaciones")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'calificaciones' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Calificaciones</button>
                     <button onClick={() => setActiveTab("progreso")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'progreso' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Progreso Académico</button>
-                    <button onClick={() => setActiveTab("notas")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'notas' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Evaluación General</button>
+                    {/* Evaluación General se unificó en Progreso Académico para evitar redundancia y errores */}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -123,76 +126,15 @@ export function TeacherDashboardClient({
                         <Card className="rounded-[40px] border-0 shadow-2xl bg-white sticky top-8">
                             <CardHeader className="pb-4 pt-8 px-8 border-b border-slate-50 mb-4">
                                 <CardTitle className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                                    <FileEdit className="text-slate-800" /> {activeTab === "calificaciones" ? "Nuevas Calificaciones" : activeTab === "progreso" ? "Progreso Académico" : "Evaluación General"}
+                                    <FileEdit className="text-slate-800" /> {activeTab === "calificaciones" ? "Nuevas Calificaciones" : "Progreso Académico"}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-8 pb-8 pt-4">
                                 {activeTab === "notas" && (
-                                <form id="eval-form" action={handleSubtmit} className="space-y-6">
-                                    <div className="space-y-3">
-                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">¿A quién evaluamos?</Label>
-                                        <div className="relative group">
-                                            <Input
-                                                type="text"
-                                                placeholder="🔍 Buscar alumno o grado..."
-                                                value={search}
-                                                autoComplete="off"
-                                                onChange={(e) => setSearch(e.target.value)}
-                                                className="h-14 rounded-t-[24px] border-2 border-slate-200 bg-white px-6 font-bold focus:border-slate-800 transition-colors"
-                                            />
-                                            <select
-                                                name="estudiante_id"
-                                                required
-                                                size={5}
-                                                className="flex w-full overflow-y-auto rounded-b-[24px] border-2 border-t-0 border-slate-200 bg-slate-50 px-2 py-2 text-sm text-slate-700 font-bold shadow-inner focus:outline-none focus:border-slate-800 transition-all cursor-pointer"
-                                            >
-                                                {filteredEstudiantes.map(e => (
-                                                    <option key={e.id} value={e.id} className="p-3 my-1 rounded-xl checked:bg-slate-800 checked:text-white hover:bg-slate-100 transition-colors">
-                                                        {e.nombre} — {e.grado}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                    <div className="text-center p-8 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+                                        <p className="text-slate-500 font-bold mb-4">Esta sección se ha movido a Progreso Académico para mayor claridad.</p>
+                                        <Button onClick={() => setActiveTab("progreso")} variant="outline" className="rounded-full">Ir a Progreso Académico</Button>
                                     </div>
-
-                                    <div className="space-y-3">
-                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Categoría del Avance</Label>
-                                        <select name="categoria" required className="flex w-full h-14 rounded-[24px] border-2 border-slate-200 bg-slate-50 px-6 font-bold shadow-inner focus:outline-none focus:border-slate-800 transition-all">
-                                            <option value="">Seleccione...</option>
-                                            <option value="Conducta">😇 Conducta</option>
-                                            <option value="General">🌟 General</option>
-                                            <option value="Tareas">📝 Tareas</option>
-                                            <option value="Salud">🩺 Salud</option>
-                                            <option value="Deportes">⚽ Deportes</option>
-                                            <option value="Matemáticas">🔢 Matemáticas</option>
-                                            <option value="Ciencias">🔬 Ciencias</option>
-                                            <option value="Almuerzo">🍽️ Almuerzo</option>
-                                            <option value="Desayuno">🥐 Desayuno</option>
-                                            <option value="Meriendas">🥪 Meriendas</option>
-                                            <option value="Avances">📈 Avances</option>
-                                            <option value="Otros">📌 Otros</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Comentario Académico</Label>
-                                        <textarea
-                                            name="observaciones"
-                                            required
-                                            rows={4}
-                                            placeholder="Detalles sobre el progreso del alumno..."
-                                            className="flex w-full rounded-[24px] border-2 border-slate-200 bg-slate-50 p-6 font-medium shadow-inner focus:outline-none focus:border-slate-800 transition-all resize-none"
-                                        ></textarea>
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="w-full bg-[#002147] hover:bg-slate-800 text-white h-16 rounded-[24px] text-lg font-black tracking-widest uppercase transition-all shadow-xl active:scale-[0.98]"
-                                    >
-                                        {isLoading ? "Enviando..." : "Guardar Evaluación"} <Send className="ml-2 h-5 w-5" />
-                                    </Button>
-                                </form>
                                 )}
 
                                 {activeTab === "calificaciones" && (
@@ -201,7 +143,10 @@ export function TeacherDashboardClient({
                                         const result = await addCalificacionAction(null, formData);
                                         setIsLoading(false);
                                         if (result?.error) alert("⚠️ ERROR: " + result.error);
-                                        else { showToast("¡Calificación guardada!"); (document.getElementById("calif-form") as HTMLFormElement).reset(); }
+                                        else { 
+                                            showToast("¡Calificación guardada!"); 
+                                            (document.getElementById("calif-form") as HTMLFormElement | null)?.reset(); 
+                                        }
                                     }} className="space-y-6">
                                     <div className="space-y-3">
                                         <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Alumno</Label>
@@ -268,50 +213,68 @@ export function TeacherDashboardClient({
                                 )}
 
                                 {activeTab === "progreso" && (
-                                <form id="progreso-form" action={handleSubtmit} className="space-y-6">
+                                <form id="progreso-form" action={handleSubmit} className="space-y-6">
                                     <div className="space-y-3">
                                         <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">¿A quién evaluamos?</Label>
-                                        <select
-                                            name="estudiante_id"
-                                            required
-                                            className="flex w-full h-14 rounded-[24px] border-2 border-slate-200 bg-slate-50 px-6 font-bold focus:outline-none focus:border-slate-800 transition-all cursor-pointer"
-                                        >
-                                            <option value="">Selecciona alumno...</option>
-                                            {filteredEstudiantes.map(e => (
-                                                <option key={e.id} value={e.id}>{e.nombre} — {e.grado}</option>
-                                            ))}
-                                        </select>
+                                        <div className="relative group">
+                                            <Input
+                                                type="text"
+                                                placeholder="🔍 Buscar alumno o grado..."
+                                                value={search}
+                                                autoComplete="off"
+                                                onChange={(e) => setSearch(e.target.value)}
+                                                className="h-14 rounded-t-[24px] border-2 border-slate-200 bg-white px-6 font-bold focus:border-slate-800 transition-colors"
+                                            />
+                                            <select
+                                                name="estudiante_id"
+                                                required
+                                                size={5}
+                                                className="flex w-full overflow-y-auto rounded-b-[24px] border-2 border-t-0 border-slate-200 bg-slate-50 px-2 py-2 text-sm text-slate-700 font-bold shadow-inner focus:outline-none focus:border-slate-800 transition-all cursor-pointer"
+                                            >
+                                                {filteredEstudiantes.map(e => (
+                                                    <option key={e.id} value={e.id} className="p-3 my-1 rounded-xl checked:bg-slate-800 checked:text-white hover:bg-slate-100 transition-colors">
+                                                        {e.nombre} — {e.grado}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-3">
                                         <Label className="font-black text-slate-700 text-sm uppercase tracking-widest">Área de Desempeño</Label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
                                             {[
+                                                { label: "Conducta", emoji: "😇" },
+                                                { label: "Matemáticas", emoji: "🔢" },
+                                                { label: "Ciencias", emoji: "🔬" },
                                                 { label: "Lectura", emoji: "📖" },
+                                                { label: "Lenguaje", emoji: "💬" },
                                                 { label: "Motricidad", emoji: "✍️" },
                                                 { label: "Deporte", emoji: "⚽" },
                                                 { label: "Salud", emoji: "🩺" },
                                                 { label: "Recreo", emoji: "🛝" },
                                                 { label: "Canto", emoji: "🎵" },
                                                 { label: "Música", emoji: "🎼" },
-                                                { label: "Comportamiento", emoji: "😇" },
-                                                { label: "Participación", emoji: "🙋" },
-                                                { label: "Matemáticas", emoji: "🔢" },
-                                                { label: "Lenguaje", emoji: "💬" },
                                                 { label: "Arte", emoji: "🎨" },
                                                 { label: "Tareas", emoji: "📝" },
+                                                { label: "Participación", emoji: "🙋" },
+                                                { label: "Almuerzo", emoji: "🍽️" },
+                                                { label: "Meriendas", emoji: "🥪" },
                                                 { label: "General", emoji: "🌟" },
+                                                { label: "Avances", emoji: "📈" },
+                                                { label: "Religión", emoji: "⛪" },
+                                                { label: "Otros", emoji: "📌" },
                                             ].map(cat => (
-                                                <label key={cat.label} className="flex items-center gap-3 bg-slate-50 rounded-2xl p-3 border-2 border-slate-100 has-[:checked]:border-[#002147] has-[:checked]:bg-[#002147]/5 cursor-pointer transition-all">
+                                                <label key={cat.label} className="flex flex-col items-center justify-center gap-1 bg-slate-50 rounded-xl p-2 border-2 border-slate-100 has-[:checked]:border-[#002147] has-[:checked]:bg-[#002147]/5 cursor-pointer transition-all hover:bg-slate-100">
                                                     <input
                                                         type="radio"
                                                         name="categoria"
                                                         value={cat.label}
-                                                        className="accent-[#002147] h-4 w-4 shrink-0"
+                                                        className="accent-[#002147] h-3 w-3"
                                                         required
                                                     />
-                                                    <span className="text-lg">{cat.emoji}</span>
-                                                    <span className="font-bold text-slate-700 text-sm">{cat.label}</span>
+                                                    <span className="text-xl">{cat.emoji}</span>
+                                                    <span className="font-bold text-slate-700 text-[9px] leading-tight uppercase tracking-tighter">{cat.label}</span>
                                                 </label>
                                             ))}
                                         </div>
@@ -322,7 +285,7 @@ export function TeacherDashboardClient({
                                         <textarea
                                             name="observaciones"
                                             required
-                                            rows={4}
+                                            rows={3}
                                             placeholder="Describe el progreso observado en esta área..."
                                             className="flex w-full rounded-[24px] border-2 border-slate-200 bg-slate-50 p-6 font-medium shadow-inner focus:outline-none focus:border-slate-800 transition-all resize-none"
                                         ></textarea>
@@ -345,7 +308,7 @@ export function TeacherDashboardClient({
                     <div className="lg:col-span-12 xl:col-span-7">
                         <div className="bg-slate-800/5 rounded-[40px] p-4 md:p-8">
                             <h2 className="text-2xl font-black text-slate-800 px-6 py-4 flex items-center gap-2 tracking-tighter shadow-sm mb-6 bg-white rounded-3xl w-fit">
-                                <Clock className="text-[#002147]" /> {activeTab === "calificaciones" ? "Historial Numérico" : activeTab === "progreso" ? "Historial de Progreso" : "Historial de Reportes"}
+                                <Clock className="text-[#002147]" /> {activeTab === "calificaciones" ? "Historial Numérico" : "Historial de Progreso"}
                             </h2>
 
                             <div className="space-y-6">

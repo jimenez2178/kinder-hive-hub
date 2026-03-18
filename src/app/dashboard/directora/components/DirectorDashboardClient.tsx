@@ -16,7 +16,7 @@ import Link from "next/link";
 export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, metrics, previewData }: {
     estudiantes: any[],
     padres: { id: string, nombre: string, nombre_completo: string | null }[],
-    usuariosPendientes: { id: string, nombre: string, nombre_completo: string | null, created_at: string }[],
+    usuariosPendientes: { id: string, nombre: string, nombre_completo: string | null, created_at: string, nombre_alumno?: string | null }[],
     pagosRevision: any[],
     metrics: {
         ingresosDelMes: number,
@@ -924,7 +924,10 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                             <div key={user.id} className="bg-slate-50 border border-slate-100 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 items-center justify-between">
                                                 <div>
                                                     <p className="font-black text-slate-800">{user.nombre_completo || "Sin nombre"}</p>
-                                                    <p className="text-sm font-bold text-slate-500">ID Usuario: {user.nombre}</p>
+                                                    <p className="text-sm font-bold text-slate-500">User: {user.nombre}</p>
+                                                    {user.nombre_alumno && (
+                                                        <p className="text-xs font-bold text-[#8A2BE2]">Alumno: {user.nombre_alumno}</p>
+                                                    )}
                                                     <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">
                                                         Solicitado: {new Date(user.created_at).toLocaleDateString('es-DO')}
                                                     </p>

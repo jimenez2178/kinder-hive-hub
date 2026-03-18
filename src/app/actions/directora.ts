@@ -290,15 +290,54 @@ export async function deleteAllEstudiantesAction(prevState: unknown, formData: F
 
 export async function approveParentAction(prevState: unknown, formData: FormData) {
     const supabase = await createClient();
+    
+    // Check security: only director
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) return { error: "No autorizado" };
+    const { data: userProfile } = await supabase.from('perfiles').select('rol').eq('id', userData.user.id).single();
+    if (userProfile?.rol !== 'directora') return { error: "Permiso denegado. Solo directores pueden ejecutar esta acción." };
+
     const parentId = formData.get("parent_id") as string;
 
-    const { error } = await supabase
+    // 1. Obtener el perfil padre para ver el nombre del alumno
+    const { data: perfilData, error: perfilError } = await supabase
+        .from('perfiles')
+        .select('nombre_alumno')
+        .eq('id', parentId)
+        .single();
+    
+    if (perfilError) return { error: perfilError.message };
+
+    // 2. Aprobar
+    const { error: updateError } = await supabase
         .from("perfiles")
-        .update({ estado: 'aprobado' })
+        .update({ estado: 'aprobado', estado_aprobacion: 'aprobado' })
         .eq('id', parentId)
         .eq('rol', 'padre');
 
-    if (error) return { error: error.message };
+    if (updateError) return { error: updateError.message };
+
+    // 3. Buscar alumno y crear relación en padres_estudiantes
+    if (perfilData?.nombre_alumno) {
+        const { data: estudiantesData } = await supabase
+            .from('estudiantes')
+            .select('id')
+            .ilike('nombre', `%${perfilData.nombre_alumno}%`)
+            .limit(1);
+
+        if (estudiantesData && estudiantesData.length > 0) {
+            const estudianteId = estudiantesData[0].id;
+            // Opcional: actualizar el campo padre_id en el estudiante
+            await supabase.from('estudiantes').update({ padre_id: parentId }).eq('id', estudianteId);
+            
+            // Relación en padres_estudiantes
+            await supabase.from('padres_estudiantes').insert({
+                padre_id: parentId,
+                estudiante_id: estudianteId,
+                relacion: 'tutor'
+            });
+        }
+    }
 
     revalidatePath("/dashboard/directora");
     revalidatePath("/dashboard/padre");
@@ -308,14 +347,18 @@ export async function approveParentAction(prevState: unknown, formData: FormData
 
 export async function rejectParentAction(prevState: unknown, formData: FormData) {
     const supabase = await createClient();
+
+    // Check security: only director
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) return { error: "No autorizado" };
+    const { data: userProfile } = await supabase.from('perfiles').select('rol').eq('id', userData.user.id).single();
+    if (userProfile?.rol !== 'directora') return { error: "Permiso denegado. Solo directores pueden ejecutar esta acción." };
+
     const parentId = formData.get("parent_id") as string;
 
-    // Hard delete or set to 'rechazado'? Let's just delete the profile for now.
-    // Given the foreign key constraints to auth.users, deleting just the profile might be an issue.
-    // It's safer to just set estado = 'rechazado'
     const { error } = await supabase
         .from("perfiles")
-        .update({ estado: 'rechazado' })
+        .update({ estado: 'rechazado', estado_aprobacion: 'rechazado' })
         .eq('id', parentId)
         .eq('rol', 'padre');
 

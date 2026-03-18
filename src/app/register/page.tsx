@@ -44,11 +44,22 @@ export default function RegisterForm() {
                 <CardContent>
                     <form action={formAction} className="grid gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="nombre_completo" className="font-semibold ml-1 text-xs uppercase">Nombre Completo</Label>
+                            <Label htmlFor="nombre_completo" className="font-semibold ml-1 text-xs uppercase">Tu Nombre Completo</Label>
                             <Input
                                 id="nombre_completo"
                                 name="nombre_completo"
                                 placeholder="Ej: Jesús Jiménez"
+                                required
+                                className="rounded-2xl h-11 shadow-sm"
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="nombre_alumno" className="font-semibold ml-1 text-xs uppercase">Nombre del Alumno(a)</Label>
+                            <Input
+                                id="nombre_alumno"
+                                name="nombre_alumno"
+                                placeholder="Ej: Juan Pérez"
                                 required
                                 className="rounded-2xl h-11 shadow-sm"
                             />

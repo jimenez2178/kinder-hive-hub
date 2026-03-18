@@ -54,11 +54,11 @@ export async function middleware(request: NextRequest) {
         // Fetch profile to check role and state
         const { data: profile, error: profileError } = await supabase
             .from("perfiles")
-            .select("rol, estado")
+            .select("rol, estado_aprobacion")
             .eq("id", user.id)
             .single();
 
-        console.log(`[MIDDLEWARE] User: ${user.email}, Role: ${profile?.rol}, Status: ${profile?.estado}, Path: ${request.nextUrl.pathname}`);
+        console.log(`[MIDDLEWARE] User: ${user.email}, Role: ${profile?.rol}, Status: ${profile?.estado_aprobacion}, Path: ${request.nextUrl.pathname}`);
 
         // If no profile exists (unusual), allow them to proceed to "/" or "/login" to be re-captured or rescued
         if (profileError || !profile) {
@@ -70,16 +70,16 @@ export async function middleware(request: NextRequest) {
         }
 
         // A. Handle Pending Status
-        if (profile.estado === "pendiente") {
+        if (profile.estado_aprobacion === "pendiente") {
             if (!isEsperaPath) {
-                console.log("[MIDDLEWARE] Pending user - Redirecting to /espera");
+                console.log("[MIDDLEWARE] Pending approval - Redirecting to /espera");
                 return NextResponse.redirect(new URL("/espera", request.url));
             }
             return supabaseResponse; // Stay on /espera
         }
 
         // B. Handle Approved Users (already on /espera or public pages)
-        if (profile.estado === "aprobado") {
+        if (profile.estado_aprobacion === "aprobado") {
             // Redirect away from /espera if already approved
             if (isEsperaPath || isPublicPath) {
                 let target = "/dashboard/padre";

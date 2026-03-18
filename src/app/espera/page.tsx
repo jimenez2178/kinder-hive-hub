@@ -16,12 +16,9 @@ export default function EsperaPage() {
                     <span className="text-6xl text-yellow-500">⏳</span>
                 </div>
                 <h1 className="text-3xl font-bold text-gray-800 mb-4">¡Hemos recibido tu solicitud!</h1>
-                <p className="text-gray-600 mb-8">
-                    Tu cuenta está actualmente en estado <strong>pendiente</strong> de aprobación por parte de la dirección del centro.
+                <p className="text-gray-600 mb-8 font-medium">
+                    Tu solicitud está siendo revisada por la dirección. Recibirás un correo al ser aprobado.
                 </p>
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-8 text-left italic text-sm text-blue-800">
-                    "Estamos verificando tus datos para garantizar la seguridad de todos nuestros alumnos. Recibirás una notificación en cuanto tu acceso sea habilitado."
-                </div>
                 <div className="flex flex-col gap-3">
                     <button 
                         type="button"
