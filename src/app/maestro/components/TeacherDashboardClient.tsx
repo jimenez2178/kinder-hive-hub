@@ -235,16 +235,16 @@ export function TeacherDashboardClient({
 
                                     <div className="grid grid-cols-3 gap-3">
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase text-[#002147] tracking-widest">Nota Mes</Label>
-                                            <Input type="number" step="0.1" name="nota_mes" required className="h-12 rounded-[16px] text-center font-black" />
+                                            <Label className="text-[10px] font-black uppercase text-[#002147] tracking-widest">Nota Mes <span className="text-red-400">*</span></Label>
+                                            <Input type="number" step="0.1" min="0" max="100" name="nota_mes" required className="h-12 rounded-[16px] text-center font-black" placeholder="--" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase text-[#002147] tracking-widest">Prueba</Label>
-                                            <Input type="number" step="0.1" name="nota_prueba" required className="h-12 rounded-[16px] text-center font-black" />
+                                            <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Prueba <span className="font-normal normal-case">(opc)</span></Label>
+                                            <Input type="number" step="0.1" min="0" max="100" name="nota_prueba" className="h-12 rounded-[16px] text-center font-black opacity-70 focus:opacity-100" placeholder="--" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase text-[#002147] tracking-widest">Final</Label>
-                                            <Input type="number" step="0.1" name="nota_final" required className="h-12 rounded-[16px] text-center font-black" />
+                                            <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Final <span className="font-normal normal-case">(opc)</span></Label>
+                                            <Input type="number" step="0.1" min="0" max="100" name="nota_final" className="h-12 rounded-[16px] text-center font-black opacity-70 focus:opacity-100" placeholder="--" />
                                         </div>
                                     </div>
 

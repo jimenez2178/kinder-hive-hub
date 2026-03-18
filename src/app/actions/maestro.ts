@@ -72,11 +72,13 @@ export async function addCalificacionAction(prevState: unknown, formData: FormDa
 
     const estudiante_id = formData.get("estudiante_id") as string;
     const asignatura = formData.get("asignatura") as string;
-    const nota_mes = formData.get("nota_mes") ? parseFloat(formData.get("nota_mes") as string) : null;
-    const nota_prueba = formData.get("nota_prueba") ? parseFloat(formData.get("nota_prueba") as string) : null;
-    const nota_final = formData.get("nota_final") ? parseFloat(formData.get("nota_final") as string) : null;
-    const comentario_especifico = formData.get("comentario_especifico") as string;
     const periodo = formData.get("periodo") as string;
+
+    // Preparar valores: solo incluir notas que tengan valor real (no sobreescribir con null)
+    const nota_mes_val = formData.get("nota_mes") ? parseFloat(formData.get("nota_mes") as string) : null;
+    const nota_prueba_val = formData.get("nota_prueba") ? parseFloat(formData.get("nota_prueba") as string) : null;
+    const nota_final_val = formData.get("nota_final") ? parseFloat(formData.get("nota_final") as string) : null;
+    const comentario_val = (formData.get("comentario_especifico") as string) || null;
 
     const { data: profile } = await supabase
         .from("perfiles")
@@ -84,16 +86,25 @@ export async function addCalificacionAction(prevState: unknown, formData: FormDa
         .eq("id", user.id)
         .single();
 
-    const { error } = await supabase.from("calificaciones").insert({
+    // Construimos el objeto de actualización solo con los campos que tienen valor
+    const updateData: Record<string, unknown> = {
+        colegio_id: profile?.colegio_id,
+    };
+    if (nota_mes_val !== null) updateData.nota_mes = nota_mes_val;
+    if (nota_prueba_val !== null) updateData.nota_prueba = nota_prueba_val;
+    if (nota_final_val !== null) updateData.nota_final = nota_final_val;
+    if (comentario_val) updateData.comentario_especifico = comentario_val;
+
+    // UPSERT: si ya existe (mismo alumno + asignatura + periodo + maestro) actualiza, si no, inserta
+    const { error } = await supabase.from("calificaciones").upsert({
         estudiante_id,
         maestro_id: user.id,
-        colegio_id: profile?.colegio_id,
         asignatura,
-        nota_mes,
-        nota_prueba,
-        nota_final,
-        comentario_especifico,
-        periodo
+        periodo,
+        ...updateData,
+    }, {
+        onConflict: "estudiante_id,maestro_id,asignatura,periodo",
+        ignoreDuplicates: false
     });
 
     if (error) return { error: error.message };
