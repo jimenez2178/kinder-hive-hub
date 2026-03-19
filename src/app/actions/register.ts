@@ -1,17 +1,18 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { enviarNotificacionRegistro } from "@/lib/n8n";
 
 
 export type RegisterState = {
     error?: string;
     success?: boolean;
+    successMessage?: string;
 };
 
 export async function registerAction(prevState: RegisterState | null, formData: FormData): Promise<RegisterState> {
-    // Limpiamos los espacios en el email (incluso los internos) para evitar errores del SDK
+    // Limpiamos los espacios en el email para evitar errores del SDK
     const emailRaw = (formData.get("email") as string) || "";
     const email = emailRaw.replace(/\s+/g, "").toLowerCase();
     
@@ -19,15 +20,13 @@ export async function registerAction(prevState: RegisterState | null, formData: 
     const nombreCompleto = (formData.get("nombre_completo") as string)?.trim();
     const nombreAlumno = (formData.get("nombre_alumno") as string)?.trim();
     
-    // Usamos el prefijo del correo electrónico como "nombre" obligatoriamente para que luego
-    // la función "addEstudianteAction" (que vincula al padre a través del email) lo pueda encontrar.
     const nombre = email.split('@')[0];
     
     console.log(`[REGISTER] Register attempt for: ${email}`);
     
+    // 1. Forzar cierre de sesión de cualquier usuario activo (ej: la directora)
+    // para que Supabase no lance error de sesión cruzada
     const supabase = await createClient();
-
-    // 1. Limpiar sesión previa si existe (evita errores de RLS por sesión cruzada al registrar varios usuarios)
     await supabase.auth.signOut();
 
     // 2. Sign up the user in Supabase Auth
@@ -45,25 +44,33 @@ export async function registerAction(prevState: RegisterState | null, formData: 
 
     if (authError) {
         console.error(`[REGISTER] Auth error: ${authError.message}`);
-        if (authError.message.includes("rate limit")) {
-            return { error: "Límite de registros temporales excedido. Por favor, espere unos minutos o contacte a la Directora para registro manual." };
+        // Si el correo ya existe, dar un mensaje claro
+        if (authError.message.toLowerCase().includes("already registered") || authError.message.toLowerCase().includes("user already")) {
+            return { error: "Este correo electrónico ya está registrado. Intenta iniciar sesión." };
         }
         return { error: `Error de registro: ${authError.message}` };
     }
 
     if (!authData.user) {
-        return { error: "No se pudo crear el usuario en el sistema de autenticación." };
+        // Puede ocurrir si el correo ya existe y la confirmación de email está activa.
+        // Supabase a veces devuelve user=null sin error cuando el email ya existe.
+        return { error: "Este correo ya puede estar registrado. Intenta iniciar sesión o usa otro correo." };
     }
 
     console.log(`[REGISTER] Auth user created: ${authData.user.id}. Creating profile...`);
 
-    // 3. Trigger Notification to Director
-    await enviarNotificacionRegistro(email, nombreCompleto);
+    // 3. Trigger Notification to Director (non-blocking, no await effect on result)
+    enviarNotificacionRegistro(email, nombreCompleto).catch(e => console.error("[REGISTER] Notification error:", e));
 
     // 4. Create or update the profile in 'perfiles' table
-    // El trigger 'handle_new_user' ya se encargó de esto de forma segura.
-    // Hacemos el upsert como refuerzo, pero ignoramos errores de RLS pues el trigger es el maestro.
-    const { error: profileError } = await supabase
+    // Usamos el service role para que las políticas RLS no bloqueen la creación del perfil
+    // cuando el usuario acaba de ser creado y aún no hay sesión activa.
+    const adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { error: profileError } = await adminSupabase
         .from("perfiles")
         .upsert({
             id: authData.user.id,
@@ -77,13 +84,15 @@ export async function registerAction(prevState: RegisterState | null, formData: 
             colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992" 
         }, { onConflict: 'id' });
 
-    if (profileError && !profileError.message.includes("row-level security")) {
+    if (profileError) {
         console.error(`[REGISTER] Profile error: ${profileError.message}`);
+        // No fallamos el flujo — el trigger de Supabase aún puede haber creado el perfil
     }
 
-    console.log(`[REGISTER] Registration successful for ${email}. Redirecting to /espera...`);
+    console.log(`[REGISTER] Registration successful for ${email}.`);
 
-
-    // 3. Redirect to espera
-    redirect("/espera");
+    return { 
+        success: true, 
+        successMessage: "¡Registro Exitoso! Espera la aprobación de la dirección." 
+    };
 }

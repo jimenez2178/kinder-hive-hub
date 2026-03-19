@@ -17,6 +17,24 @@ import Link from "next/link"
 export default function RegisterForm() {
     const [state, formAction, isPending] = useActionState(registerAction, null);
 
+    // SUCCESS STATE — show a clean confirmation message, no redirect needed
+    if (state?.success && state?.successMessage) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-muted/20 p-4">
+                <div className="max-w-sm w-full bg-white rounded-[2rem] shadow-2xl p-10 text-center border-t-8 border-[#8A2BE2]">
+                    <div className="text-6xl mb-6">✅</div>
+                    <h2 className="text-2xl font-black text-[#002147] mb-3 tracking-tight">¡Solicitud Enviada!</h2>
+                    <p className="text-slate-600 font-semibold leading-relaxed mb-8">
+                        {state.successMessage}
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
+                        La directora revisará tu solicitud y te notificará pronto.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-muted/20 p-4">
             {/* Brand Header */}
