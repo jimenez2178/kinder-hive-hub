@@ -5,20 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction, clearComunicadosAction } from "@/app/actions/directora";
+import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction, clearComunicadosAction, approveReunionAction, rejectReunionAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle } from "lucide-react";
+import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle, MessageCircle } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
 import { approvePaymentAction, rejectPaymentAction as rejectPaymentActionLegacy, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, metrics, previewData }: {
+export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, solicitudesReunion, metrics, previewData }: {
     estudiantes: any[],
     padres: { id: string, nombre: string, nombre_completo: string | null }[],
     usuariosPendientes: { id: string, nombre: string, nombre_completo: string | null, created_at: string, nombre_alumno?: string | null }[],
     pagosRevision: any[],
+    solicitudesReunion?: any[],
     metrics: {
         ingresosDelMes: number,
         metaTotal: number,
@@ -31,7 +32,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
     },
     previewData: { comunicados: any[], galeria: any[], eventos: any[], agradecimientos: any[] }
 }) {
-    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | null>(null);
+    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | "reuniones" | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [showPreview, setShowPreview] = useState(false);
     const [showReport, setShowReport] = useState(false);
@@ -60,12 +61,14 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
     // --- Gestión de Comunicados (Optimista) ---
     const [localComunicados, setLocalComunicados] = useState(previewData.comunicados);
     const [localUsuariosPendientes, setLocalUsuariosPendientes] = useState(usuariosPendientes);
+    const [localSolicitudesReunion, setLocalSolicitudesReunion] = useState(solicitudesReunion || []);
     const router = useRouter();
 
     useEffect(() => {
         setLocalComunicados(previewData.comunicados);
         setLocalUsuariosPendientes(usuariosPendientes);
-    }, [previewData.comunicados, usuariosPendientes]);
+        setLocalSolicitudesReunion(solicitudesReunion || []);
+    }, [previewData.comunicados, usuariosPendientes, solicitudesReunion]);
 
     const handleDeleteComunicado = async (id: string) => {
         const previousComunicados = [...localComunicados];
@@ -238,6 +241,17 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         className="rounded-full bg-[#ff4b2b] hover:bg-[#e63e20] text-white font-black h-12 px-6 shadow-lg shadow-[#ff4b2b]/20"
                     >
                         <Heart className="mr-2 h-5 w-5" /> Agradecer
+                    </Button>
+                    <Button
+                        onClick={() => setActiveModal("reuniones")}
+                        className={`rounded-full ${localSolicitudesReunion.filter((r: any) => r.estado === 'pendiente').length > 0 ? 'bg-[#002147] animate-pulse border-2 border-white' : 'bg-slate-800'} hover:bg-black text-white font-black h-12 px-6 shadow-lg relative transition-all`}
+                    >
+                        <MessageCircle className="mr-2 h-5 w-5" /> Reuniones
+                        {localSolicitudesReunion.filter((r: any) => r.estado === 'pendiente').length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center border-2 border-white font-black">
+                                {localSolicitudesReunion.filter((r: any) => r.estado === 'pendiente').length}
+                            </span>
+                        )}
                     </Button>
                     <Button
                         onClick={() => setShowPreview(!showPreview)}
@@ -980,6 +994,66 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 </div>
                             )}
 
+                            {activeModal === "reuniones" && (
+                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                                    <h3 className="text-xl font-black text-[#002147] mb-4 italic uppercase">Gestión de Reuniones</h3>
+                                    {localSolicitudesReunion.length === 0 ? (
+                                        <div className="text-center py-12 text-slate-400">
+                                            <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                            <p className="font-bold">No hay solicitudes de reunión.</p>
+                                        </div>
+                                    ) : (
+                                        localSolicitudesReunion.map((req: any) => (
+                                            <div key={req.id} className={`border rounded-[32px] p-6 flex flex-col gap-4 transition-all ${req.estado === 'pendiente' ? 'bg-blue-50/50 border-blue-100 shadow-sm' : 'bg-slate-50 border-slate-100 opacity-60'}`}>
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <p className="font-black text-slate-800 text-lg">{req.padre?.nombre_completo || req.padre?.nombre || "Padre Desconocido"}</p>
+                                                        <p className="text-xs font-bold text-[#8A2BE2] uppercase tracking-tighter">Alumno: {req.padre?.nombre_alumno || "No especificado"}</p>
+                                                    </div>
+                                                    <Badge className={req.estado === 'aprobado' ? 'bg-green-500' : req.estado === 'rechazado' ? 'bg-red-500' : 'bg-blue-500'}>
+                                                        {req.estado === 'pendiente' ? 'Pendiente' : req.estado === 'aprobado' ? 'Aceptada' : 'Rechazada'}
+                                                    </Badge>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-2xl border border-slate-100 italic text-slate-600 text-sm font-medium">
+                                                    "{req.motivo}"
+                                                </div>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">
+                                                    Solicitado: {new Date(req.created_at).toLocaleString('es-DO')}
+                                                </p>
+                                                
+                                                {req.estado === 'pendiente' && (
+                                                    <div className="flex gap-3 mt-2">
+                                                        <Button
+                                                            onClick={async () => {
+                                                                setIsLoading(true);
+                                                                const res = await rejectReunionAction(req.id);
+                                                                setIsLoading(false);
+                                                                if (res.error) alert(res.error);
+                                                                else showToast("Reunión rechazada");
+                                                            }}
+                                                            className="flex-1 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-black h-12"
+                                                        >
+                                                            Declinar
+                                                        </Button>
+                                                        <Button
+                                                            onClick={async () => {
+                                                                setIsLoading(true);
+                                                                const res = await approveReunionAction(req.id);
+                                                                setIsLoading(false);
+                                                                if (res.error) alert(res.error);
+                                                                else showToast("Reunión aceptada");
+                                                            }}
+                                                            className="flex-[2] rounded-2xl bg-[#002147] text-white hover:bg-blue-900 font-black h-12 shadow-lg"
+                                                        >
+                                                            Aceptar Reunión
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
                             {activeModal === "revisar_pagos" && (
                                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                                     {pagosRevision.length === 0 ? (

@@ -563,3 +563,31 @@ export async function clearComunicadosAction() {
 }
 
 
+
+export async function approveReunionAction(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("solicitudes_reunion")
+        .update({ estado: 'aprobado' })
+        .eq('id', id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}
+
+export async function rejectReunionAction(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("solicitudes_reunion")
+        .update({ estado: 'rechazado' })
+        .eq('id', id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre");
+    return { success: true };
+}

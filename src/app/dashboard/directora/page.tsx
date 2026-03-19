@@ -35,6 +35,15 @@ export default async function DirectoraPage() {
         .or("estado.eq.en_revision,estado.eq.pendiente,estado.eq.rechazado")
         .order("fecha", { ascending: false });
 
+    // 1e. Solicitudes de Reunión
+    const { data: solicitudesReunion } = await supabase
+        .from("solicitudes_reunion")
+        .select(`
+            *,
+            padre:perfiles!padre_id(id, nombre_completo, nombre, nombre_alumno)
+        `)
+        .order("created_at", { ascending: false });
+
     // 2. Cálculos Financieros del Mes Actual y Tendencia 3 Meses
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -129,6 +138,7 @@ export default async function DirectoraPage() {
                 padres={padres || []}
                 usuariosPendientes={usuariosPendientes || []}
                 pagosRevision={pagosRevision || []}
+                solicitudesReunion={solicitudesReunion || []}
                 metrics={{
                     ingresosDelMes,
                     metaTotal,

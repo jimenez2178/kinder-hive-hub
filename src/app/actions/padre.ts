@@ -71,6 +71,7 @@ export async function reportarPagoAction(data: { estudiante_id: string, monto: n
     return { success: true };
 }
 
+
 export async function marcarAvisoLeidoAction(avisoId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -85,5 +86,39 @@ export async function marcarAvisoLeidoAction(avisoId: string) {
     if (error) return { error: error.message };
 
     revalidatePath("/dashboard/padre");
+    return { success: true };
+}
+
+export async function solicitarReunionAction(motivo: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: "No autorizado" };
+
+    // Obtener el colegio_id del perfil del padre
+    const { data: perfil } = await supabase
+        .from("perfiles")
+        .select("colegio_id")
+        .eq("id", user.id)
+        .single();
+
+    if (!perfil) return { error: "Perfil no encontrado" };
+
+    const { error } = await supabase
+        .from("solicitudes_reunion")
+        .insert({
+            padre_id: user.id,
+            colegio_id: perfil.colegio_id,
+            motivo: motivo,
+            estado: 'pendiente'
+        });
+
+    if (error) {
+        console.error("[REUNION] Error inserting:", error.message);
+        return { error: error.message };
+    }
+
+    revalidatePath("/dashboard/padre");
+    revalidatePath("/dashboard/directora");
     return { success: true };
 }
