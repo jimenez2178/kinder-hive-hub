@@ -1,8 +1,32 @@
 "use client";
 
+import { useEffect } from "react";
 import { logoutAction } from "@/app/actions/auth";
+import { createClient } from "@/utils/supabase/client";
 
 export default function EsperaPage() {
+    useEffect(() => {
+        const checkStatus = async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from("perfiles")
+                    .select("estado_aprobacion")
+                    .eq("id", user.id)
+                    .single();
+                
+                if (profile?.estado_aprobacion === "aprobado") {
+                    window.location.href = "/dashboard/padre";
+                }
+            }
+        };
+
+        // Poll every 5 seconds
+        const intervalId = setInterval(checkStatus, 5000);
+        return () => clearInterval(intervalId);
+    }, []);
+
     const handleLogout = async () => {
         await logoutAction();
         // Force a full clean redirect to login and clear any client cache

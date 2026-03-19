@@ -85,3 +85,10 @@
 - **Middleware**: Se actualizaron las redirecciones de acceso a evaluar estado_aprobacion en vez de estado.
 - **Dashboard (Admin)**: Se actualizó listado de Solicitudes Pendientes. Ahora los usuarios no solo cambian de estado, sino que se auto-vinculan al estudiante existente a través de la relación padres_estudiantes y actualizando el padre_id.
 
+
+
+## [2026-03-18] Completado de Aprobación Previa y RLS
+- **BD**: Se estableció política RLS estricta para colegios.
+- **Espera**: Se actualizó diseño y mensaje para redirigidos.
+- **Despliegue**: Build y Push realizado verificando TSC 0 errores.
+

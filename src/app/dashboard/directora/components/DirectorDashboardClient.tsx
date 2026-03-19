@@ -926,7 +926,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                     <p className="font-black text-slate-800">{user.nombre_completo || "Sin nombre"}</p>
                                                     <p className="text-sm font-bold text-slate-500">User: {user.nombre}</p>
                                                     {user.nombre_alumno && (
-                                                        <p className="text-xs font-bold text-[#8A2BE2]">Alumno: {user.nombre_alumno}</p>
+                                                        <p className="text-xs font-bold text-[#8A2BE2]">ALUMNO: {user.nombre_alumno}</p>
                                                     )}
                                                     <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">
                                                         Solicitado: {new Date(user.created_at).toLocaleDateString('es-DO')}

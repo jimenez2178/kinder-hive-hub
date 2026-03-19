@@ -318,24 +318,36 @@ export async function approveParentAction(prevState: unknown, formData: FormData
     if (updateError) return { error: updateError.message };
 
     // 3. Buscar alumno y crear relación en padres_estudiantes
-    if (perfilData?.nombre_alumno) {
+    const nombreAlumnoSearch = perfilData?.nombre_alumno?.trim();
+    if (nombreAlumnoSearch) {
         const { data: estudiantesData } = await supabase
             .from('estudiantes')
             .select('id')
-            .ilike('nombre', `%${perfilData.nombre_alumno}%`)
+            .ilike('nombre', `%${nombreAlumnoSearch}%`)
             .limit(1);
 
         if (estudiantesData && estudiantesData.length > 0) {
             const estudianteId = estudiantesData[0].id;
-            // Opcional: actualizar el campo padre_id en el estudiante
+            
+            // Actualizar el campo padre_id en el estudiante
             await supabase.from('estudiantes').update({ padre_id: parentId }).eq('id', estudianteId);
             
-            // Relación en padres_estudiantes
-            await supabase.from('padres_estudiantes').insert({
-                padre_id: parentId,
-                estudiante_id: estudianteId,
-                relacion: 'tutor'
-            });
+            // Verificar si la relación ya existe para evitar errores
+            const { data: existingRel } = await supabase
+                .from('padres_estudiantes')
+                .select('id')
+                .eq('padre_id', parentId)
+                .eq('estudiante_id', estudianteId)
+                .maybeSingle();
+                
+            if (!existingRel) {
+                // Relación en padres_estudiantes
+                await supabase.from('padres_estudiantes').insert({
+                    padre_id: parentId,
+                    estudiante_id: estudianteId,
+                    relacion: 'tutor'
+                });
+            }
         }
     }
 

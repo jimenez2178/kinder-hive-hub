@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
         // Fetch profile to check role and state
         const { data: profile, error: profileError } = await supabase
             .from("perfiles")
-            .select("rol, estado_aprobacion")
+            .select("rol, estado, estado_aprobacion")
             .eq("id", user.id)
             .single();
 
@@ -69,8 +69,11 @@ export async function middleware(request: NextRequest) {
             return supabaseResponse;
         }
 
-        // A. Handle Pending Status
-        if (profile.estado_aprobacion === "pendiente") {
+        const isAprobado = profile.estado_aprobacion === "aprobado" || profile.estado === "aprobado";
+        const isPendiente = profile.estado_aprobacion === "pendiente" || profile.estado === "pendiente";
+
+        // A. Handle Pending Status (Aplica principalmente a padres)
+        if (isPendiente && profile.rol !== "directora" && profile.rol !== "maestro") {
             if (!isEsperaPath) {
                 console.log("[MIDDLEWARE] Pending approval - Redirecting to /espera");
                 return NextResponse.redirect(new URL("/espera", request.url));
@@ -79,7 +82,7 @@ export async function middleware(request: NextRequest) {
         }
 
         // B. Handle Approved Users (already on /espera or public pages)
-        if (profile.estado_aprobacion === "aprobado") {
+        if (isAprobado || profile.rol === "directora" || profile.rol === "maestro") {
             // Redirect away from /espera if already approved
             if (isEsperaPath || isPublicPath) {
                 let target = "/dashboard/padre";
