@@ -564,6 +564,32 @@ export async function clearComunicadosAction() {
 
 
 
+export async function finishReunionAction(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("solicitudes_reunion")
+        .update({ estado: 'finalizada' })
+        .eq('id', id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/", "layout");
+    return { success: true };
+}
+
+export async function deleteReunionAction(id: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from("solicitudes_reunion")
+        .delete()
+        .eq('id', id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/", "layout");
+    return { success: true };
+}
+
 export async function approveReunionAction(id: string, fecha_cita: string, comentario_directora: string) {
     const supabase = await createClient();
     const { error } = await supabase
@@ -577,8 +603,7 @@ export async function approveReunionAction(id: string, fecha_cita: string, comen
 
     if (error) return { error: error.message };
 
-    revalidatePath("/dashboard/directora");
-    revalidatePath("/dashboard/padre");
+    revalidatePath("/", "layout");
     return { success: true };
 }
 
@@ -591,7 +616,6 @@ export async function rejectReunionAction(id: string) {
 
     if (error) return { error: error.message };
 
-    revalidatePath("/dashboard/directora");
-    revalidatePath("/dashboard/padre");
+    revalidatePath("/", "layout");
     return { success: true };
 }

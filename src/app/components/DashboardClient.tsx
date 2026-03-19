@@ -319,8 +319,12 @@ export default function DashboardClient({
                 </header>
                 
                 {/* ═══ CITAS CONFIRMADAS ═══ */}
-                {solicitudesReunion.filter((r: any) => r.estado === 'aprobado').map((cita: any) => (
-                    <div key={cita.id} className="mb-8 p-8 bg-[#002147] rounded-[40px] text-white shadow-2xl border-l-[12px] border-green-500 relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                {solicitudesReunion.filter((r: any) => r.estado === 'aprobado' && r.fecha_cita).map((cita: any) => {
+                    const citaDate = new Date(cita.fecha_cita);
+                    if (isNaN(citaDate.getTime())) return null; // Saltar si la fecha es inválida
+
+                    return (
+                        <div key={cita.id} className="mb-8 p-8 bg-[#002147] rounded-[40px] text-white shadow-2xl border-l-[12px] border-green-500 relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
                         {/* Decoración */}
                         <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
                         
@@ -353,7 +357,8 @@ export default function DashboardClient({
                             "{cita.comentario_directora}"
                         </div>
                     </div>
-                ))}
+                );
+                })}
 
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
                 {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).length > 0 && (

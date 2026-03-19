@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction, clearComunicadosAction, approveReunionAction, rejectReunionAction } from "@/app/actions/directora";
+import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction, clearComunicadosAction, approveReunionAction, rejectReunionAction, finishReunionAction, deleteReunionAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle, MessageCircle } from "lucide-react";
@@ -39,6 +39,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
     const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: "", visible: false });
     const [isLoading, setIsLoading] = useState(false);
     const [confirmingMeeting, setConfirmingMeeting] = useState<any>(null);
+    const [meetingTab, setMeetingTab] = useState<"pendientes" | "historial">("pendientes");
 
     // --- Buscador de Alumnos ---
     const [searchTerm, setSearchTerm] = useState("");
@@ -747,6 +748,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                     {activeModal === "agradecimiento" && "Enviar Agradecimiento"}
                                     {activeModal === "pendientes" && "Aprobar Accesos"}
                                     {activeModal === "revisar_pagos" && "Validar Comprobantes"}
+                                    {activeModal === "reuniones" && "Gestión de Reuniones"}
                                 </CardTitle>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                     {activeModal === "pendientes" && "Usuarios esperando acceso al portal familiar"}
@@ -996,76 +998,172 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                             )}
 
                             {activeModal === "reuniones" && (
-                                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                                    <h3 className="text-xl font-black text-[#002147] mb-4 italic uppercase">Gestión de Reuniones</h3>
-                                    {localSolicitudesReunion.length === 0 ? (
-                                        <div className="text-center py-12 text-slate-400">
-                                            <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                                            <p className="font-bold">No hay solicitudes de reunión.</p>
-                                        </div>
-                                    ) : (
-                                        localSolicitudesReunion.map((req: any) => (
-                                            <div key={req.id} className={`border rounded-[32px] p-6 flex flex-col gap-4 transition-all ${req.estado === 'pendiente' ? 'bg-blue-50/50 border-blue-100 shadow-sm' : 'bg-slate-50 border-slate-100 opacity-60'}`}>
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <p className="font-black text-slate-800 text-lg">{req.padre?.nombre_completo || req.padre?.nombre || "Padre Desconocido"}</p>
-                                                        <p className="text-xs font-bold text-[#8A2BE2] uppercase tracking-tighter">Alumno: {req.padre?.nombre_alumno || "No especificado"}</p>
-                                                    </div>
-                                                    <Badge className={req.estado === 'aprobado' ? 'bg-green-500' : req.estado === 'rechazado' ? 'bg-red-500' : 'bg-blue-500'}>
-                                                        {req.estado === 'pendiente' ? 'Pendiente' : req.estado === 'aprobado' ? 'Aceptada' : 'Rechazada'}
-                                                    </Badge>
-                                                </div>
-                                                <div className="bg-white p-4 rounded-2xl border border-slate-100 italic text-slate-600 text-sm font-medium">
-                                                    "{req.motivo}"
-                                                </div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">
-                                                    Solicitado: {new Date(req.created_at).toLocaleString('es-DO')}
-                                                </p>
-                                                
-                                                {req.estado === 'pendiente' && (
-                                                    <div className="flex gap-3 mt-2">
-                                                        <Button
-                                                            onClick={async () => {
-                                                                setIsLoading(true);
-                                                                const res = await rejectReunionAction(req.id);
-                                                                setIsLoading(false);
-                                                                if (res.error) alert(res.error);
-                                                                else showToast("Reunión rechazada");
-                                                            }}
-                                                            className="flex-1 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-black h-12"
-                                                        >
-                                                            Declinar
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => setConfirmingMeeting(req)}
-                                                            className="flex-[2] rounded-2xl bg-[#002147] text-white hover:bg-blue-900 font-black h-12 shadow-lg"
-                                                        >
-                                                            Aceptar Reunión
-                                                        </Button>
-                                                    </div>
-                                                )}
+                                <div className="flex flex-col h-full max-h-[70vh]">
+                                    <div className="flex gap-4 mb-6 sticky top-0 bg-white z-10 pb-2 border-b">
+                                        <button 
+                                            onClick={() => setMeetingTab('pendientes')}
+                                            className={`pb-2 px-1 text-sm font-black uppercase tracking-widest transition-all ${meetingTab === 'pendientes' ? 'border-b-4 border-[#002147] text-[#002147]' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                            Activas ({localSolicitudesReunion.filter((r: any) => r.estado === 'pendiente' || r.estado === 'aprobado').length})
+                                        </button>
+                                        <button 
+                                            onClick={() => setMeetingTab('historial')}
+                                            className={`pb-2 px-1 text-sm font-black uppercase tracking-widest transition-all ${meetingTab === 'historial' ? 'border-b-4 border-[#002147] text-[#002147]' : 'text-slate-400 hover:text-slate-600'}`}
+                                        >
+                                            Historial
+                                        </button>
+                                    </div>
 
-                                                {req.estado === 'aprobado' && (
-                                                    <div className="flex flex-col gap-3 mt-2 bg-green-50/80 p-4 rounded-2xl border border-green-100">
-                                                        <div className="flex justify-between items-center text-xs font-black text-green-700 uppercase">
-                                                            <span>📅 Cita Confirmada</span>
-                                                            <span>{new Date(req.fecha_cita).toLocaleString('es-DO')}</span>
+                                    <div className="overflow-y-auto pr-2 space-y-6 flex-1 custom-scrollbar">
+                                        {meetingTab === 'pendientes' ? (
+                                            localSolicitudesReunion.filter((r: any) => r.estado === 'pendiente' || r.estado === 'aprobado').length === 0 ? (
+                                                <div className="py-20 text-center space-y-4">
+                                                    <MessageCircle className="h-12 w-12 text-slate-200 mx-auto" />
+                                                    <p className="text-slate-400 font-bold">No hay reuniones activas</p>
+                                                </div>
+                                            ) : (
+                                                localSolicitudesReunion
+                                                    .filter((r: any) => r.estado === 'pendiente' || r.estado === 'aprobado')
+                                                    .map((req: any) => (
+                                                        <div key={req.id} className="bg-slate-50/50 p-6 rounded-[32px] border-2 border-slate-100 hover:border-blue-100 transition-all relative">
+                                                            {/* BOTÓN BORRAR (Trash2) - SIEMPRE ARRIBA A LA DERECHA */}
+                                                            <button 
+                                                                onClick={async (e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    if (!confirm("¿BORRAR PERMANENTEMENTE esta solicitud?")) return;
+                                                                    setIsLoading(true);
+                                                                    const res = await deleteReunionAction(req.id);
+                                                                    setIsLoading(false);
+                                                                    if (res.error) alert(res.error);
+                                                                    else {
+                                                                        showToast("Registro eliminado");
+                                                                        setLocalSolicitudesReunion(prev => prev.filter(r => r.id !== req.id));
+                                                                    }
+                                                                }}
+                                                                className="absolute top-4 right-4 z-50 cursor-pointer p-3 bg-red-50 hover:bg-red-100 text-[#EF4444] rounded-full shadow-sm transition-all"
+                                                                title="Borrar Solicitud"
+                                                            >
+                                                                <Trash2 className="h-5 w-5" />
+                                                            </button>
+
+                                                            <div className="flex justify-between items-start mb-4 pr-16">
+                                                                <div>
+                                                                    <h4 className="font-black text-slate-900 leading-tight uppercase">
+                                                                        {req.padre?.nombre_completo || req.padre?.nombre}
+                                                                    </h4>
+                                                                    <div className="flex items-center gap-2 text-slate-400 font-bold text-[10px] mt-2 uppercase tracking-widest">
+                                                                        <Users className="h-3.5 w-3.5" />
+                                                                        Alumno: <span className="text-purple-600">{req.padre?.nombre_alumno || 'IVAN'}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Badge className={req.estado === 'pendiente' ? 'bg-amber-500' : 'bg-green-600'}>
+                                                                        {req.estado === 'pendiente' ? 'Pendiente' : 'Aceptada'}
+                                                                    </Badge>
+                                                                    {/* BOTÓN FINALIZAR (Check) - AL LADO DE LA ETIQUETA ACEPTADA */}
+                                                                    {req.estado === 'aprobado' && (
+                                                                        <button 
+                                                                            onClick={async (e) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                if (!confirm("¿Deseas finalizar y archivar esta reunión?")) return;
+                                                                                setIsLoading(true);
+                                                                                const res = await finishReunionAction(req.id);
+                                                                                setIsLoading(false);
+                                                                                if (res.error) alert(res.error);
+                                                                                else showToast("Finalizada");
+                                                                            }}
+                                                                            className="z-50 cursor-pointer p-1.5 bg-green-50 hover:bg-green-100 text-[#10B981] rounded-full transition-all border border-green-200"
+                                                                            title="Marcar como Finalizada"
+                                                                        >
+                                                                            <CheckCircle className="h-5 w-5" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="bg-white p-5 rounded-2xl border border-slate-100 mb-4 italic text-slate-600 text-base leading-relaxed">
+                                                                "{req.motivo}"
+                                                            </div>
+
+                                                            <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-4">
+                                                                Solicitado: {new Date(req.created_at).toLocaleString('es-DO')}
+                                                            </div>
+
+                                                            {req.estado === 'pendiente' && (
+                                                                <div className="flex gap-4">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        onClick={async () => {
+                                                                            if (!confirm("¿Deseas declinar esta solicitud?")) return;
+                                                                            setIsLoading(true);
+                                                                            const res = await rejectReunionAction(req.id);
+                                                                            setIsLoading(false);
+                                                                            if (res.error) alert(res.error);
+                                                                            else showToast("Reunión declinada");
+                                                                        }}
+                                                                        className="flex-1 rounded-[20px] border-2 bg-red-50 text-red-600 hover:bg-red-100 font-black h-12"
+                                                                    >
+                                                                        Declinar
+                                                                    </Button>
+                                                                    <Button
+                                                                        onClick={() => setConfirmingMeeting(req)}
+                                                                        className="flex-[2] rounded-[20px] bg-[#002147] text-white hover:bg-blue-900 font-black h-12 shadow-xl"
+                                                                    >
+                                                                        Aceptar Reunión
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+
+                                                            {req.estado === 'aprobado' && (
+                                                                <div className="space-y-4">
+                                                                    <div className="bg-green-50 p-5 rounded-2xl border border-green-100">
+                                                                        <div className="flex items-center gap-2 text-[11px] font-black text-green-700 uppercase mb-2">
+                                                                            <Calendar className="h-4 w-4" />
+                                                                            <span>Confirmada para: {new Date(req.fecha_cita).toLocaleString('es-DO')}</span>
+                                                                        </div>
+                                                                        <p className="text-sm text-green-800 font-medium italic">"{req.comentario_directora}"</p>
+                                                                    </div>
+                                                                    <a 
+                                                                        href={`https://wa.me/${req.padre?.telefono?.replace(/\D/g, '') || '111'}?text=${encodeURIComponent(`Hola ${req.padre?.nombre || 'Tutor'}, le confirmo su reunión en Kinder Hive Hub para el ${new Date(req.fecha_cita).toLocaleString('es-DO', { dateStyle: 'long', timeStyle: 'short' })}. Comentario: ${req.comentario_directora}`)}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="w-full flex items-center justify-center gap-3 bg-[#25D366] text-white font-black py-4 rounded-[20px] hover:bg-[#20bd5a] transition-all shadow-lg text-base"
+                                                                    >
+                                                                        <MessageCircle className="h-6 w-6 fill-white" /> Notificar por WhatsApp
+                                                                    </a>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <p className="text-xs text-slate-600 font-medium">"{req.comentario_directora}"</p>
-                                                        <a 
-                                                            href={`https://wa.me/${req.padre?.telefono?.replace(/\D/g, '') || '111'}?text=${encodeURIComponent(`Hola ${req.padre?.nombre || 'Tutor'}, le confirmo su reunión en Kinder Hive Hub para el ${new Date(req.fecha_cita).toLocaleString('es-DO')}. Comentario: ${req.comentario_directora}`)}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center justify-center gap-2 bg-[#25D366] text-white font-black py-3 rounded-xl hover:bg-[#20bd5a] transition-all shadow-md mt-1"
-                                                        >
-                                                            <svg viewBox="0 0 24 24" fill="white" className="h-5 w-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-                                                            Avisar por WhatsApp
-                                                        </a>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))
-                                    )}
+                                                    ))
+                                            )
+                                        ) : (
+                                            /* HISTORIAL */
+                                            localSolicitudesReunion.filter((r: any) => r.estado === 'finalizada' || r.estado === 'rechazado').length === 0 ? (
+                                                <div className="py-20 text-center opacity-30 grayscale">
+                                                    <FileText className="h-12 w-12 mx-auto mb-3" />
+                                                    <p className="font-bold">Historial vacío</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {localSolicitudesReunion
+                                                        .filter((r: any) => r.estado === 'finalizada' || r.estado === 'rechazado')
+                                                        .map((req: any) => (
+                                                            <div key={req.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center opacity-70">
+                                                                <div>
+                                                                    <p className="font-black text-slate-700 uppercase text-[10px]">{req.padre?.nombre_completo}</p>
+                                                                    <p className="text-[9px] text-slate-400 font-bold">{new Date(req.created_at).toLocaleDateString()}</p>
+                                                                </div>
+                                                                <Badge className={req.estado === 'finalizada' ? 'bg-slate-400' : 'bg-red-400'}>
+                                                                    {req.estado === 'finalizada' ? 'Finalizada' : 'Rechazada'}
+                                                                </Badge>
+                                                            </div>
+                                                        ))}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -1161,7 +1259,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                                 else showToast("Registro eliminado");
                                                             }
                                                         }}
-                                                        className="absolute top-4 right-4 h-10 w-10 rounded-full text-slate-300 hover:text-red-500 hover:bg-white transition-all shadow-sm"
+                                                        className="absolute top-4 right-4 h-10 w-10 rounded-full text-red-500 hover:bg-red-50 transition-all shadow-sm"
                                                     >
                                                         <Trash2 className="h-5 w-5" />
                                                     </Button>
@@ -1258,11 +1356,11 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                     type="button"
                                     variant="ghost"
                                     onClick={() => setActiveModal(null)}
-                                    className={(activeModal === "pendientes" || activeModal === "revisar_pagos") ? "w-full h-14 rounded-2xl font-black text-slate-600 bg-slate-100 hover:bg-slate-200" : "flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"}
+                                    className={(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones") ? "w-full h-14 rounded-2xl font-black text-slate-600 bg-slate-100 hover:bg-slate-200" : "flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"}
                                 >
-                                    {(activeModal === "pendientes" || activeModal === "revisar_pagos") ? "Cerrar Panel" : "Cancelar"}
+                                    {(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones") ? "Cerrar Panel" : "Cancelar"}
                                 </Button>
-                                {(activeModal !== "pendientes" && activeModal !== "revisar_pagos") && (
+                                {(activeModal !== "pendientes" && activeModal !== "revisar_pagos" && activeModal !== "reuniones") && (
                                     <Button
                                         type="submit"
                                         disabled={isLoading}

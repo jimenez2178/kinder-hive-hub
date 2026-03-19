@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { getFraseDelDia } from "@/lib/n8n";
 import DashboardClient from "../../components/DashboardClient";
@@ -161,12 +162,14 @@ export default async function DashboardPage() {
         .in("estudiante_id", estudiantes?.map(e => e.id) || [])
         .order("created_at", { ascending: false });
 
-    // 10. Solicitudes de Reunión Propias
+    // 10. Solicitudes de Reunión Propias (Solo la última activa)
     const { data: solicitudesReunion } = await supabase
         .from("solicitudes_reunion")
         .select("*")
         .eq("padre_id", user.id)
-        .order("created_at", { ascending: false });
+        .eq("estado", "aprobado")
+        .order("created_at", { ascending: false })
+        .limit(1);
 
     return (
         <DashboardClient
