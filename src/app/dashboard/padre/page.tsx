@@ -161,6 +161,13 @@ export default async function DashboardPage() {
         .in("estudiante_id", estudiantes?.map(e => e.id) || [])
         .order("created_at", { ascending: false });
 
+    // 10. Solicitudes de Reunión Propias
+    const { data: solicitudesReunion } = await supabase
+        .from("solicitudes_reunion")
+        .select("*")
+        .eq("padre_id", user.id)
+        .order("created_at", { ascending: false });
+
     return (
         <DashboardClient
             initialFrase={fraseDelDia}
@@ -174,6 +181,7 @@ export default async function DashboardPage() {
             agradecimientos={agradecimientos || []}
             evaluaciones={evaluaciones || []}
             calificaciones={calificaciones || []}
+            solicitudesReunion={solicitudesReunion || []}
         />
     );
 }

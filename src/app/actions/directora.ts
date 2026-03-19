@@ -564,11 +564,15 @@ export async function clearComunicadosAction() {
 
 
 
-export async function approveReunionAction(id: string) {
+export async function approveReunionAction(id: string, fecha_cita: string, comentario_directora: string) {
     const supabase = await createClient();
     const { error } = await supabase
         .from("solicitudes_reunion")
-        .update({ estado: 'aprobado' })
+        .update({ 
+            estado: 'aprobado',
+            fecha_cita,
+            comentario_directora
+        })
         .eq('id', id);
 
     if (error) return { error: error.message };

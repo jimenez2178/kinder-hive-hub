@@ -40,7 +40,7 @@ export default async function DirectoraPage() {
         .from("solicitudes_reunion")
         .select(`
             *,
-            padre:perfiles!padre_id(id, nombre_completo, nombre, nombre_alumno)
+            padre:perfiles!padre_id(id, nombre_completo, nombre, nombre_alumno, telefono)
         `)
         .order("created_at", { ascending: false });
 

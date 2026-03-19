@@ -108,6 +108,7 @@ export default function DashboardClient({
     agradecimientos = [],
     evaluaciones = [],
     calificaciones = [],
+    solicitudesReunion = [],
     onDeleteComunicado
 }: {
     initialFrase: string,
@@ -121,6 +122,7 @@ export default function DashboardClient({
     agradecimientos?: any[],
     evaluaciones?: any[],
     calificaciones?: any[],
+    solicitudesReunion?: any[],
     onDeleteComunicado?: (id: string) => Promise<void>
 }) {
     const [frase] = useState(initialFrase);
@@ -315,6 +317,43 @@ export default function DashboardClient({
                         </div>
                     </div>
                 </header>
+                
+                {/* ═══ CITAS CONFIRMADAS ═══ */}
+                {solicitudesReunion.filter((r: any) => r.estado === 'aprobado').map((cita: any) => (
+                    <div key={cita.id} className="mb-8 p-8 bg-[#002147] rounded-[40px] text-white shadow-2xl border-l-[12px] border-green-500 relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                        {/* Decoración */}
+                        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
+                        
+                        <div className="flex flex-col md:flex-row items-center gap-6 z-10 relative">
+                            <div className="h-20 w-20 bg-green-500/20 rounded-[30px] flex items-center justify-center backdrop-blur-md border border-green-500/30 shrink-0 shadow-lg shadow-green-500/20">
+                                <Calendar className="h-10 w-10 text-green-400" />
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                                    <h3 className="text-2xl font-black italic tracking-tight">¡Cita Confirmada con Dirección!</h3>
+                                    <Badge className="bg-green-500 text-white font-black text-[10px] px-4 py-1 rounded-full border-0 uppercase animate-pulse">
+                                        Confirmada
+                                    </Badge>
+                                </div>
+                                <div className="flex flex-col md:flex-row items-center gap-4 text-blue-100/70 font-black text-sm uppercase tracking-widest">
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        {new Date(cita.fecha_cita).toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="h-4 w-4" />
+                                        A las {new Date(cita.fecha_cita).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 bg-white/5 p-6 rounded-[30px] border border-white/10 italic text-blue-50 text-lg font-medium leading-relaxed relative z-10">
+                            <span className="text-blue-300 not-italic font-black text-xs uppercase block mb-2 opacity-50">Comentario de la Directora:</span>
+                            "{cita.comentario_directora}"
+                        </div>
+                    </div>
+                ))}
 
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
                 {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).length > 0 && (
