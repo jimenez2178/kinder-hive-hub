@@ -59,7 +59,6 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
             .upsert({
                 id: data.user.id,
                 email: lowerEmail,
-                nombre: lowerEmail.split('@')[0],
                 nombre_completo: lowerEmail.split('@')[0],
                 rol: rescueRol,
                 estado_aprobacion: rescueRol === "padre" ? "pendiente" : "aprobado",

@@ -85,12 +85,11 @@ export async function registerAction(prevState: RegisterState | null, formData: 
                     .upsert({
                         id: authData.user.id,
                         email: email,
-                        nombre: nombre,
                         nombre_completo: nombreCompleto,
-                        rol: "padre",
-                        estado_aprobacion: "pendiente",
                         nombre_alumno: nombreAlumno,
-                        colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992" 
+                        colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992",
+                        rol: "padre",
+                        estado_aprobacion: "pendiente"
                     }, { onConflict: 'id' });
 
                 if (profileError) {
