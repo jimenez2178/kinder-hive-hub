@@ -595,7 +595,7 @@ export async function approveReunionAction(id: string, fecha_cita: string, comen
     const { error } = await supabase
         .from("solicitudes_reunion")
         .update({ 
-            estado: 'aprobado',
+            estado: 'aceptada',
             fecha_cita,
             comentario_directora
         })
@@ -604,6 +604,8 @@ export async function approveReunionAction(id: string, fecha_cita: string, comen
     if (error) return { error: error.message };
 
     revalidatePath("/", "layout");
+    revalidatePath("/dashboard/padre");
+    revalidatePath("/dashboard/directora");
     return { success: true };
 }
 

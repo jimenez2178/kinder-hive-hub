@@ -167,7 +167,7 @@ export default async function DashboardPage() {
         .from("solicitudes_reunion")
         .select("*")
         .eq("padre_id", user.id)
-        .eq("estado", "aprobado")
+        .eq("estado", "aceptada")
         .order("created_at", { ascending: false })
         .limit(1);
 

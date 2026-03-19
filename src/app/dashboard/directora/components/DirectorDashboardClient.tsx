@@ -1062,7 +1062,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                                         {req.estado === 'pendiente' ? 'Pendiente' : 'Aceptada'}
                                                                     </Badge>
                                                                     {/* BOTÓN FINALIZAR (Check) - AL LADO DE LA ETIQUETA ACEPTADA */}
-                                                                    {req.estado === 'aprobado' && (
+                                                                    {req.estado === 'aceptada' && (
                                                                         <button 
                                                                             onClick={async (e) => {
                                                                                 e.preventDefault();
@@ -1116,7 +1116,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                                 </div>
                                                             )}
 
-                                                            {req.estado === 'aprobado' && (
+                                                            {req.estado === 'aceptada' && (
                                                                 <div className="space-y-4">
                                                                     <div className="bg-green-50 p-5 rounded-2xl border border-green-100">
                                                                         <div className="flex items-center gap-2 text-[11px] font-black text-green-700 uppercase mb-2">

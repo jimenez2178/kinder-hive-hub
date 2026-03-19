@@ -319,7 +319,7 @@ export default function DashboardClient({
                 </header>
                 
                 {/* ═══ CITAS CONFIRMADAS ═══ */}
-                {solicitudesReunion.filter((r: any) => r.estado === 'aprobado' && r.fecha_cita).map((cita: any) => {
+                {solicitudesReunion.filter((r: any) => r.estado === 'aceptada' && r.fecha_cita).map((cita: any) => {
                     const citaDate = new Date(cita.fecha_cita);
                     if (isNaN(citaDate.getTime())) return null; // Saltar si la fecha es inválida
 
