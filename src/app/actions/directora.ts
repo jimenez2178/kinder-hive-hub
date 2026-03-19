@@ -3,6 +3,7 @@
 import "server-only";
 
 import { createClient } from "@/utils/supabase/server";
+import { getAdminClient } from "@/lib/supabase-admin";
 import { revalidatePath } from "next/cache";
 import { enviarNotificacionPago } from "@/lib/n8n";
 
@@ -207,7 +208,7 @@ export async function addEstudianteAction(prevState: unknown, formData: FormData
     if (finalPadreId) {
         const { error: updateError } = await supabase
             .from('perfiles')
-            .update({ estado: 'aprobado' })
+            .update({ estado_aprobacion: 'aprobado' })
             .eq('id', finalPadreId);
         
         if (updateError) {
@@ -300,6 +301,7 @@ export async function approveParentAction(prevState: unknown, formData: FormData
     if (userProfile?.rol !== 'directora') return { error: "Permiso denegado. Solo directores pueden ejecutar esta acción." };
 
     const parentId = formData.get("parent_id") as string;
+    if (!parentId) return { error: "ID de padre no proporcionado." };
 
     // 1. Obtener el perfil padre para ver el nombre del alumno
     const { data: perfilData, error: perfilError } = await supabase
@@ -308,16 +310,34 @@ export async function approveParentAction(prevState: unknown, formData: FormData
         .eq('id', parentId)
         .single();
     
-    if (perfilError) return { error: perfilError.message };
+    if (perfilError) {
+        console.error("[APPROVE] Error fetching parent profile:", perfilError.message);
+        return { error: "No se pudo encontrar el perfil del padre." };
+    }
 
-    // 2. Aprobar
-    const { error: updateError } = await supabase
-        .from("perfiles")
-        .update({ estado: 'aprobado', estado_aprobacion: 'aprobado' })
-        .eq('id', parentId)
-        .eq('rol', 'padre');
+    // 2. ATOMIC APPROVAL — Update BOTH columns using admin client to bypass RLS
+    try {
+        const adminClient = getAdminClient();
+        const { error: updateError, data: updateData } = await adminClient
+            .from("perfiles")
+            .update({ estado_aprobacion: 'aprobado' })
+            .eq('id', parentId)
+            .eq('rol', 'padre')
+            .select('id, email, estado_aprobacion');
 
-    if (updateError) return { error: updateError.message };
+        if (updateError) {
+            console.error("[APPROVE] Update failed:", updateError.message);
+            return { error: `Error al aprobar: ${updateError.message}` };
+        }
+        if (!updateData || updateData.length === 0) {
+            console.error("[APPROVE] No rows updated — padre no encontrado o rol incorrecto");
+            return { error: "No se encontró un padre con ese ID." };
+        }
+        console.log(`[APPROVE] ✅ Padre aprobado correctamente:`, updateData[0]);
+    } catch (adminError: any) {
+        console.error("[APPROVE] Admin client error:", adminError);
+        return { error: "Error de configuración del servidor." };
+    }
 
     // 3. Buscar alumno y crear relación en padres_estudiantes
     const nombreAlumnoSearch = perfilData?.nombre_alumno?.trim();
@@ -330,11 +350,8 @@ export async function approveParentAction(prevState: unknown, formData: FormData
 
         if (estudiantesData && estudiantesData.length > 0) {
             const estudianteId = estudiantesData[0].id;
-            
-            // Actualizar el campo padre_id en el estudiante
             await supabase.from('estudiantes').update({ padre_id: parentId }).eq('id', estudianteId);
             
-            // Verificar si la relación ya existe para evitar errores
             const { data: existingRel } = await supabase
                 .from('padres_estudiantes')
                 .select('id')
@@ -343,7 +360,6 @@ export async function approveParentAction(prevState: unknown, formData: FormData
                 .maybeSingle();
                 
             if (!existingRel) {
-                // Relación en padres_estudiantes
                 await supabase.from('padres_estudiantes').insert({
                     padre_id: parentId,
                     estudiante_id: estudianteId,
@@ -372,7 +388,7 @@ export async function rejectParentAction(prevState: unknown, formData: FormData)
 
     const { error } = await supabase
         .from("perfiles")
-        .update({ estado: 'rechazado', estado_aprobacion: 'rechazado' })
+        .update({ estado_aprobacion: 'rechazado' })
         .eq('id', parentId)
         .eq('rol', 'padre');
 

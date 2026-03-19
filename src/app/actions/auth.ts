@@ -62,7 +62,7 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
                 nombre: lowerEmail.split('@')[0],
                 nombre_completo: lowerEmail.split('@')[0],
                 rol: rescueRol,
-                estado: rescueRol === "padre" ? "pendiente" : "aprobado",
+                estado_aprobacion: rescueRol === "padre" ? "pendiente" : "aprobado",
                 colegio_id: "bd8d5b9b-cb69-4d9e-83cd-84e80b792992"
             })
             .select()
@@ -71,14 +71,14 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
         if (rescueError) return { error: "Error al sincronizar perfil. Por favor, contacte soporte." };
         
         // Redirigir basado en el nuevo perfil rescatado
-        if (newProfile.estado === "pendiente") return { redirect: "/espera" };
+        if (newProfile.estado_aprobacion === "pendiente") return { redirect: "/espera" };
         if (newProfile.rol === "directora") return { redirect: "/dashboard/directora" };
         return { redirect: "/dashboard/padre" };
     }
 
-    console.log(`[LOGIN] User found: ${profile.email}, Role: ${profile.rol}, Estado: ${profile.estado}`);
+    console.log(`[LOGIN] User found: ${profile.email}, Role: ${profile.rol}, Status: ${profile.estado_aprobacion}`);
 
-    if (profile.estado === "pendiente") {
+    if (profile.estado_aprobacion === "pendiente") {
         return { redirect: "/espera" };
     }
 

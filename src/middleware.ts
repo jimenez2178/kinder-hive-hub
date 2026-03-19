@@ -51,14 +51,12 @@ export async function middleware(request: NextRequest) {
 
     // 2. Authenticated users logic
     if (user) {
-        // Fetch profile to check role and state — AGGRESSIVE REVALIDATION
-        const isOnEspera = request.nextUrl.pathname.startsWith("/espera");
-        
-        // If we are on /espera, we want to make sure we get the ABSOLUTE latest state from DB
-        const { data: profile, error: profileError } = await (isOnEspera ? 
-            supabase.from("perfiles").select("rol, estado, estado_aprobacion").eq("id", user.id).single() :
-            supabase.from("perfiles").select("rol, estado, estado_aprobacion").eq("id", user.id).single()
-        );
+        // Single source of truth: estado_aprobacion is the canonical access control column
+        const { data: profile, error: profileError } = await supabase
+            .from("perfiles")
+            .select("rol, estado_aprobacion")
+            .eq("id", user.id)
+            .single();
 
         console.log(`[MIDDLEWARE] User: ${user.email}, Role: ${profile?.rol}, Status: ${profile?.estado_aprobacion}, Path: ${request.nextUrl.pathname}`);
 
@@ -71,8 +69,9 @@ export async function middleware(request: NextRequest) {
             return supabaseResponse;
         }
 
-        const isAprobado = profile.estado_aprobacion === "aprobado" || profile.estado === "aprobado";
-        const isPendiente = profile.estado_aprobacion === "pendiente" || profile.estado === "pendiente";
+        // Use ONLY estado_aprobacion as the canonical access control field
+        const isAprobado = profile.estado_aprobacion === "aprobado";
+        const isPendiente = profile.estado_aprobacion === "pendiente" || !profile.estado_aprobacion;
 
         // A. Handle Pending Status (Aplica principalmente a padres)
         if (isPendiente && profile.rol !== "directora" && profile.rol !== "maestro") {
