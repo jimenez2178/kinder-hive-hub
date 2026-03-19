@@ -51,12 +51,14 @@ export async function middleware(request: NextRequest) {
 
     // 2. Authenticated users logic
     if (user) {
-        // Fetch profile to check role and state
-        const { data: profile, error: profileError } = await supabase
-            .from("perfiles")
-            .select("rol, estado, estado_aprobacion")
-            .eq("id", user.id)
-            .single();
+        // Fetch profile to check role and state — AGGRESSIVE REVALIDATION
+        const isOnEspera = request.nextUrl.pathname.startsWith("/espera");
+        
+        // If we are on /espera, we want to make sure we get the ABSOLUTE latest state from DB
+        const { data: profile, error: profileError } = await (isOnEspera ? 
+            supabase.from("perfiles").select("rol, estado, estado_aprobacion").eq("id", user.id).single() :
+            supabase.from("perfiles").select("rol, estado, estado_aprobacion").eq("id", user.id).single()
+        );
 
         console.log(`[MIDDLEWARE] User: ${user.email}, Role: ${profile?.rol}, Status: ${profile?.estado_aprobacion}, Path: ${request.nextUrl.pathname}`);
 
