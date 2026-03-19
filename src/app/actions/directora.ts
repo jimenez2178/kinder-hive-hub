@@ -592,20 +592,32 @@ export async function deleteReunionAction(id: string) {
 
 export async function approveReunionAction(id: string, fecha_cita: string, comentario_directora: string) {
     const supabase = await createClient();
-    const { error } = await supabase
+    
+    // Verificamos el perfil para segurarnos del permiso (extra safety)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "No autenticado" };
+    
+    const { error: updateError, data } = await supabase
         .from("solicitudes_reunion")
         .update({ 
             estado: 'aceptada',
             fecha_cita,
             comentario_directora
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
-    if (error) return { error: error.message };
+    if (updateError) return { error: updateError.message };
+    
+    // Si no hay data o está vacío, el registro no se encontró o RLS falló
+    if (!data || data.length === 0) {
+        return { error: "Error de persistencia: No se pudo actualizar el registro. Verifica permisos." };
+    }
 
     revalidatePath("/", "layout");
-    revalidatePath("/dashboard/padre");
-    revalidatePath("/dashboard/directora");
+    revalidatePath("/dashboard/padre", "page");
+    revalidatePath("/dashboard/directora", "page");
+    
     return { success: true };
 }
 
