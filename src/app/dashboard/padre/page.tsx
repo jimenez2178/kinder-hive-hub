@@ -162,14 +162,12 @@ export default async function DashboardPage() {
         .in("estudiante_id", estudiantes?.map(e => e.id) || [])
         .order("created_at", { ascending: false });
 
-    // 10. Solicitudes de Reunión Propias (Solo la última activa)
     const { data: solicitudesReunion } = await supabase
         .from("solicitudes_reunion")
         .select("*")
         .eq("padre_id", user.id)
-        .eq("estado", "aceptada")
-        .order("created_at", { ascending: false })
-        .limit(1);
+        .neq("estado", "finalizada")
+        .order("created_at", { ascending: false });
 
     return (
         <DashboardClient

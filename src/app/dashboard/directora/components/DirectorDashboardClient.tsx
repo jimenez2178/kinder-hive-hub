@@ -1177,13 +1177,19 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         <form onSubmit={async (e) => {
                                             e.preventDefault();
                                             const f = new FormData(e.currentTarget);
-                                            const fechaTime = `${f.get('fecha')}T${f.get('hora')}`;
+                                            // Formato ISO robusto: YYYY-MM-DDTHH:mm:ss
+                                            const fechaTime = `${f.get('fecha')}T${f.get('hora')}:00`;
                                             setIsLoading(true);
                                             const res = await approveReunionAction(confirmingMeeting.id, fechaTime, f.get('comentario') as string);
                                             setIsLoading(false);
                                             if (res.error) alert(res.error);
                                             else {
                                                 showToast("Cita agendada correctamente");
+                                                setLocalSolicitudesReunion(prev => prev.map(r => 
+                                                    r.id === confirmingMeeting.id 
+                                                    ? { ...r, estado: 'aceptada', fecha_cita: fechaTime, comentario_directora: f.get('comentario') } 
+                                                    : r
+                                                ));
                                                 setConfirmingMeeting(null);
                                             }
                                         }} className="space-y-4">
