@@ -4,9 +4,10 @@ import { useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function PushNotificationManager() {
-    const supabase = createClient();
-
     useEffect(() => {
+        const supabase = createClient();
+        if (typeof window === "undefined") return;
+
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker
                 .register("/sw.js")

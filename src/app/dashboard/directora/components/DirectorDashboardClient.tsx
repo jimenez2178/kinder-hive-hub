@@ -10,8 +10,9 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
-import { approvePaymentAction, rejectPaymentAction, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
+import { approvePaymentAction, rejectPaymentAction as rejectPaymentActionLegacy, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, metrics, previewData }: {
     estudiantes: any[],
@@ -58,10 +59,13 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
 
     // --- Gestión de Comunicados (Optimista) ---
     const [localComunicados, setLocalComunicados] = useState(previewData.comunicados);
+    const [localUsuariosPendientes, setLocalUsuariosPendientes] = useState(usuariosPendientes);
+    const router = useRouter();
 
     useEffect(() => {
         setLocalComunicados(previewData.comunicados);
-    }, [previewData.comunicados]);
+        setLocalUsuariosPendientes(usuariosPendientes);
+    }, [previewData.comunicados, usuariosPendientes]);
 
     const handleDeleteComunicado = async (id: string) => {
         const previousComunicados = [...localComunicados];
@@ -105,14 +109,28 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         try {
             const result = await actionFn(null, formData);
             if (result?.error) {
-                alert("Error: " + result.error);
+                alert("Atención: " + result.error);
             } else {
-                setActiveModal(null);
-                showToast("¡Registro guardado correctamente!");
+                // Si la acción fue de aprobar/rechazar padre, lo quitamos de la lista local inmediatamente
+                const parentId = formData.get('parent_id') as string;
+                if (parentId) {
+                    setLocalUsuariosPendientes(prev => prev.filter(u => u.id !== parentId));
+                }
+
+                showToast("¡Operación completada con éxito!");
+                
+                // Si solo queda 1 o ninguno, cerramos el modal
+                if (parentId && localUsuariosPendientes.length <= 1) {
+                    setActiveModal(null);
+                }
+                
+                router.refresh(); // Refrescar datos del servidor (métricas, contadores)
             }
         } catch (err) {
             console.error("[handleAction] Unexpected Error:", err);
-            alert("Error crítico: No se pudo conectar con el servidor. Por favor, verifique su sesión.");
+            // Intentar refrescar para ver si el error fue solo de red momentáneo
+            router.refresh();
+            alert("Hubo un problema de conexión. Si el error persiste, cierre sesión y vuelva a entrar.");
         } finally {
             setIsLoading(false);
         }
@@ -914,13 +932,13 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
 
                             {activeModal === "pendientes" && (
                                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                                    {usuariosPendientes.length === 0 ? (
+                                    {localUsuariosPendientes.length === 0 ? (
                                         <div className="text-center py-12 text-slate-400">
                                             <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
                                             <p className="font-bold">No hay solicitudes pendientes.</p>
                                         </div>
                                     ) : (
-                                        usuariosPendientes.map(user => (
+                                        localUsuariosPendientes.map(user => (
                                             <div key={user.id} className="bg-slate-50 border border-slate-100 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 items-center justify-between">
                                                 <div>
                                                     <p className="font-black text-slate-800">{user.nombre_completo || "Sin nombre"}</p>
@@ -1063,7 +1081,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                                     type="button"
                                                                     onClick={async () => {
                                                                         setIsLoading(true);
-                                                                        const res = await rejectPaymentAction(pago.id);
+                                                                        const res = await rejectPaymentActionLegacy(pago.id);
                                                                         setIsLoading(false);
                                                                         if (res.error) alert(res.error);
                                                                         else showToast("Pago rechazado");

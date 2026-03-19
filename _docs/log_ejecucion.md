@@ -92,3 +92,11 @@
 - **Espera**: Se actualizó diseño y mensaje para redirigidos.
 - **Despliegue**: Build y Push realizado verificando TSC 0 errores.
 
+
+
+## [2026-03-19] Hotfixes Aprobación Accesos y Middleware
+- **Middleware**: Excepción creada para asegurar navegación de roles superiores e ingresos Legacy.
+- **Dashboard Director**: UI alterada para mostrar ALUMNO detalladamente.
+- **Link Automático**: Prevención de inserciones dobles a la tabla padres_estudiantes y vinculación oficial por búsqueda ilike en nombre_alumno.
+- **Pantalla Espera**: Refresh en tiempo real configurado (polling cada 5s) para atrapar el cambio de estado en vivo.
+
