@@ -321,11 +321,10 @@ export default function DashboardClient({
                 {/* ═══ CITAS CONFIRMADAS ═══ */}
                 {solicitudesReunion.filter((r: any) => r.estado === 'aceptada' && r.fecha_cita).map((cita: any) => {
                     const citaDate = new Date(cita.fecha_cita);
-                    if (isNaN(citaDate.getTime())) return null; // Saltar si la fecha es inválida
+                    if (isNaN(citaDate.getTime())) return null; 
 
                     return (
                         <div key={cita.id} className="mb-8 p-8 bg-[#002147] rounded-[40px] text-white shadow-2xl border-l-[12px] border-green-500 relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
-                        {/* Decoración */}
                         <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
                         
                         <div className="flex flex-col md:flex-row items-center gap-6 z-10 relative">
@@ -359,6 +358,29 @@ export default function DashboardClient({
                     </div>
                 );
                 })}
+
+                {/* ═══ CITAS PENDIENTES ═══ */}
+                {solicitudesReunion.filter((r: any) => r.estado === 'pendiente').map((cita: any) => (
+                    <div key={cita.id} className="mb-8 p-8 bg-[#FFF9C4] rounded-[40px] text-[#5D4037] shadow-xl border-l-[12px] border-amber-400 relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                        <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                            <div className="h-16 w-16 bg-amber-400/20 rounded-[24px] flex items-center justify-center shrink-0">
+                                <Clock className="h-8 w-8 text-amber-600 animate-pulse" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h3 className="text-xl font-black italic uppercase tracking-tight">Reunión en Revisión</h3>
+                                    <Badge className="bg-amber-400 text-amber-900 font-black text-[9px] px-3 py-0.5 rounded-full border-0 uppercase">
+                                        Pendiente
+                                    </Badge>
+                                </div>
+                                <p className="font-bold text-sm text-balance leading-tight">La directora está revisando tu solicitud. Recibirás fecha y hora muy pronto por aquí.</p>
+                                <div className="mt-3 bg-white/30 p-4 rounded-2xl italic text-xs font-bold border border-amber-200">
+                                    Motivo: "{cita.motivo}"
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
 
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
                 {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).length > 0 && (
