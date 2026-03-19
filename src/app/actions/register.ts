@@ -44,6 +44,7 @@ export async function registerAction(prevState: RegisterState | null, formData: 
                 data: {
                     nombre_completo: nombreCompleto,
                     full_name: nombreCompleto,
+                    nombre_alumno: nombreAlumno,
                     rol: "padre"
                 }
             }

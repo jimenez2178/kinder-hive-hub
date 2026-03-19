@@ -315,15 +315,44 @@ export async function approveParentAction(prevState: unknown, formData: FormData
         return { error: "No se pudo encontrar el perfil del padre." };
     }
 
-    // 2. ATOMIC APPROVAL — Update BOTH columns using admin client to bypass RLS
+    // 2. ATOMIC APPROVAL — Update columns
     try {
-        const adminClient = getAdminClient();
-        const { error: updateError, data: updateData } = await adminClient
-            .from("perfiles")
-            .update({ estado_aprobacion: 'aprobado' })
-            .eq('id', parentId)
-            .eq('rol', 'padre')
-            .select('id, email, estado_aprobacion');
+        let updateError;
+        let updateData;
+        
+        // Intentamos con AdminClient si existe, si no, con el cliente regular (Director)
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            try {
+                const adminClient = getAdminClient();
+                const res = await adminClient
+                    .from("perfiles")
+                    .update({ estado_aprobacion: 'aprobado' })
+                    .eq('id', parentId)
+                    .eq('rol', 'padre')
+                    .select('id, email, estado_aprobacion');
+                updateError = res.error;
+                updateData = res.data;
+            } catch (e) {
+                console.warn("[APPROVE] AdminClient failed, fallback to regular client.");
+                const res = await supabase
+                    .from("perfiles")
+                    .update({ estado_aprobacion: 'aprobado' })
+                    .eq('id', parentId)
+                    .eq('rol', 'padre')
+                    .select('id, email, estado_aprobacion');
+                updateError = res.error;
+                updateData = res.data;
+            }
+        } else {
+             const res = await supabase
+                .from("perfiles")
+                .update({ estado_aprobacion: 'aprobado' })
+                .eq('id', parentId)
+                .eq('rol', 'padre')
+                .select('id, email, estado_aprobacion');
+            updateError = res.error;
+            updateData = res.data;
+        }
 
         if (updateError) {
             console.error("[APPROVE] Update failed:", updateError.message);
@@ -331,12 +360,12 @@ export async function approveParentAction(prevState: unknown, formData: FormData
         }
         if (!updateData || updateData.length === 0) {
             console.error("[APPROVE] No rows updated — padre no encontrado o rol incorrecto");
-            return { error: "No se encontró un padre con ese ID." };
+            return { error: "No se encontró un padre con ese ID o permiso insuficiente." };
         }
         console.log(`[APPROVE] ✅ Padre aprobado correctamente:`, updateData[0]);
     } catch (adminError: any) {
-        console.error("[APPROVE] Admin client error:", adminError);
-        return { error: "Error de configuración del servidor." };
+        console.error("[APPROVE] Unexpected error:", adminError);
+        return { error: "Hubo un problema de procesamiento. Verifique permisos." };
     }
 
     // 3. Buscar alumno y crear relación en padres_estudiantes
