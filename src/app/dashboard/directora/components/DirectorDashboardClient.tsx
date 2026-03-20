@@ -394,15 +394,19 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <div className="flex-1 flex flex-col items-center gap-4 group/bar">
                                     <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
                                         <div 
-                                            className="w-full rounded-t-2xl md:rounded-t-3xl shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/10"
+                                            className="w-full rounded-t-2xl md:rounded-t-3xl transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/20 relative z-10"
                                             style={{ 
-                                                height: `${Math.max(12, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%`,
+                                                height: `${Math.min(100, Math.max(15, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100))}%`,
                                                 backgroundColor: '#10B981',
-                                                boxShadow: '0 0 50px rgba(16, 185, 129, 0.4), inset 0 2px 10px rgba(255,255,255,0.3)'
+                                                boxShadow: '0 0 50px rgba(16, 185, 129, 0.5), inset 0 2px 15px rgba(255,255,255,0.4)'
                                             }}
                                         >
-                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-[10px] font-black px-3 py-1.5 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-30">
                                                 RD$ {metrics.ingresosDelMes.toLocaleString()}
+                                            </div>
+                                            {/* Etiqueta de Porcentaje */}
+                                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white font-black text-[10px] md:text-xs drop-shadow-md z-20">
+                                                {Math.round((metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%
                                             </div>
                                         </div>
                                     </div>
@@ -413,15 +417,19 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <div className="flex-1 flex flex-col items-center gap-4 group/bar">
                                     <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
                                         <div 
-                                            className="w-full rounded-t-2xl md:rounded-t-3xl shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/10"
+                                            className="w-full rounded-t-2xl md:rounded-t-3xl transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/20 relative z-10"
                                             style={{ 
-                                                height: `${Math.max(12, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100)}%`,
+                                                height: `${Math.min(100, Math.max(15, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100))}%`,
                                                 backgroundColor: '#FB7185',
-                                                boxShadow: '0 0 50px rgba(251, 113, 133, 0.4), inset 0 2px 10px rgba(255,255,255,0.3)'
+                                                boxShadow: '0 0 50px rgba(251, 113, 133, 0.5), inset 0 2px 15px rgba(255,255,255,0.4)'
                                             }}
                                         >
-                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-20">
-                                                RD$ {(metrics.metaTotal - metrics.ingresosDelMes).toLocaleString()}
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-[10px] font-black px-3 py-1.5 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-30">
+                                                RD$ {Math.max(0, metrics.metaTotal - metrics.ingresosDelMes).toLocaleString()}
+                                            </div>
+                                            {/* Etiqueta de Porcentaje */}
+                                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white font-black text-[10px] md:text-xs drop-shadow-md z-20">
+                                                {Math.max(0, Math.round(((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100))}%
                                             </div>
                                         </div>
                                     </div>

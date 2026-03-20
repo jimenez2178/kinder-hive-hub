@@ -60,20 +60,30 @@ export default function PDFDownloadButton({ alumno, mes, ano, calificaciones, as
             {({ blob, url, loading, error }) => (
                 <Button 
                     disabled={loading}
-                    className={`w-full ${loading ? 'bg-slate-700' : 'bg-[#002147] hover:bg-[#003366]'} text-white font-black py-7 rounded-[40px] shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 group border-b-4 border-blue-900 border-x border-t border-white/10`}
+                    className={`w-full ${loading ? 'opacity-50' : 'opacity-100'} bg-white hover:bg-[#F0F4F8] text-[#002147] font-black py-8 rounded-[40px] shadow-xl transition-all active:scale-95 flex items-center justify-center gap-4 group border-2 border-[#D4AF37] relative overflow-hidden`}
                 >
+                    {/* Efecto de brillo sutil */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+                    
                     {loading ? (
-                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <Loader2 className="h-7 w-7 animate-spin text-[#002147]" />
                     ) : (
-                        <Download className="h-6 w-6 group-hover:translate-y-0.5 transition-transform" />
+                        <Download className="h-8 w-8 text-[#005088] transition-transform group-hover:translate-y-0.5" />
                     )}
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm font-black uppercase tracking-tighter">
-                            {loading ? 'Generando Documento...' : 'Descargar Boletín Mensual'}
+                    
+                    <div className="flex flex-col items-start leading-none gap-1">
+                        <span className="text-base font-black uppercase tracking-tight">
+                            {loading ? 'Generando Boletín...' : 'Descargar Boletín Oficial'}
                         </span>
-                        <span className="text-[10px] opacity-60 font-bold uppercase tracking-widest">
-                            {mes} {ano} — Formato Oxford
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-[#005088] font-bold uppercase tracking-[0.2em] opacity-80">
+                                {mes} {ano}
+                            </span>
+                            <span className="h-1 w-1 rounded-full bg-[#D4AF37]" />
+                            <span className="text-[10px] text-[#D4AF37] font-black uppercase tracking-widest">
+                                Formato Oxford
+                            </span>
+                        </div>
                     </div>
                 </Button>
             )}
