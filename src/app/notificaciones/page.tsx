@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Bell, BellRing, BellOff, Send, ShieldCheck, AlertCircle, CheckCircle2, X, Loader2, ArrowLeft, CreditCard } from 'lucide-react';
+import { Bell, BellRing, BellOff, Send, ShieldCheck, AlertCircle, CheckCircle2, X, Loader2, ArrowLeft, CreditCard, Terminal, Globe, Key, ShieldAlert, CheckCircle } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { getMessaging, getToken } from 'firebase/messaging';
 import Link from 'next/link';
+import { updateNotificationSettingsAction, getNotificationSettingsAction } from '@/app/actions/notificaciones';
 
 // --- CONFIGURACIÓN DE FIREBASE (Placeholder seguro) ---
 // En producción, estas variables deben venir de .env.local o estar inyectadas en el global scope
@@ -44,6 +45,15 @@ export default function NotificacionesPage() {
   const [isSupported, setIsSupported] = useState(true);
   const [isIOS, setIsIOS] = useState(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [settings, setSettings] = useState({ seguridad: true, pagos: true, avisos: true });
+  const [debugStatus, setDebugStatus] = useState<any>({
+    browserSupport: false,
+    serviceWorker: 'checking',
+    notificationPermission: 'default',
+    vapidKeySet: true,
+    fcmToken: null,
+    error: null
+  });
 
   useEffect(() => {
     const initAuth = async () => {
@@ -59,17 +69,32 @@ export default function NotificacionesPage() {
       setUser(currentUser);
     });
 
+    const fetchData = async () => {
+      const res = await getNotificationSettingsAction();
+      if (res.data) setSettings(res.data);
+    };
+
     if (typeof window !== 'undefined') {
       const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       setIsIOS(isIOSDevice);
 
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        setIsSupported(false);
-      } else {
+      const support = 'Notification' in window && 'serviceWorker' in navigator;
+      setIsSupported(support);
+      
+      if (support) {
         setPermission(Notification.permission);
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          setDebugStatus((prev: any) => ({
+            ...prev,
+            browserSupport: true,
+            serviceWorker: regs.length > 0 ? 'active' : 'inactive',
+            notificationPermission: Notification.permission
+          }));
+        });
       }
     }
 
+    fetchData();
     return () => unsubscribe();
   }, []);
 
@@ -119,7 +144,9 @@ export default function NotificacionesPage() {
 
       if (token) {
         console.log("Token generado con éxito:", token);
+        alert("TOKEN GENERADO: " + token);
         setFcmToken(token);
+        setDebugStatus((prev: any) => ({ ...prev, fcmToken: token }));
         
         const appId = (typeof window !== 'undefined' && (window as any).__app_id) || 'kinder-hive-hub';
         const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'notifications');
@@ -132,11 +159,21 @@ export default function NotificacionesPage() {
         }, { merge: true });
       } else {
         console.warn("No se pudo obtener el token de registro.");
+        setDebugStatus((prev: any) => ({ ...prev, error: "Token vacío" }));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error obteniendo token FCM:", error);
-      showToast("Error al vincular dispositivo.", "error");
+      setDebugStatus((prev: any) => ({ ...prev, error: error.message }));
+      showToast("Error: " + error.message, "error");
     }
+  };
+
+  const toggleSetting = async (key: 'seguridad' | 'pagos' | 'avisos') => {
+    const newSettings = { ...settings, [key]: !settings[key] };
+    setSettings(newSettings);
+    const res = await updateNotificationSettingsAction(newSettings);
+    if (res.error) showToast("Error al guardar preferencia.", "error");
+    else showToast("Ajuste guardado con éxito.");
   };
 
   const sendTestNotification = () => {
@@ -277,7 +314,10 @@ export default function NotificacionesPage() {
             <span className="h-[2px] w-20 bg-slate-200"></span>
           </div>
           
-          <div className="bg-white rounded-[25px] p-5 flex items-center justify-between border border-slate-100 shadow-sm transition-all hover:border-blue-100">
+          <div 
+            onClick={() => toggleSetting('seguridad')}
+            className="bg-white rounded-[25px] p-5 flex items-center justify-between border border-slate-100 shadow-sm transition-all hover:border-blue-100 cursor-pointer"
+          >
             <div className="flex items-center gap-4">
               <div className="bg-blue-50 p-3 rounded-[15px] text-blue-600">
                 <ShieldCheck size={20} />
@@ -287,12 +327,15 @@ export default function NotificacionesPage() {
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Instantáneo</span>
               </div>
             </div>
-            <div className="w-12 h-7 bg-[#10B981] rounded-full relative shadow-inner">
-              <div className="absolute right-1 top-1 w-5 h-5 bg-white rounded-full shadow-md"></div>
+            <div className={`w-12 h-7 rounded-full relative shadow-inner transition-colors duration-300 ${settings.seguridad ? 'bg-[#10B981]' : 'bg-slate-200'}`}>
+              <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${settings.seguridad ? 'right-1' : 'left-1'}`}></div>
             </div>
           </div>
 
-          <div className="bg-white rounded-[25px] p-5 flex items-center justify-between border border-slate-100 shadow-sm transition-all hover:border-purple-100">
+          <div 
+            onClick={() => toggleSetting('pagos')}
+            className="bg-white rounded-[25px] p-5 flex items-center justify-between border border-slate-100 shadow-sm transition-all hover:border-purple-100 cursor-pointer"
+          >
             <div className="flex items-center gap-4">
               <div className="bg-purple-50 p-3 rounded-[15px] text-purple-600">
                 <CreditCard size={20} />
@@ -302,17 +345,71 @@ export default function NotificacionesPage() {
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Prioridad Alta</span>
               </div>
             </div>
-            <div className="w-12 h-7 bg-[#10B981] rounded-full relative shadow-inner">
-              <div className="absolute right-1 top-1 w-5 h-5 bg-white rounded-full shadow-md"></div>
+            <div className={`w-12 h-7 rounded-full relative shadow-inner transition-colors duration-300 ${settings.pagos ? 'bg-[#10B981]' : 'bg-slate-200'}`}>
+              <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${settings.pagos ? 'right-1' : 'left-1'}`}></div>
             </div>
           </div>
         </div>
+
+        <NotificationDebugger status={debugStatus} />
       </main>
 
       <footer className="mt-12 text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] text-center">
         Kinder Hive Hub Security v2.0 <br/>
         <span className="text-slate-300 opacity-50">Authorized by Soluciones Jimenez</span>
       </footer>
+    </div>
+  );
+}
+function NotificationDebugger({ status }: { status: any }) {
+  return (
+    <div className="mt-10 p-6 bg-slate-900 rounded-[30px] text-slate-300 font-mono text-[10px] w-full shadow-2xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      <div className="flex items-center gap-2 mb-4 text-indigo-400 border-b border-slate-800 pb-2">
+        <Terminal size={14} />
+        <span className="font-bold uppercase tracking-widest">System Debugger v1.0</span>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="flex items-center gap-2 text-slate-400"><Globe size={12}/> Soporte Navegador:</span>
+          <span className={status.browserSupport ? "text-emerald-400" : "text-red-400"}>
+            {status.browserSupport ? "[ OK ]" : "[ FAIL ]"}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="flex items-center gap-2 text-slate-400"><Key size={12}/> Service Worker:</span>
+          <span className={status.serviceWorker === 'active' ? "text-emerald-400" : "text-amber-400"}>
+            {`[ ${status.serviceWorker.toUpperCase()} ]`}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="flex items-center gap-2 text-slate-400"><ShieldAlert size={12}/> Permiso Sistema:</span>
+          <span className={status.notificationPermission === 'granted' ? "text-emerald-400" : "text-amber-400"}>
+            {`[ ${status.notificationPermission.toUpperCase()} ]`}
+          </span>
+        </div>
+
+        {status.notificationPermission === 'denied' && (
+          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 leading-tight">
+            ⚠️ El navegador ha bloqueado las notificaciones. Debes ir a la configuración del sitio y "Restablecer permisos".
+          </div>
+        )}
+
+        <div className="pt-4 border-t border-slate-800">
+          <p className="text-slate-500 italic mb-2">Logs de Red:</p>
+          <div className="bg-black/40 p-3 rounded-lg overflow-x-auto whitespace-nowrap scrollbar-hide">
+            {status.fcmToken ? (
+              <span className="text-indigo-400 text-[8px]">Token: {status.fcmToken}</span>
+            ) : status.error ? (
+                <span className="text-rose-400 font-bold uppercase">Error: {status.error}</span>
+            ) : (
+              <span className="text-slate-600">Esperando registro de token FCM...</span>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
