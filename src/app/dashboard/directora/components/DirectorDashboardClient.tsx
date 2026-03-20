@@ -377,11 +377,16 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         </div>
 
                         {metrics.ingresosDelMes === 0 && (metrics.metaTotal - metrics.ingresosDelMes) <= 0 ? (
-                            <div className="h-64 flex flex-col items-center justify-center text-center">
-                                <div className="bg-white/5 p-6 rounded-full mb-4">
-                                    <TrendingUp className="h-10 w-10 text-blue-200/20" />
+                            <div className="h-64 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                                {/* Siluetas base para estado vacío */}
+                                <div className="absolute inset-0 flex items-end justify-around h-64 gap-8 px-4 md:px-12 opacity-5 pointer-events-none">
+                                    <div className="flex-1 max-w-[100px] h-[40%] bg-slate-300 rounded-t-3xl border-x-2 border-white/10" />
+                                    <div className="flex-1 max-w-[100px] h-[30%] bg-slate-200 rounded-t-3xl border-x-2 border-white/10" />
                                 </div>
-                                <p className="text-blue-100/60 font-black italic uppercase text-lg">Sin movimientos este mes</p>
+                                <div className="bg-white/5 p-6 rounded-full mb-4 relative z-10 border border-white/5">
+                                    <TrendingUp className="h-10 w-10 text-white/10" />
+                                </div>
+                                <p className="text-[#F3F0DF]/40 font-black italic uppercase text-lg relative z-10 tracking-widest">Sin movimientos este mes</p>
                             </div>
                         ) : (
                             <div className="flex items-end justify-around h-64 gap-8 px-4 md:px-12 relative z-10">
@@ -389,30 +394,38 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <div className="flex-1 flex flex-col items-center gap-4 group/bar">
                                     <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
                                         <div 
-                                            className="w-full bg-emerald-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(52,211,153,0.4)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-emerald-300/20"
-                                            style={{ height: `${Math.max(12, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
+                                            className="w-full rounded-t-2xl md:rounded-t-3xl shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/10"
+                                            style={{ 
+                                                height: `${Math.max(12, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%`,
+                                                backgroundColor: '#10B981',
+                                                boxShadow: '0 0 50px rgba(16, 185, 129, 0.4), inset 0 2px 10px rgba(255,255,255,0.3)'
+                                            }}
                                         >
-                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-20">
                                                 RD$ {metrics.ingresosDelMes.toLocaleString()}
                                             </div>
                                         </div>
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter text-emerald-400/80">Cobrado</span>
+                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#F3F0DF] drop-shadow-md">Cobrado</span>
                                 </div>
 
                                 {/* Barra Pagos Pendientes */}
                                 <div className="flex-1 flex flex-col items-center gap-4 group/bar">
                                     <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
                                         <div 
-                                            className="w-full bg-rose-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(251,113,113,0.3)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-rose-300/20"
-                                            style={{ height: `${Math.max(12, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
+                                            className="w-full rounded-t-2xl md:rounded-t-3xl shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/10"
+                                            style={{ 
+                                                height: `${Math.max(12, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100)}%`,
+                                                backgroundColor: '#FB7185',
+                                                boxShadow: '0 0 50px rgba(251, 113, 133, 0.4), inset 0 2px 10px rgba(255,255,255,0.3)'
+                                            }}
                                         >
-                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-20">
                                                 RD$ {(metrics.metaTotal - metrics.ingresosDelMes).toLocaleString()}
                                             </div>
                                         </div>
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-tighter text-rose-400/80">Pendiente</span>
+                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#F3F0DF] drop-shadow-md">Pendiente</span>
                                 </div>
                             </div>
                         )}
