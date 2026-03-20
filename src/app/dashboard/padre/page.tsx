@@ -61,6 +61,7 @@ export default async function DashboardPage() {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
+    const currentMonthName = now.toLocaleDateString('es-DO', { month: 'long' });
 
     if (estudiantes && estudiantes.length > 0) {
         // Obtenemos los IDs de todos los estudiantes para buscar sus pagos en una sola consulta o por ciclo
@@ -169,6 +170,14 @@ export default async function DashboardPage() {
         .in("estado", ["pendiente", "aceptada"])
         .order("created_at", { ascending: false });
 
+    // 10. Asistencia del Mes para el Boletín
+    const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
+    const { data: asistenciaMes } = await supabase
+        .from("asistencia")
+        .select("*")
+        .in("estudiante_id", estudiantes?.map(e => e.id) || [])
+        .gte("fecha", firstDayOfMonth);
+
     return (
         <DashboardClient
             initialFrase={fraseDelDia}
@@ -183,6 +192,9 @@ export default async function DashboardPage() {
             evaluaciones={evaluaciones || []}
             calificaciones={calificaciones || []}
             solicitudesReunion={solicitudesReunion || []}
+            asistenciaMes={asistenciaMes || []}
+            currentMonth={currentMonthName}
+            currentYear={currentYear.toString()}
         />
     );
 }

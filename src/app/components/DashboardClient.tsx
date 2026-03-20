@@ -63,6 +63,7 @@ import { useState, useEffect } from "react";
 import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction, marcarAvisoLeidoAction, solicitarReunionAction } from "@/app/actions/padre";
 import { createClient } from "@/utils/supabase/client";
 import AuthorizedManager from "./AuthorizedManager";
+import PDFDownloadButton from "@/components/PDFDownloadButton";
 
 function VideoPlayer({ url }: { url: string }) {
     if (!url) return null;
@@ -132,6 +133,9 @@ export default function DashboardClient({
     evaluaciones = [],
     calificaciones = [],
     solicitudesReunion = [],
+    asistenciaMes = [],
+    currentMonth = "",
+    currentYear = "",
     onDeleteComunicado
 }: {
     initialFrase: string,
@@ -146,6 +150,9 @@ export default function DashboardClient({
     evaluaciones?: any[],
     calificaciones?: any[],
     solicitudesReunion?: any[],
+    asistenciaMes?: any[],
+    currentMonth?: string,
+    currentYear?: string,
     onDeleteComunicado?: (id: string) => Promise<void>
 }) {
     const [frase] = useState(initialFrase);
@@ -546,6 +553,20 @@ export default function DashboardClient({
                                             >
                                                 <FileText className="h-4 w-4" /> Ver Ficha Digital
                                             </button>
+
+                                            <div className="mt-3">
+                                                <PDFDownloadButton 
+                                                    alumno={est}
+                                                    mes={currentMonth}
+                                                    ano={currentYear}
+                                                    calificaciones={calificaciones.filter((c: any) => c.estudiante_id === est.id)}
+                                                    asistencia={{
+                                                        presentes: asistenciaMes.filter((a: any) => a.estudiante_id === est.id && (a.estado === 'presente' || a.estado?.toLowerCase() === 'p')).length,
+                                                        ausentes: asistenciaMes.filter((a: any) => a.estudiante_id === est.id && (a.estado === 'ausente' || a.estado?.toLowerCase() === 'a')).length
+                                                    }}
+                                                    observaciones={evaluaciones.find((ev: any) => ev.estudiante_id === est.id)?.observaciones}
+                                                />
+                                            </div>
                                         </div>
                                     )) : (
                                         <p className="text-white/60 italic text-sm">No hay estudiantes asociados</p>
