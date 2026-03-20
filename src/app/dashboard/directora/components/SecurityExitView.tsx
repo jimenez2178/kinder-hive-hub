@@ -130,7 +130,12 @@ export default function SecurityExitView({ estudiantes }: SecurityExitViewProps)
                                         <Card key={auth.id} className="rounded-[40px] overflow-hidden border-0 shadow-2xl bg-white group hover:scale-[1.02] transition-transform">
                                             <div className="aspect-[4/5] relative">
                                                 {auth.foto_url ? (
-                                                    <img src={auth.foto_url} alt={auth.nombre_sustituto} className="w-full h-full object-cover" />
+                                                    <img 
+                                                        src={auth.foto_url} 
+                                                        alt={auth.nombre_sustituto} 
+                                                        referrerPolicy="no-referrer"
+                                                        className="w-full h-full object-cover" 
+                                                    />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
                                                         <User className="h-20 w-20" />

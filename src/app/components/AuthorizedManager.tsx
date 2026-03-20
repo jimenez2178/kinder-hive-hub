@@ -182,7 +182,12 @@ export default function AuthorizedManager({ estudiantes }: AuthorizedManagerProp
                     <Card key={auth.id} className="rounded-[32px] overflow-hidden border-2 border-slate-100 group hover:border-blue-200 transition-all shadow-lg hover:shadow-xl">
                         <div className="aspect-square relative overflow-hidden bg-slate-50">
                             {auth.foto_url ? (
-                                <img src={auth.foto_url} alt={auth.nombre_sustituto} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <img 
+                                    src={auth.foto_url} 
+                                    alt={auth.nombre_sustituto} 
+                                    referrerPolicy="no-referrer"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-slate-200">
                                     <User className="h-20 w-20" />
@@ -232,7 +237,7 @@ export default function AuthorizedManager({ estudiantes }: AuthorizedManagerProp
                             <div className="flex flex-col items-center gap-4">
                                 <div className="h-32 w-32 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden relative group">
                                     {previewUrl ? (
-                                        <img src={previewUrl} className="w-full h-full object-cover" />
+                                        <img src={previewUrl} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                                     ) : (
                                         <Camera className="h-10 w-10 text-slate-200" />
                                     )}
