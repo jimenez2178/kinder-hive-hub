@@ -193,22 +193,28 @@ export default function AuthorizedManager({ estudiantes }: AuthorizedManagerProp
                                     <User className="h-20 w-20" />
                                 </div>
                             )}
+                            
+                            {/* Botón Eliminar: Siempre visible en móvil, hover en desktop */}
                             <button 
                                 onClick={() => handleDelete(auth)}
-                                className="absolute top-4 right-4 p-3 bg-red-50/90 backdrop-blur-sm text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-lg"
+                                className="absolute top-4 right-4 p-3 bg-red-500 text-white rounded-2xl md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-black shadow-xl z-10"
                             >
                                 <Trash2 className="h-5 w-5" />
                             </button>
-                            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-900/80 to-transparent">
+
+                            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-slate-900/90 to-transparent">
                                 <Badge className="bg-[#8A2BE2] text-white border-none font-black text-[10px] uppercase mb-1">
                                     {auth.parentesco}
                                 </Badge>
-                                <h4 className="text-white font-black text-xl leading-tight uppercase truncate">{auth.nombre_sustituto}</h4>
+                                <h4 className="text-white font-black text-xl leading-tight uppercase truncate tracking-tighter italic">{auth.nombre_sustituto}</h4>
                             </div>
                         </div>
-                        <div className="p-6 bg-white flex items-center gap-3">
-                            <IdCard className="h-5 w-5 text-slate-300" />
-                            <span className="font-bold text-slate-600 text-sm">Cédula: {auth.cedula}</span>
+                        <div className="p-6 bg-white flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <IdCard className="h-5 w-5 text-slate-300" />
+                                <span className="font-bold text-slate-600 text-sm">{auth.cedula}</span>
+                            </div>
+                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                         </div>
                     </Card>
                 ))}
