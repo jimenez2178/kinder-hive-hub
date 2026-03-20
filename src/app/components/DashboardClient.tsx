@@ -176,11 +176,9 @@ export default function DashboardClient({
 
     useEffect(() => {
         // El Service Worker se registra ahora en PushNotificationManager (RootLayout)
-        // Solo verificamos si el usuario ya tiene permisos para decidir si mostrar el aviso
         if (typeof window !== "undefined" && "Notification" in window) {
-            if (Notification.permission !== "granted") {
-                setShowPushBanner(true);
-            }
+            // Siempre mostramos el banner ahora como indicador de estado según la nueva directiva
+            setShowPushBanner(true);
         }
     }, []);
 
@@ -441,18 +439,29 @@ export default function DashboardClient({
                         <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-1000" />
                         <div className="flex items-center gap-5 relative z-10">
                             <div className="bg-white/10 p-4 rounded-[24px] backdrop-blur-md border border-white/10 shadow-xl">
-                                <BellRing className="h-7 w-7 text-emerald-400 animate-pulse" />
+                                <BellRing className={`h-7 w-7 ${typeof window !== 'undefined' && Notification.permission === 'granted' ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`} />
                             </div>
                             <div>
-                                <h3 className="font-black text-2xl tracking-tighter italic uppercase leading-none mb-1">Centro de Alertas Digital</h3>
-                                <p className="text-blue-100/60 text-sm font-medium tracking-tight">Activa sonidos y avisos en tiempo real para seguridad y pagos.</p>
+                                <div className="flex items-center gap-3">
+                                    <h3 className="font-black text-2xl tracking-tighter italic uppercase leading-none mb-1">Centro de Alertas Digital</h3>
+                                    {typeof window !== 'undefined' && (
+                                        <Badge className={`font-black text-[9px] px-2 py-0.5 rounded-full border-0 uppercase ${Notification.permission === 'granted' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white animate-pulse'}`}>
+                                            {Notification.permission === 'granted' ? '🔔 ACTIVAS' : '🔕 DESACTIVADAS'}
+                                        </Badge>
+                                    )}
+                                </div>
+                                <p className="text-blue-100/60 text-sm font-medium tracking-tight">
+                                    {typeof window !== 'undefined' && Notification.permission === 'granted' 
+                                        ? 'Tu dispositivo está vinculado correctamente al sistema de alertas.' 
+                                        : 'Activa sonidos y avisos en tiempo real para seguridad y pagos.'}
+                                </p>
                             </div>
                         </div>
                         <Link 
                             href="/notificaciones"
-                            className="bg-[#10B981] hover:bg-[#059669] text-white font-black py-4 px-10 rounded-[25px] flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-emerald-900/40 shrink-0 group/btn"
+                            className="bg-white text-[#002147] hover:bg-blue-50 font-black py-4 px-10 rounded-[25px] flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-blue-900/40 shrink-0 group/btn"
                         >
-                            Configurar Ahora
+                            {typeof window !== 'undefined' && Notification.permission === 'granted' ? 'Gestionar Alertas' : 'Configurar Ahora'}
                             <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </div>

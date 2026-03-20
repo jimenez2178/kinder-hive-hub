@@ -5,6 +5,7 @@ import { Bell, BellRing, BellOff, Send, ShieldCheck, AlertCircle, CheckCircle2, 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { getMessaging, getToken } from 'firebase/messaging';
 import Link from 'next/link';
 
 // --- CONFIGURACIÓN DE FIREBASE (Placeholder seguro) ---
@@ -41,6 +42,8 @@ export default function NotificacionesPage() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [isSupported, setIsSupported] = useState(true);
+  const [isIOS, setIsIOS] = useState(false);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -57,6 +60,9 @@ export default function NotificacionesPage() {
     });
 
     if (typeof window !== 'undefined') {
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      setIsIOS(isIOSDevice);
+
       if (!('Notification' in window) || !('serviceWorker' in navigator)) {
         setIsSupported(false);
       } else {
@@ -106,16 +112,30 @@ export default function NotificacionesPage() {
     if (!user) return;
     
     try {
-      const appId = (typeof window !== 'undefined' && (window as any).__app_id) || 'kinder-hive-hub';
-      const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'notifications');
-      await setDoc(userRef, {
-        enabled: true,
-        lastUpdated: new Date().toISOString(),
-        platform: navigator.platform,
-        userAgent: navigator.userAgent
+      const messaging = getMessaging(app);
+      const token = await getToken(messaging, {
+        vapidKey: 'BCIg0zxMasMJWYX0DR-Ve7QKyVGw0zflu4QgEf7mMCbzMZ0YGNmZg7DiNymOFBMCJaCQFglAa5eXw5qel9qWdd0'
       });
+
+      if (token) {
+        console.log("Token generado con éxito:", token);
+        setFcmToken(token);
+        
+        const appId = (typeof window !== 'undefined' && (window as any).__app_id) || 'kinder-hive-hub';
+        const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'notifications');
+        await setDoc(userRef, {
+          enabled: true,
+          fcmToken: token,
+          lastUpdated: new Date().toISOString(),
+          platform: navigator.platform,
+          userAgent: navigator.userAgent
+        }, { merge: true });
+      } else {
+        console.warn("No se pudo obtener el token de registro.");
+      }
     } catch (error) {
-      console.error("Error guardando suscripción:", error);
+      console.error("Error obteniendo token FCM:", error);
+      showToast("Error al vincular dispositivo.", "error");
     }
   };
 
@@ -173,6 +193,20 @@ export default function NotificacionesPage() {
       </header>
 
       <main className="w-full max-w-md space-y-6">
+        {isIOS && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-[20px] flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
+            <div className="bg-amber-100 p-2 rounded-xl">
+              <ShieldCheck className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-amber-900 uppercase mb-1">Usuario de iOS Detectado</p>
+              <p className="text-xs text-amber-800 leading-relaxed">
+                Para recibir sonidos y alertas, debes **añadir esta app a tu pantalla de inicio** y abrirla desde allí.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white p-8 rounded-[40px] shadow-2xl shadow-slate-200/50 border border-slate-50 flex flex-col items-center text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full blur-3xl -mr-16 -mt-16"></div>
           
