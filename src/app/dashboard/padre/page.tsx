@@ -166,7 +166,7 @@ export default async function DashboardPage() {
         .from("solicitudes_reunion")
         .select("*")
         .eq("padre_id", user.id)
-        .neq("estado", "finalizada")
+        .in("estado", ["pendiente", "aceptada"])
         .order("created_at", { ascending: false });
 
     return (

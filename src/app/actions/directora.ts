@@ -573,6 +573,8 @@ export async function finishReunionAction(id: string) {
 
     if (error) return { error: error.message };
 
+    revalidatePath("/dashboard/padre", "page");
+    revalidatePath("/dashboard/directora", "page");
     revalidatePath("/", "layout");
     return { success: true };
 }
@@ -586,6 +588,8 @@ export async function deleteReunionAction(id: string) {
 
     if (error) return { error: error.message };
 
+    revalidatePath("/dashboard/padre", "page");
+    revalidatePath("/dashboard/directora", "page");
     revalidatePath("/", "layout");
     return { success: true };
 }
@@ -593,7 +597,6 @@ export async function deleteReunionAction(id: string) {
 export async function approveReunionAction(id: string, fecha_cita: string, comentario_directora: string) {
     const supabase = await createClient();
     
-    // Verificamos el perfil para segurarnos del permiso (extra safety)
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "No autenticado" };
     
@@ -601,22 +604,22 @@ export async function approveReunionAction(id: string, fecha_cita: string, comen
         .from("solicitudes_reunion")
         .update({ 
             estado: 'aceptada',
-            fecha_cita,
-            comentario_directora
+            fecha_cita: fecha_cita,
+            comentario_directora: comentario_directora
         })
         .eq('id', id)
         .select();
 
     if (updateError) return { error: updateError.message };
     
-    // Si no hay data o está vacío, el registro no se encontró o RLS falló
     if (!data || data.length === 0) {
         return { error: "Error de persistencia: No se pudo actualizar el registro. Verifica permisos." };
     }
 
-    revalidatePath("/", "layout");
+    // Revalidación forzada para el dashboard del padre
     revalidatePath("/dashboard/padre", "page");
     revalidatePath("/dashboard/directora", "page");
+    revalidatePath("/", "layout");
     
     return { success: true };
 }
@@ -630,6 +633,8 @@ export async function rejectReunionAction(id: string) {
 
     if (error) return { error: error.message };
 
+    revalidatePath("/dashboard/padre", "page");
+    revalidatePath("/dashboard/directora", "page");
     revalidatePath("/", "layout");
     return { success: true };
 }
