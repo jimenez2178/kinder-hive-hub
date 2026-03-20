@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction, clearComunicadosAction, approveReunionAction, rejectReunionAction, finishReunionAction, deleteReunionAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle, MessageCircle } from "lucide-react";
+import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle, MessageCircle, Shield } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
 import { approvePaymentAction, rejectPaymentAction as rejectPaymentActionLegacy, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import SecurityExitView from "./SecurityExitView";
 
 export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, solicitudesReunion, metrics, previewData }: {
     estudiantes: any[],
@@ -32,7 +33,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
     },
     previewData: { comunicados: any[], galeria: any[], eventos: any[], agradecimientos: any[] }
 }) {
-    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | "reuniones" | null>(null);
+    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | "reuniones" | "seguridad" | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [showPreview, setShowPreview] = useState(false);
     const [showReport, setShowReport] = useState(false);
@@ -267,6 +268,12 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         className="rounded-full bg-slate-800 hover:bg-slate-700 text-white font-black h-12 px-6 shadow-lg"
                     >
                         <FileText className="mr-2 h-5 w-5" /> Reporte Mensual
+                    </Button>
+                    <Button
+                        onClick={() => setActiveModal("seguridad")}
+                        className="rounded-full bg-blue-600 hover:bg-blue-700 text-white font-black h-12 px-6 shadow-lg shadow-blue-500/20"
+                    >
+                        <Shield className="mr-2 h-5 w-5" /> Seguridad de Salida
                     </Button>
                 </div>
 
@@ -1356,17 +1363,23 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 </div>
                             )}
 
+                            {activeModal === "seguridad" && (
+                                <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-2">
+                                    <SecurityExitView estudiantes={estudiantes} />
+                                </div>
+                            )}
+
                             {/* --- BOTONES --- */}
                             <div className="pt-4 flex gap-3 border-t border-slate-100">
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     onClick={() => setActiveModal(null)}
-                                    className={(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones") ? "w-full h-14 rounded-2xl font-black text-slate-600 bg-slate-100 hover:bg-slate-200" : "flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"}
+                                    className={(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones" || activeModal === "seguridad") ? "w-full h-14 rounded-2xl font-black text-slate-600 bg-slate-100 hover:bg-slate-200" : "flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"}
                                 >
-                                    {(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones") ? "Cerrar Panel" : "Cancelar"}
+                                    {(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones" || activeModal === "seguridad") ? "Cerrar Panel" : "Cancelar"}
                                 </Button>
-                                {(activeModal !== "pendientes" && activeModal !== "revisar_pagos" && activeModal !== "reuniones") && (
+                                {(activeModal !== "pendientes" && activeModal !== "revisar_pagos" && activeModal !== "reuniones" && activeModal !== "seguridad") && (
                                     <Button
                                         type="submit"
                                         disabled={isLoading}

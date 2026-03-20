@@ -21,16 +21,38 @@ import {
     Phone,
     User,
     Edit3,
+    Check,
+    Clock,
+    Shield,
+    Trash2,
+    BellRing,
     Mic,
     Waves,
-    UploadCloud,
-    BellRing,
-    Clock,
     Plus,
-    Wallet,
     ExternalLink,
+    UploadCloud,
     Instagram as InstagramIcon,
-    Trash2
+    Wallet,
+    TrendingUp,
+    AlertCircle,
+    Info,
+    DollarSign,
+    CheckCircle,
+    History,
+    ExternalLink as LinkIcon,
+    PieChart,
+    Target,
+    Zap,
+    Trophy,
+    Award,
+    Sparkles,
+    Eye,
+    EyeOff,
+    HandHeart,
+    Camera,
+    Quote,
+    Mail,
+    Settings
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +62,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { useState, useEffect } from "react";
 import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction, marcarAvisoLeidoAction, solicitarReunionAction } from "@/app/actions/padre";
 import { createClient } from "@/utils/supabase/client";
+import AuthorizedManager from "./AuthorizedManager";
 
 function VideoPlayer({ url }: { url: string }) {
     if (!url) return null;
@@ -381,6 +404,11 @@ export default function DashboardClient({
                         </div>
                     </div>
                 ))}
+
+                {/* ═══ MÓDULO DE SEGURIDAD (AUTORIZACIONES) ═══ */}
+                <Card className="mb-10 p-8 rounded-[40px] border-2 border-slate-100 bg-white/50 backdrop-blur-sm shadow-xl">
+                    <AuthorizedManager estudiantes={estudiantes} />
+                </Card>
 
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
                 {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).length > 0 && (
