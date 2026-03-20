@@ -157,11 +157,11 @@ export default async function DirectoraPage() {
                                 return {
                                     id: est.id,
                                     nombre: est.nombre,
-                                    deuda: cuota - totalPagado,
+                                    deuda: Math.round(cuota - totalPagado),
                                     padre_id: est.padre_id
                                 };
                             })
-                            .filter(d => d.deuda > 0)
+                            .filter(d => d.deuda >= 1)
                             .sort((a, b) => b.deuda - a.deuda)
                             .slice(0, 3);
 

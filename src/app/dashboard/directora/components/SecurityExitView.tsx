@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getAuthorizedByStudentAction, deleteAuthorizedAction } from "@/app/actions/autorizaciones";
+import { recordExitAction } from "@/app/actions/directora";
 
 interface SecurityExitViewProps {
     estudiantes: any[];
@@ -57,23 +58,33 @@ export default function SecurityExitView({ estudiantes }: SecurityExitViewProps)
         
         setIsActionLoading(auth.id);
         
-        if (isFinalDelivery) {
-            // Notificar via WhatsApp (Simulado/Abierto)
-            const message = `Hola, te informamos que ${selectedAlumno.nombre} ha sido entregado(a) correctamente a ${auth.nombre_sustituto}. ¡Gracias por confiar en nosotros!`;
-            const wpUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            window.open(wpUrl, '_blank');
-        }
+        try {
+            if (isFinalDelivery) {
+                // Registro interno en tabla asistencia
+                const exitRes = await recordExitAction(selectedAlumno.id);
+                if (exitRes.error) {
+                    console.error("No se pudo registrar en asistencia, procediendo con borrado:", exitRes.error);
+                }
+            }
 
-        // Eliminar autorización
-        const pathParts = auth.foto_url.split('/autorizaciones/').pop()?.split('?')[0];
-        const res = await deleteAuthorizedAction(auth.id, pathParts);
-        
-        if (res.error) {
-            alert(res.error);
-        } else {
-            loadAuthorized(selectedAlumno.id);
+            // Eliminar autorización (Limpieza del panel)
+            const pathParts = auth.foto_url.split('/autorizaciones/').pop()?.split('?')[0];
+            const res = await deleteAuthorizedAction(auth.id, pathParts);
+            
+            if (res.error) {
+                alert(res.error);
+            } else {
+                if (isFinalDelivery) {
+                    alert("¡Estudiante entregado con éxito!");
+                }
+                loadAuthorized(selectedAlumno.id);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error procesando la entrega.");
+        } finally {
+            setIsActionLoading(null);
         }
-        setIsActionLoading(null);
     };
 
     return (

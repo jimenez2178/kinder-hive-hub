@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, approveParentAction, rejectParentAction, deleteComunicadoAction, clearComunicadosAction, approveReunionAction, rejectReunionAction, finishReunionAction, deleteReunionAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle, MessageCircle, Shield } from "lucide-react";
+import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle, MessageCircle, Shield, Clock, UserCheck } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
 import { approvePaymentAction, rejectPaymentAction as rejectPaymentActionLegacy, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
@@ -389,8 +389,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <div className="flex-1 flex flex-col items-center gap-4 group/bar">
                                     <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
                                         <div 
-                                            className="w-full bg-emerald-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(52,211,153,0.3)] transition-all duration-1000 group-hover/bar:scale-x-105"
-                                            style={{ height: `${Math.max(5, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
+                                            className="w-full bg-emerald-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(52,211,153,0.4)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-emerald-300/20"
+                                            style={{ height: `${Math.max(12, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
                                         >
                                             <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
                                                 RD$ {metrics.ingresosDelMes.toLocaleString()}
@@ -404,8 +404,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 <div className="flex-1 flex flex-col items-center gap-4 group/bar">
                                     <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
                                         <div 
-                                            className="w-full bg-rose-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(251,113,113,0.2)] transition-all duration-1000 group-hover/bar:scale-x-105"
-                                            style={{ height: `${Math.max(5, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
+                                            className="w-full bg-rose-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(251,113,113,0.3)] transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-rose-300/20"
+                                            style={{ height: `${Math.max(12, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
                                         >
                                             <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
                                                 RD$ {(metrics.metaTotal - metrics.ingresosDelMes).toLocaleString()}
@@ -444,16 +444,9 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                 </p>
                                             </div>
                                         </div>
-                                        <Button 
-                                            size="icon"
-                                            onClick={() => {
-                                                const msg = `Atención: Recordatorio de pago para el alumno ${item.nombre}. Saldo pendiente: RD$ ${item.deuda.toLocaleString()}. Favor pasar por administración.`;
-                                                window.open(`https://wa.me/${item.telefono || ''}?text=${encodeURIComponent(msg)}`, '_blank');
-                                            }}
-                                            className="h-9 w-9 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-md shrink-0"
-                                        >
-                                            <MessageCircle className="h-4 w-4" />
-                                        </Button>
+                                        <div className="h-9 w-9 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center shrink-0" title="Pendiente de cobro">
+                                            <Clock className="h-4 w-4" />
+                                        </div>
                                     </div>
                                 ))
                             ) : (
@@ -1214,14 +1207,9 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                                         </div>
                                                                         <p className="text-sm text-green-800 font-medium italic">"{req.comentario_directora}"</p>
                                                                     </div>
-                                                                    <a 
-                                                                        href={`https://wa.me/${req.padre?.telefono?.replace(/\D/g, '') || '111'}?text=${encodeURIComponent(`Hola ${req.padre?.nombre || 'Tutor'}, le confirmo su reunión en Kinder Hive Hub para el ${new Date(req.fecha_cita).toLocaleString('es-DO', { dateStyle: 'long', timeStyle: 'short' })}. Comentario: ${req.comentario_directora}`)}`}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="w-full flex items-center justify-center gap-3 bg-[#25D366] text-white font-black py-4 rounded-[20px] hover:bg-[#20bd5a] transition-all shadow-lg text-base"
-                                                                    >
-                                                                        <MessageCircle className="h-6 w-6 fill-white" /> Notificar por WhatsApp
-                                                                    </a>
+                                                                    <div className="flex items-center gap-3 bg-slate-100 text-slate-500 font-bold py-4 px-6 rounded-[20px] text-sm italic">
+                                                                        <UserCheck className="h-5 w-5" /> Notificación interna registrada
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>

@@ -624,6 +624,47 @@ export async function approveReunionAction(id: string, fecha_cita: string, comen
     return { success: true };
 }
 
+export async function recordExitAction(estudianteId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "No autorizado" };
+
+    const { data: profile } = await supabase
+        .from("perfiles")
+        .select("colegio_id")
+        .eq("id", user.id)
+        .single();
+        
+    if (!profile) return { error: "Perfil no encontrado" };
+
+    const fecha = new Date().toISOString().split('T')[0];
+    const hora_salida = new Date().toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+
+    // Registramos la salida de forma interna en la tabla asistencia
+    const { error } = await supabase.from("asistencia").upsert({
+        estudiante_id: estudianteId,
+        fecha,
+        hora_salida,
+        colegio_id: profile.colegio_id,
+        estado: 'presente'
+    }, {
+        onConflict: "estudiante_id,fecha"
+    });
+
+    if (error) {
+        console.error("[recordExitAction] Error:", error.message);
+        return { error: "Error al registrar en DB: " + error.message };
+    }
+
+    revalidatePath("/dashboard/directora");
+    return { success: true };
+}
+
+
 export async function rejectReunionAction(id: string) {
     const supabase = await createClient();
     const { error } = await supabase
