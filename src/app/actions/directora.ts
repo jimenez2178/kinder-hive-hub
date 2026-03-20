@@ -82,6 +82,34 @@ export async function addPaymentAction(prevState: unknown, formData: FormData) {
 
     if (error) return { error: error.message };
 
+    // --- NOTIFICACIÓN N8N (Telegram) ---
+    try {
+        const { data: estData } = await supabase
+            .from("estudiantes")
+            .select("nombre, padre_id")
+            .eq("id", estudiante_id)
+            .single();
+
+        if (estData?.padre_id) {
+            const { data: perfilPadre } = await supabase
+                .from("perfiles")
+                .select("telegram_chat_id")
+                .eq("id", estData.padre_id)
+                .single();
+
+            if (perfilPadre?.telegram_chat_id) {
+                console.log(`[AUDITORÍA] Enviando notificación de pago registrado a Telegram para ${estData.nombre}`);
+                await notifyParent(
+                    "Pago Recibido",
+                    `Se ha registrado un pago de RD$ ${montoTotal.toLocaleString()} por concepto de: ${concepto}.`,
+                    { hijo_nombre: estData.nombre, telegram_chat_id: perfilPadre.telegram_chat_id }
+                );
+            }
+        }
+    } catch (notifyErr) {
+        console.error("[addPaymentAction] Error enviando notificación:", notifyErr);
+    }
+
     revalidatePath("/dashboard/directora");
     revalidatePath("/dashboard/padre");
     return { success: true, timestamp: Date.now(), concepto, montoTotal };
@@ -462,15 +490,25 @@ export async function approvePaymentAction(pagoId: string) {
 
     if (error) return { error: error.message };
 
-    // 3. Disparar notificación n8n
+    // 3. Disparar notificación n8n (Prioridad Telegram)
     if (pago && pago.estudiantes) {
         const est = pago.estudiantes as any;
         const { data: perfil } = await supabase
             .from("perfiles")
-            .select("nombre_completo")
+            .select("nombre_completo, telegram_chat_id")
             .eq("id", est.padre_id)
             .single();
 
+        if (perfil?.telegram_chat_id) {
+            console.log(`[AUDITORÍA] Enviando confirmación de pago a Telegram para ${est.nombre}`);
+            await notifyParent(
+                "Pago Aprobado",
+                `Tu pago de RD$ ${Number(pago.monto).toLocaleString()} ha sido validado y aprobado con éxito.`,
+                { hijo_nombre: est.nombre, telegram_chat_id: perfil.telegram_chat_id }
+            );
+        }
+
+        // Mantener legacy por si acaso
         await enviarNotificacionPago(
             perfil?.nombre_completo || "Tutor",
             Number(pago.monto),

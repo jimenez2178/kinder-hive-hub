@@ -103,15 +103,20 @@ export function AttendanceModule() {
             .not("telegram_chat_id", "is", null)
             .maybeSingle();
 
+          console.log(`[AUDITORÍA ASISTENCIA] Datos recuperados para ${student.nombre}:`, parentProfile);
+
           if (parentProfile?.telegram_chat_id) {
             const mensaje = status === 'ausente' 
               ? `Hola ${parentProfile.nombre}, te informamos que ${student.nombre} no asistió a clases hoy.`
               : `Hola ${parentProfile.nombre}, te informamos que ${student.nombre} llegó con tardanza hoy.`;
             
+            console.log(`[AUDITORÍA ASISTENCIA] ✅ Disparando notificación para ${student.nombre}`);
             await notifyParent(status === 'ausente' ? "Asistencia" : "Tardanza", mensaje, {
               hijo_nombre: student.nombre,
               telegram_chat_id: parentProfile.telegram_chat_id
             });
+          } else {
+            console.warn(`[AUDITORÍA ASISTENCIA] ⚠️ No se encontró ID de Telegram para vincular con ${student.nombre}`);
           }
         }
       }

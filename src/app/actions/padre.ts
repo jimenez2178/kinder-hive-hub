@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { notifyParent } from "@/lib/notifications";
 
 export async function processParentPaymentAction(monto: number) {
     const supabase = await createClient();
@@ -50,6 +51,7 @@ export async function uploadComprobanteAction(pagoId: string, url: string) {
     revalidatePath("/");
     return { success: true };
 }
+
 export async function reportarPagoAction(data: { estudiante_id: string, monto: number, concepto: string, url_comprobante?: string }) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -66,6 +68,32 @@ export async function reportarPagoAction(data: { estudiante_id: string, monto: n
     });
 
     if (error) return { error: error.message };
+
+    // --- NOTIFICACIÓN N8N (Telegram) ---
+    try {
+        const { data: estData } = await supabase
+            .from("estudiantes")
+            .select("nombre")
+            .eq("id", data.estudiante_id)
+            .single();
+
+        const { data: perfilPadre } = await supabase
+            .from("perfiles")
+            .select("telegram_chat_id")
+            .eq("id", user.id)
+            .single();
+
+        if (perfilPadre?.telegram_chat_id) {
+            console.log(`[AUDITORÍA] Enviando reporte de pago a Telegram para ${estData?.nombre}`);
+            await notifyParent(
+                "Pago Reportado",
+                `Tu reporte de pago de RD$ ${data.monto.toLocaleString()} por concepto de: ${data.concepto} ha sido recibido y está en revisión.`,
+                { hijo_nombre: estData?.nombre || "Hijo", telegram_chat_id: perfilPadre.telegram_chat_id }
+            );
+        }
+    } catch (notifyErr) {
+        console.error("[reportarPagoAction] Error enviando notificación:", notifyErr);
+    }
 
     revalidatePath("/dashboard/padre");
     return { success: true };

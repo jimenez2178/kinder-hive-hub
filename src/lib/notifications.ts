@@ -6,18 +6,28 @@
  * @param perfilPadre - Objeto con el nombre del hijo y el ID de Telegram vinculado
  */
 export async function notifyParent(tipo: string, mensaje: string, perfilPadre: { hijo_nombre: string, telegram_chat_id: string }) {
-  if (!perfilPadre.telegram_chat_id) {
-    console.warn("No hay ID de Telegram para el padre de", perfilPadre.hijo_nombre);
-    return;
+  // Alerta para depuración visual (Solo en Cliente)
+  if (typeof window !== 'undefined') {
+    alert(`DEBUG: Enviando Webhook de ${tipo} para ${perfilPadre.hijo_nombre}`);
   }
 
-  const url = "https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder";
+  console.log(`🚀 [AUDITORÍA N8N] Disparando Webhook: ${tipo} para ${perfilPadre.hijo_nombre}`);
+
+  if (!perfilPadre.telegram_chat_id) {
+    console.warn(`[AUDITORÍA N8N] ⚠️ No hay ID de Telegram para: ${perfilPadre.hijo_nombre}`);
+    return { success: false, error: "Missing Telegram ID" };
+  }
+
+  const url = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder";
   const payload = {
     tipo_evento: tipo,
     nombre_alumno: perfilPadre.hijo_nombre,
     mensaje: mensaje,
-    telegram_chat_id: perfilPadre.telegram_chat_id
+    telegram_chat_id: perfilPadre.telegram_chat_id,
+    timestamp: new Date().toISOString()
   };
+
+  console.log("[AUDITORÍA N8N] Payload:", JSON.stringify(payload, null, 2));
 
   try {
     const response = await fetch(url, {
@@ -29,13 +39,15 @@ export async function notifyParent(tipo: string, mensaje: string, perfilPadre: {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[AUDITORÍA N8N] ❌ Error HTTP: ${response.status} - ${errorText}`);
       throw new Error(`Error en el webhook: ${response.statusText}`);
     }
 
-    console.log("Notificación enviada con éxito a Telegram via n8n");
+    console.log("[AUDITORÍA N8N] ✅ Notificación enviada con éxito.");
     return { success: true };
   } catch (error) {
-    console.error("Error al enviar notificación a n8n:", error);
+    console.error("[AUDITORÍA N8N] ❌ Error excepcional:", error);
     return { success: false, error };
   }
 }
