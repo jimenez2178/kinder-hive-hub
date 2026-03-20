@@ -157,7 +157,7 @@ export default async function DirectoraPage() {
                                 return {
                                     id: est.id,
                                     nombre: est.nombre,
-                                    deuda: Math.round(cuota - totalPagado),
+                                    deuda: Math.floor(cuota - totalPagado),
                                     padre_id: est.padre_id
                                 };
                             })

@@ -52,11 +52,13 @@ import {
     Camera,
     Quote,
     Mail,
-    Settings
+    Settings,
+    ArrowRight
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoutButton } from "@/components/LogoutButton";
 import { useState, useEffect } from "react";
@@ -173,76 +175,16 @@ export default function DashboardClient({
     const [hiddenAvisos, setHiddenAvisos] = useState<string[]>([]);
 
     useEffect(() => {
-        console.log("Checking Service Worker support...");
-        if ("serviceWorker" in navigator && "PushManager" in window) {
-            navigator.serviceWorker.register("/sw.js")
-                .then((reg) => {
-                    console.log("Service Worker registered successfully:", reg.scope);
-                    reg.pushManager.getSubscription().then((sub) => {
-                        console.log("Current subscription:", sub);
-                        if (!sub) {
-                            setShowPushBanner(true);
-                        }
-                    });
-                })
-                .catch(err => {
-                    console.error("Service Worker registration failed:", err);
-                });
-        } else {
-            console.warn("Push notifications are not supported in this browser.");
+        // El Service Worker se registra ahora en PushNotificationManager (RootLayout)
+        // Solo verificamos si el usuario ya tiene permisos para decidir si mostrar el aviso
+        if (typeof window !== "undefined" && "Notification" in window) {
+            if (Notification.permission !== "granted") {
+                setShowPushBanner(true);
+            }
         }
     }, []);
 
-    const subscribeToPush = async () => {
-        console.log("Initializing push subscription process...");
-        try {
-            // Check for VAPID key
-            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-            console.log("VAPID Key present:", !!vapidKey);
-            
-            if (!vapidKey) {
-                alert("Error técnico: Falta la llave VAPID de configuración.");
-                return;
-            }
-
-            // 1. Request Permission explicitly
-            console.log("Requesting notification permission...");
-            const permission = await Notification.requestPermission();
-            console.log("Permission result:", permission);
-
-            if (permission !== 'granted') {
-                alert("Para recibir alertas inmediatas, debes permitir las notificaciones en la configuración de tu navegador.");
-                return;
-            }
-
-            // 2. Register/Wait for Service Worker
-            const reg = await navigator.serviceWorker.ready;
-            console.log("Service Worker ready for subscription.");
-
-            // 3. Subscribe
-            const sub = await reg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: vapidKey
-            });
-            console.log("Push Subscription successful:", JSON.stringify(sub));
-
-            // 4. Update Database
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                console.log("Updating push token for user:", user.id);
-                const { error } = await supabase.from('perfiles').update({ push_token: JSON.stringify(sub) }).eq('id', user.id);
-                if (error) console.error("Database update error:", error);
-                else console.log("Database updated successfully.");
-            }
-
-            setShowPushBanner(false);
-            alert("¡Genial! Las notificaciones inmediatas han sido activadas con éxito.");
-        } catch (error) {
-            console.error("Error in subscribeToPush:", error);
-            alert("No se pudo activar las notificaciones. Asegúrate de que tu navegador soporte PWA y no estés en modo incógnito.");
-        }
-    };
+    // Legacy push subscription logic removed to prioritize Firebase implementation
 
     const handleUploadComprobante = async (pagoId: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -494,21 +436,25 @@ export default function DashboardClient({
                 )}
                 
 
-                {/* PUSH NOTIFICATIONS BANNER */}
                 {showPushBanner && (
-                    <div className="bg-[#8A2BE2] text-white rounded-[32px] p-6 mb-10 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-white/20 p-3 rounded-full shrink-0">
-                                <BellRing className="h-6 w-6 text-white" />
+                    <div className="mb-10 p-8 bg-[#002147] rounded-[40px] text-white shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden animate-in slide-in-from-top-4 duration-500 border border-white/5 group">
+                        <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-1000" />
+                        <div className="flex items-center gap-5 relative z-10">
+                            <div className="bg-white/10 p-4 rounded-[24px] backdrop-blur-md border border-white/10 shadow-xl">
+                                <BellRing className="h-7 w-7 text-emerald-400 animate-pulse" />
                             </div>
                             <div>
-                                <h3 className="font-black text-lg leading-tight">Activar Alertas Inmediatas</h3>
-                                <p className="text-white/80 text-sm font-semibold mt-1">Recibe notificaciones en tu celular sobre pagos, comunicados y eventos.</p>
+                                <h3 className="font-black text-2xl tracking-tighter italic uppercase leading-none mb-1">Centro de Alertas Digital</h3>
+                                <p className="text-blue-100/60 text-sm font-medium tracking-tight">Activa sonidos y avisos en tiempo real para seguridad y pagos.</p>
                             </div>
                         </div>
-                        <Button onClick={subscribeToPush} className="rounded-full bg-white hover:bg-slate-100 text-[#8A2BE2] font-black shrink-0 px-6 h-12 w-full sm:w-auto">
-                            Activar Ahora
-                        </Button>
+                        <Link 
+                            href="/notificaciones"
+                            className="bg-[#10B981] hover:bg-[#059669] text-white font-black py-4 px-10 rounded-[25px] flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-emerald-900/40 shrink-0 group/btn"
+                        >
+                            Configurar Ahora
+                            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        </Link>
                     </div>
                 )}
 

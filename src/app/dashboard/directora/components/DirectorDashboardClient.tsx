@@ -352,7 +352,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                 {/* --- DASHBOARD FINANCIERO DINÁMICO (V4) --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
                     {/* Gráfico de Rentabilidad */}
-                    <Card style={{ backgroundColor: '#002147' }} className="lg:col-span-2 rounded-[40px] border-0 shadow-2xl p-8 relative overflow-hidden group">
+                    <Card style={{ backgroundColor: '#002147' }} className="lg:col-span-2 rounded-[40px] border-0 shadow-2xl p-8 relative group">
                         {/* Decoración de fondo */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
                         
@@ -396,16 +396,16 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         <div 
                                             className="w-full rounded-t-2xl md:rounded-t-3xl transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/20 relative z-10"
                                             style={{ 
-                                                height: `${Math.min(100, Math.max(15, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100))}%`,
+                                                height: `${Math.min(100, Math.max(12, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100))}%`,
                                                 backgroundColor: '#10B981',
-                                                boxShadow: '0 0 50px rgba(16, 185, 129, 0.5), inset 0 2px 15px rgba(255,255,255,0.4)'
+                                                boxShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(255,255,255,0.1)'
                                             }}
                                         >
-                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-[10px] font-black px-3 py-1.5 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-30">
+                                            <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-[10px] font-black px-3 py-1.5 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-30">
                                                 RD$ {metrics.ingresosDelMes.toLocaleString()}
                                             </div>
-                                            {/* Etiqueta de Porcentaje */}
-                                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white font-black text-[10px] md:text-xs drop-shadow-md z-20">
+                                            {/* Etiqueta de Porcentaje (Top) */}
+                                            <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-emerald-400 font-black text-sm md:text-base drop-shadow-md z-20">
                                                 {Math.round((metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%
                                             </div>
                                         </div>
@@ -419,16 +419,16 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                         <div 
                                             className="w-full rounded-t-2xl md:rounded-t-3xl transition-all duration-1000 group-hover/bar:scale-x-105 border-x-2 border-white/20 relative z-10"
                                             style={{ 
-                                                height: `${Math.min(100, Math.max(15, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100))}%`,
+                                                height: `${Math.min(100, Math.max(12, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100))}%`,
                                                 backgroundColor: '#FB7185',
-                                                boxShadow: '0 0 50px rgba(251, 113, 133, 0.5), inset 0 2px 15px rgba(255,255,255,0.4)'
+                                                boxShadow: '0 0 20px rgba(251, 113, 133, 0.4), 0 0 40px rgba(255,255,255,0.1)'
                                             }}
                                         >
-                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-[10px] font-black px-3 py-1.5 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-30">
+                                            <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-[10px] font-black px-3 py-1.5 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-30">
                                                 RD$ {Math.max(0, metrics.metaTotal - metrics.ingresosDelMes).toLocaleString()}
                                             </div>
-                                            {/* Etiqueta de Porcentaje */}
-                                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white font-black text-[10px] md:text-xs drop-shadow-md z-20">
+                                            {/* Etiqueta de Porcentaje (Top) */}
+                                            <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-rose-400 font-black text-sm md:text-base drop-shadow-md z-20">
                                                 {Math.max(0, Math.round(((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100))}%
                                             </div>
                                         </div>
