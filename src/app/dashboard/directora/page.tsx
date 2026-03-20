@@ -147,7 +147,40 @@ export default async function DirectoraPage() {
                     totalEstudiantes: estudiantes?.length || 0,
                     alDia: (estudiantes?.length || 0) - countPendientes,
                     comunicadosCount: allComunicados?.length || 0,
-                    trendData
+                    trendData,
+                    pendientesCriticos: (await (async () => {
+                        const deudoresM0 = (estudiantes || [])
+                            .map(est => {
+                                const cuota = est.cuota_mensual || 11000;
+                                const pagosEstM0 = pagosM0.filter((p: any) => p.estudiante_id === est.id);
+                                const totalPagado = pagosEstM0.reduce((acc: number, p: any) => acc + (p.monto || 0), 0);
+                                return {
+                                    id: est.id,
+                                    nombre: est.nombre,
+                                    deuda: cuota - totalPagado,
+                                    padre_id: est.padre_id
+                                };
+                            })
+                            .filter(d => d.deuda > 0)
+                            .sort((a, b) => b.deuda - a.deuda)
+                            .slice(0, 3);
+
+                        const padreIds = deudoresM0.filter(d => d.padre_id).map(d => d.padre_id);
+                        if (padreIds.length === 0) return deudoresM0.map(d => ({ ...d, telefono: "" }));
+
+                        const { data: perfilesPadres } = await supabase
+                            .from("perfiles")
+                            .select("id, telefono")
+                            .in("id", padreIds);
+
+                        return deudoresM0.map(d => {
+                            const perfil = perfilesPadres?.find(p => p.id === d.padre_id);
+                            return {
+                                ...d,
+                                telefono: perfil?.telefono || ""
+                            };
+                        });
+                    })())
                 }}
                 previewData={{
                     comunicados: allComunicados?.slice(0, 3) || [],

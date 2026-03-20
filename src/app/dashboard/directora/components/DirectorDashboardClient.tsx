@@ -29,7 +29,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         totalEstudiantes: number,
         alDia: number,
         comunicadosCount: number,
-        trendData: { month: string, total: number }[]
+        trendData: { month: string, total: number }[],
+        pendientesCriticos: { id: string, nombre: string, deuda: number, telefono: string }[]
     },
     previewData: { comunicados: any[], galeria: any[], eventos: any[], agradecimientos: any[] }
 }) {
@@ -348,51 +349,132 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     </Card>
                 </div>
 
-                {/* --- SECCIÓN DE ESTADÍSTICAS Y CUMPLEAÑOS --- */}
+                {/* --- DASHBOARD FINANCIERO DINÁMICO (V4) --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-                    {/* Gráfico de Tendencia */}
-                    <Card className="lg:col-span-2 rounded-[40px] border-0 shadow-2xl bg-white p-8">
-                        <div className="flex items-center justify-between mb-8">
+                    {/* Gráfico de Rentabilidad */}
+                    <Card style={{ backgroundColor: '#002147' }} className="lg:col-span-2 rounded-[40px] border-0 shadow-2xl p-8 relative overflow-hidden group">
+                        {/* Decoración de fondo */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                        
+                        <div className="flex items-center justify-between mb-10 relative z-10">
                             <div>
-                                <h3 className="text-2xl font-black text-slate-800 italic uppercase tracking-tighter">Historial de Ingresos</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Análisis de flujo de caja</p>
+                                <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2">
+                                    <BarChart3 className="h-6 w-6 text-emerald-400" />
+                                    Balance del Mes
+                                </h3>
+                                <p className="text-[10px] font-bold text-blue-200/50 uppercase tracking-widest mt-1">Ingresos vs Por Cobrar (Rentabilidad Actual)</p>
                             </div>
-                            <div className="h-12 w-12 bg-[#002147]/10 rounded-2xl flex items-center justify-center">
-                                <BarChart3 className="text-[#002147] h-6 w-6" />
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-3 w-3 rounded-full bg-emerald-400"></div>
+                                    <span className="text-[10px] font-black text-white/70 uppercase">Cobrado</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="h-3 w-3 rounded-full bg-rose-400"></div>
+                                    <span className="text-[10px] font-black text-white/70 uppercase">Pendiente</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex items-end justify-around h-64 gap-8 px-8 border-b-2 border-slate-50">
-                            {metrics.trendData.map((item, i) => {
-                                const maxVal = Math.max(...metrics.trendData.map(d => d.total), 1);
-                                const heightPc = (item.total / maxVal) * 90;
-                                const isCurrent = i === metrics.trendData.length - 1;
-
-                                return (
-                                    <div key={i} className="flex-1 max-w-[120px] flex flex-col items-center gap-4 group">
-                                        <div
-                                            className="w-full relative rounded-t-[20px] transition-all duration-700 hover:scale-x-105 cursor-pointer flex items-end justify-center"
-                                            style={{
-                                                height: `${Math.max(heightPc, 5)}%`,
-                                                backgroundColor: isCurrent ? '#8A2BE2' : '#f1f5f9',
-                                                boxShadow: isCurrent ? `0 15px 30px #8A2BE244` : 'none'
-                                            }}
+                        {metrics.ingresosDelMes === 0 && (metrics.metaTotal - metrics.ingresosDelMes) <= 0 ? (
+                            <div className="h-64 flex flex-col items-center justify-center text-center">
+                                <div className="bg-white/5 p-6 rounded-full mb-4">
+                                    <TrendingUp className="h-10 w-10 text-blue-200/20" />
+                                </div>
+                                <p className="text-blue-100/60 font-black italic uppercase text-lg">Sin movimientos este mes</p>
+                            </div>
+                        ) : (
+                            <div className="flex items-end justify-around h-64 gap-8 px-4 md:px-12 relative z-10">
+                                {/* Barra Ingresos Reales */}
+                                <div className="flex-1 flex flex-col items-center gap-4 group/bar">
+                                    <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
+                                        <div 
+                                            className="w-full bg-emerald-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(52,211,153,0.3)] transition-all duration-1000 group-hover/bar:scale-x-105"
+                                            style={{ height: `${Math.max(5, (metrics.ingresosDelMes / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
                                         >
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-black px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                                RD$ {item.total?.toLocaleString()}
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-[#002147] text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
+                                                RD$ {metrics.ingresosDelMes.toLocaleString()}
                                             </div>
                                         </div>
-                                        <span className={`text-[10px] font-black uppercase tracking-tighter text-center ${isCurrent ? 'text-[#8A2BE2]' : 'text-slate-400'}`}>
-                                            {item.month}
-                                        </span>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    <span className="text-[11px] font-black uppercase tracking-tighter text-emerald-400/80">Cobrado</span>
+                                </div>
+
+                                {/* Barra Pagos Pendientes */}
+                                <div className="flex-1 flex flex-col items-center gap-4 group/bar">
+                                    <div className="w-full max-w-[100px] relative flex flex-col justify-end items-center h-full">
+                                        <div 
+                                            className="w-full bg-rose-400 rounded-t-2xl md:rounded-t-3xl shadow-[0_0_40px_rgba(251,113,113,0.2)] transition-all duration-1000 group-hover/bar:scale-x-105"
+                                            style={{ height: `${Math.max(5, ((metrics.metaTotal - metrics.ingresosDelMes) / Math.max(metrics.metaTotal, 1)) * 100)}%` }}
+                                        >
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-rose-500 text-xs font-black px-4 py-2 rounded-full shadow-2xl opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
+                                                RD$ {(metrics.metaTotal - metrics.ingresosDelMes).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-tighter text-rose-400/80">Pendiente</span>
+                                </div>
+                            </div>
+                        )}
                     </Card>
 
-                    {/* Cumpleaños Widget */}
-                    <Card className="rounded-[40px] border-0 shadow-2xl bg-white p-8 relative overflow-hidden flex flex-col justify-between">
+                    {/* Pendientes Críticos Widget */}
+                    <Card className="rounded-[40px] border-0 shadow-2xl bg-white p-8 relative overflow-hidden flex flex-col">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-xl font-black text-[#002147] flex items-center gap-2">
+                                    Alertas Críticas 🚨
+                                </h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Acción Inmediata Requerida</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                            {metrics.pendientesCriticos && metrics.pendientesCriticos.length > 0 ? (
+                                metrics.pendientesCriticos.map((item, idx) => (
+                                    <div key={item.id} className="p-4 rounded-[25px] border-2 border-rose-50 bg-rose-50/30 flex items-center justify-between group hover:border-rose-200 transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-full bg-rose-500 flex items-center justify-center font-black text-white shadow-lg text-xs">
+                                                {idx + 1}
+                                            </div>
+                                            <div>
+                                                <p className="font-extrabold text-slate-800 text-sm leading-tight uppercase truncate max-w-[120px]">{item.nombre}</p>
+                                                <p className="text-[10px] font-black text-rose-500 uppercase italic">
+                                                    Deuda: RD$ {item.deuda.toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button 
+                                            size="icon"
+                                            onClick={() => {
+                                                const msg = `Atención: Recordatorio de pago para el alumno ${item.nombre}. Saldo pendiente: RD$ ${item.deuda.toLocaleString()}. Favor pasar por administración.`;
+                                                window.open(`https://wa.me/${item.telefono || ''}?text=${encodeURIComponent(msg)}`, '_blank');
+                                            }}
+                                            className="h-9 w-9 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-md shrink-0"
+                                        >
+                                            <MessageCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-30 italic py-10">
+                                    <CheckCircle className="h-10 w-10 text-emerald-500 mb-2" />
+                                    <p className="text-sm font-bold">Sin deudores críticos</p>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {metrics.pendientesCriticos && metrics.pendientesCriticos.length > 0 && (
+                            <div className="mt-6 pt-4 border-t border-slate-50">
+                                <p className="text-[9px] font-black text-slate-400 text-center uppercase tracking-widest">
+                                    Total en Riesgo: RD$ {metrics.pendientesCriticos.reduce((acc, curr) => acc + curr.deuda, 0).toLocaleString()}
+                                </p>
+                            </div>
+                        )}
+                    </Card>
+
+                    {/* Cumpleaños Widget (Full Width) */}
+                    <Card className="lg:col-span-3 rounded-[40px] border-0 shadow-2xl bg-white p-8 relative overflow-hidden flex flex-col justify-between">
                         <div className="absolute top-0 right-0 p-4 opacity-5">
                             <Heart className="h-32 w-32 text-[#FF1493]" fill="currentColor" />
                         </div>
@@ -741,7 +823,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     onClick={() => setActiveModal(null)}
                 >
                     <Card 
-                        className="w-full max-w-lg h-fit rounded-[40px] border-0 shadow-3xl bg-white overflow-hidden animate-in zoom-in-95 duration-300"
+                        className={`w-full ${activeModal === 'seguridad' ? 'max-w-4xl' : 'max-w-lg'} h-fit rounded-[40px] border-0 shadow-3xl bg-white overflow-hidden animate-in zoom-in-95 duration-300`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <CardHeader className="bg-slate-50 p-8 border-b border-slate-100 flex flex-row items-center justify-between">
@@ -1363,11 +1445,11 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 </div>
                             )}
 
+                        <div className={activeModal === "seguridad" ? "p-4 md:p-8" : "p-8"}>
                             {activeModal === "seguridad" && (
-                                <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-2">
-                                    <SecurityExitView estudiantes={estudiantes} />
-                                </div>
+                                <SecurityExitView estudiantes={estudiantes} />
                             )}
+                        </div>
 
                             {/* --- BOTONES --- */}
                             <div className="pt-4 flex gap-3 border-t border-slate-100">
