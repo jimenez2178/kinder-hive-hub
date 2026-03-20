@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     // 1. Perfil del padre y su Colegio ID y TELÉFONO
     const { data: profile } = await supabase
         .from("perfiles")
-        .select("nombre, colegio_id, telefono")
+        .select("nombre, colegio_id, telefono, telegram_chat_id")
         .eq("id", user.id)
         .single();
 
@@ -180,6 +180,7 @@ export default async function DashboardPage() {
 
     return (
         <DashboardClient
+            userId={user.id}
             initialFrase={fraseDelDia}
             userName={profile?.nombre || "Padre"}
             saldoPendiente={saldoTotalFamilia}
@@ -195,6 +196,7 @@ export default async function DashboardPage() {
             asistenciaMes={asistenciaMes || []}
             currentMonth={currentMonthName}
             currentYear={currentYear.toString()}
+            telegramChatId={profile?.telegram_chat_id || ''}
         />
     );
 }

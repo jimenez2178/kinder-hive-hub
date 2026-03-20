@@ -66,6 +66,7 @@ import { processParentPaymentAction, uploadComprobanteAction, reportarPagoAction
 import { createClient } from "@/utils/supabase/client";
 import AuthorizedManager from "./AuthorizedManager";
 import PDFDownloadButton from "@/components/PDFDownloadButton";
+import TelegramLink from "./TelegramLink";
 
 function VideoPlayer({ url }: { url: string }) {
     if (!url) return null;
@@ -138,6 +139,8 @@ export default function DashboardClient({
     asistenciaMes = [],
     currentMonth = "",
     currentYear = "",
+    userId = "",
+    telegramChatId = "",
     onDeleteComunicado
 }: {
     initialFrase: string,
@@ -155,6 +158,8 @@ export default function DashboardClient({
     asistenciaMes?: any[],
     currentMonth?: string,
     currentYear?: string,
+    userId?: string,
+    telegramChatId?: string,
     onDeleteComunicado?: (id: string) => Promise<void>
 }) {
     const [frase] = useState(initialFrase);
@@ -466,6 +471,11 @@ export default function DashboardClient({
                         </Link>
                     </div>
                 )}
+
+                {/* Telegram Alert Linking */}
+                <div className="mb-10">
+                    <TelegramLink userId={userId} initialTelegramId={telegramChatId} />
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
 

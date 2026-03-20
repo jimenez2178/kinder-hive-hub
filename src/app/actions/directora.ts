@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/lib/supabase-admin";
 import { revalidatePath } from "next/cache";
 import { enviarNotificacionPago } from "@/lib/n8n";
+import { notifyParent } from "@/lib/notifications";
 
 async function getColegioId(supabase: any) {
     const { data, error } = await supabase.auth.getUser();
@@ -658,6 +659,35 @@ export async function recordExitAction(estudianteId: string) {
     if (error) {
         console.error("[recordExitAction] Error:", error.message);
         return { error: "Error al registrar en DB: " + error.message };
+    }
+
+    // --- NOTIFICACIÓN TELEGRAM ---
+    try {
+        // Buscamos el nombre del alumno y el ID de telegram del padre
+        const { data: studentData } = await supabase
+            .from("estudiantes")
+            .select("nombre, padre_id")
+            .eq("id", estudianteId)
+            .single();
+
+        if (studentData?.padre_id) {
+            const { data: parentProfile } = await supabase
+                .from("perfiles")
+                .select("telegram_chat_id, nombre")
+                .eq("id", studentData.padre_id)
+                .single();
+
+            if (parentProfile?.telegram_chat_id) {
+                const mensaje = `¡Hola ${parentProfile.nombre}! Te informamos que ${studentData.nombre} ha sido entregado(a) correctamente. ¡Feliz resto del día! 🏠✨`;
+                await notifyParent("Salida", mensaje, {
+                    hijo_nombre: studentData.nombre,
+                    telegram_chat_id: parentProfile.telegram_chat_id
+                });
+            }
+        }
+    } catch (notifyErr) {
+        console.error("[recordExitAction] Error enviando notificación:", notifyErr);
+        // No bloqueamos el éxito del registro por un error de notificación
     }
 
     revalidatePath("/dashboard/directora");

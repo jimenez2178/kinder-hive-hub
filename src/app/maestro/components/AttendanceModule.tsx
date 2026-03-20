@@ -5,6 +5,8 @@ import { CheckCircle2, XCircle, Clock, User, Search, Save, Bell, Filter } from '
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { createClient } from "@/utils/supabase/client";
+import { notifyParent } from "@/lib/notifications";
 
 // --- CONFIGURACIÓN DE FIREBASE ---
 const getFirebaseConfig = () => {
@@ -37,6 +39,7 @@ export function AttendanceModule() {
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
   const [course, setCourse] = useState('Kínder A');
+  const supabase = createClient();
 
   // 1. Cargar alumnos del curso
   useEffect(() => {
@@ -84,8 +87,36 @@ export function AttendanceModule() {
         timestamp: new Date().toISOString(),
         maestra_id: auth.currentUser?.uid || 'maestra_anonima'
       });
+      
+      // Enviar notificaciones a padres (Telegram) para Ausentes y Tardanzas
+      const ausentesOTardanzas = Object.entries(attendance).filter(([_, status]) => status === 'ausente' || status === 'tardanza');
+      
+      for (const [studentId, status] of ausentesOTardanzas) {
+        const student = students.find(s => s.id === studentId);
+        if (student) {
+          // Buscamos el perfil del padre en Supabase para obtener su telegram_chat_id
+          // Asumimos que podemos buscar por nombre_alumno o vinculación previa
+          const { data: parentProfile } = await supabase
+            .from("perfiles")
+            .select("telegram_chat_id, nombre")
+            .eq("nombre_alumno", student.nombre)
+            .not("telegram_chat_id", "is", null)
+            .maybeSingle();
 
-      alert("¡Pase de lista guardado con éxito! Se han enviado los avisos a los padres.");
+          if (parentProfile?.telegram_chat_id) {
+            const mensaje = status === 'ausente' 
+              ? `Hola ${parentProfile.nombre}, te informamos que ${student.nombre} no asistió a clases hoy.`
+              : `Hola ${parentProfile.nombre}, te informamos que ${student.nombre} llegó con tardanza hoy.`;
+            
+            await notifyParent(status === 'ausente' ? "Asistencia" : "Tardanza", mensaje, {
+              hijo_nombre: student.nombre,
+              telegram_chat_id: parentProfile.telegram_chat_id
+            });
+          }
+        }
+      }
+
+      alert("¡Pase de lista guardado con éxito! Se han enviado los avisos a los padres vía Telegram.");
     } catch (error) {
       console.error(error);
       alert("Error al guardar la asistencia.");
