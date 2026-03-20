@@ -163,8 +163,16 @@ export default function NotificacionesPage() {
       }
     } catch (error: any) {
       console.error("Error obteniendo token FCM:", error);
-      setDebugStatus((prev: any) => ({ ...prev, error: error.message }));
-      showToast("Error: " + error.message, "error");
+      const errorMsg = error.message || String(error);
+      setDebugStatus((prev: any) => ({ ...prev, error: errorMsg }));
+      showToast("Error: " + errorMsg, "error");
+      
+      // Log extra information for debugging
+      if (error.code === 'messaging/permission-blocked') {
+        setDebugStatus((prev: any) => ({ ...prev, error: "PERMISO BLOQUEADO: Restablece en el candado de la URL." }));
+      } else if (error.code === 'messaging/unsupported-browser') {
+         setDebugStatus((prev: any) => ({ ...prev, error: "NAVEGADOR NO SOPORTADO." }));
+      }
     }
   };
 

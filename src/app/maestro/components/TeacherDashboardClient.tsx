@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { addNotaAction, deleteNotaAction, addCalificacionAction, deleteCalificacionAction } from "@/app/actions/maestro";
 import { LogoutButton } from "@/components/LogoutButton";
-import { Send, FileEdit, Trash2, Clock } from "lucide-react";
+import { Send, FileEdit, Trash2, Clock, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { AttendanceModule } from "./AttendanceModule";
 
 export interface Calificacion {
     id: string;
@@ -52,7 +53,7 @@ export function TeacherDashboardClient({
     const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: "", visible: false });
     const [isLoading, setIsLoading] = useState(false);
     const [search, setSearch] = useState("");
-    const [activeTab, setActiveTab] = useState<"notas" | "calificaciones" | "progreso">("calificaciones");
+    const [activeTab, setActiveTab] = useState<"notas" | "calificaciones" | "progreso" | "asistencia">("asistencia");
     
     // No necesitamos useActionState para delete, llamamos la acción directamente.
 
@@ -115,6 +116,7 @@ export function TeacherDashboardClient({
                 </header>
 
                 <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 max-w-fit mx-auto">
+                    <button onClick={() => setActiveTab("asistencia")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'asistencia' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Asistencia (Pase Lista)</button>
                     <button onClick={() => setActiveTab("calificaciones")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'calificaciones' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Calificaciones</button>
                     <button onClick={() => setActiveTab("progreso")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'progreso' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Progreso Académico</button>
                     {/* Evaluación General se unificó en Progreso Académico para evitar redundancia y errores */}
@@ -130,6 +132,10 @@ export function TeacherDashboardClient({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-8 pb-8 pt-4">
+                                {activeTab === "asistencia" && (
+                                    <AttendanceModule />
+                                )}
+
                                 {activeTab === "notas" && (
                                     <div className="text-center p-8 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
                                         <p className="text-slate-500 font-bold mb-4">Esta sección se ha movido a Progreso Académico para mayor claridad.</p>

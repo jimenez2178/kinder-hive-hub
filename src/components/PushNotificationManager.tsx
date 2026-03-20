@@ -8,7 +8,7 @@ export default function PushNotificationManager() {
 
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker
-                .register("/firebase-messaging-sw.js")
+                .register("/firebase-messaging-sw.js", { scope: '/' })
                 .then((registration) => {
                     console.log("Service Worker Firebase registrado correctamente (Scope:", registration.scope + ")");
                 })
