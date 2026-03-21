@@ -60,8 +60,8 @@ export default function SecurityExitView({ estudiantes }: SecurityExitViewProps)
         
         try {
             if (isFinalDelivery) {
-                // Registro interno en tabla asistencia
-                const exitRes = await recordExitAction(selectedAlumno.id);
+                // Registro interno en tabla asistencia + Notificación Telegram
+                const exitRes = await recordExitAction(selectedAlumno.id, auth.nombre_sustituto);
                 if (exitRes.error) {
                     console.error("No se pudo registrar en asistencia, procediendo con borrado:", exitRes.error);
                 }
