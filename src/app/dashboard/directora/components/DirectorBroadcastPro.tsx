@@ -34,7 +34,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {
   } catch (e) { console.error("Firebase Error:", e); }
 }
 
-const appId = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
+const appId = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'kinder-hive-hub');
 
 export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void }) {
   const [user, setUser] = useState<any>(null);

@@ -70,7 +70,7 @@ import TelegramLink from "./TelegramLink";
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
-// --- CONFIGURACIÓN DE INFRAESTRUCTURA (REFORZADA) ---
+// --- CONFIGURACIÓN DE INFRAESTRUCTURA (REFORZADA V3.9.4) ---
 const getSafeConfig = () => {
     try {
         // @ts-ignore
@@ -86,13 +86,15 @@ const getSafeConfig = () => {
 };
 
 const firebaseConfig = getSafeConfig();
-const appIdGlobal = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
+const appIdGlobal = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'kinder-hive-hub');
 
 let firestoreDB: any = null;
+let firestoreAuth: any = null;
 if (firebaseConfig && firebaseConfig.apiKey) {
     try {
         const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
         firestoreDB = getFirestore(app);
+        firestoreAuth = getAuth(app);
     } catch (e) {
         console.error("Firebase Init Error (Parent):", e);
     }
@@ -216,30 +218,33 @@ export default function DashboardClient({
             setShowPushBanner(true);
         }
 
-        // 2. Suscripción a Firestore (v3.9.1 - Resiliente)
-        if (firestoreDB) {
+        // 2. Suscripción a Firestore (v3.9.4 - Auth + Realtime Sync)
+        if (firestoreDB && firestoreAuth) {
             try {
-                const avisosRef = collection(firestoreDB, 'artifacts', appIdGlobal, 'public', 'data', 'avisos');
-                const q = query(avisosRef, orderBy('fecha', 'desc'), limit(10));
+                // Asegurar sesión anónima antes de suscribirse (evita Permission Denied)
+                signInAnonymously(firestoreAuth).then(() => {
+                    const avisosRef = collection(firestoreDB, 'artifacts', appIdGlobal, 'public', 'data', 'avisos');
+                    const q = query(avisosRef, orderBy('fecha', 'desc'), limit(10));
 
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const novelties = snapshot.docs.map(doc => {
-                        const data = doc.data();
-                        return {
-                            id: doc.id,
-                            ...data,
-                            titulo: data.titulo,
-                            contenido: data.mensaje,
-                            prioridad: data.prioridad,
-                            video_url: data.media_url,
-                            created_at: data.fecha?.toDate?.()?.toISOString() || new Date().toISOString(),
-                            isFirestore: true
-                        };
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        const novelties = snapshot.docs.map(doc => {
+                            const data = doc.data();
+                            return {
+                                id: doc.id,
+                                ...data,
+                                titulo: data.titulo,
+                                contenido: data.mensaje,
+                                prioridad: data.prioridad,
+                                video_url: data.media_url,
+                                created_at: data.fecha?.toDate?.()?.toISOString() || new Date().toISOString(),
+                                isFirestore: true
+                            };
+                        });
+                        setFirestoreComunicados(novelties);
                     });
-                    setFirestoreComunicados(novelties);
-                });
 
-                return () => unsubscribe();
+                    return () => unsubscribe();
+                }).catch(err => console.error("Auth Fail (Parent):", err));
             } catch (e) {
                 console.error("Firebase subscription error:", e);
             }

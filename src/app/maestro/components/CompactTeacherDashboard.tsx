@@ -54,7 +54,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const auth = getAuth(app);
 const db = getFirestore(app);
 // @ts-ignore
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'kinder-hive-hub';
 const N8N_WEBHOOK = "https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder";
 
 export default function CompactTeacherDashboard({ maestroNombre }: { maestroNombre?: string }) {
