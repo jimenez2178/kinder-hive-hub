@@ -7,7 +7,7 @@ import {
   Instagram, Youtube, CloudLightning, AlertTriangle 
 } from 'lucide-react';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged, Auth, User } from 'firebase/auth';
 
 // --- CONFIGURACIÓN DE INFRAESTRUCTURA ---
@@ -69,7 +69,20 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
     const icon = priority === "URGENTE" ? "🚨" : priority === "ADVERTENCIA" ? "⚠️" : "🔔";
 
     try {
-      // URL LIMPIA Y VERIFICADA (v3.8)
+      // --- PASO A: GUARDAR EN FIRESTORE (Para el Dashboard del Padre) ---
+      if (db) {
+        const avisosRef = collection(db, 'artifacts', appId, 'public', 'data', 'avisos');
+        await addDoc(avisosRef, {
+          titulo: title,
+          mensaje: message,
+          media_url: mediaUrl,
+          prioridad: priority,
+          fecha: serverTimestamp(),
+          autor: "Dirección Escolar"
+        });
+      }
+
+      // --- PASO B: DISPARAR WEBHOOK (Para Telegram) ---
       const targetUrl = "https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder";
       
       const response = await fetch(targetUrl, {
@@ -77,7 +90,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo_evento: priority === "URGENTE" ? "AVISO URGENTE" : "AVISO ESCOLAR",
-          nombre_alumno: "Toda la Comunidad",
+          nombre_alumno: "Su hijo(a)", // n8n debe reemplazar esto con el nombre real en el loop
           mensaje: `${icon} *${title.toUpperCase()}*\n\n${message}${mediaUrl ? `\n\n🔗 Ver más: ${mediaUrl}` : ""}`,
           is_broadcast: true,
           prioridad: priority,
@@ -97,7 +110,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
         throw new Error("Error en Webhook");
       }
     } catch (error) {
-      console.error("Send error:", error);
+      console.error("Critical Send error:", error);
       setStatus('error');
       alert("No se pudo conectar con el servidor de notificaciones.");
       setTimeout(() => setStatus('idle'), 3000);
@@ -109,7 +122,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
       
       <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-white mb-20 animate-in fade-in zoom-in duration-500 relative">
         
-        {/* Header con Degradado - Ajustado para visibilidad total */}
+        {/* Header con Degradado - Sincronizado v3.9 */}
         <div className="bg-gradient-to-r from-[#6366f1] via-[#a855f7] to-[#ec4899] p-8 pt-12 text-white relative">
           <div className="flex justify-between items-start relative z-10">
             <div className="flex items-center gap-4">
@@ -118,7 +131,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
               </div>
               <div>
                 <h1 className="text-2xl font-black tracking-tighter uppercase italic">Publicar Aviso</h1>
-                <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mt-1">Comunicación Mágica ✨</p>
+                <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mt-1">Sincronizado con Dashboard y Telegram ✨</p>
               </div>
             </div>
             <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><X size={24} /></button>
@@ -146,13 +159,13 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Link de Media (Opcional)</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Link de Media (Instagram/YouTube)</label>
             <div className="relative">
               <div className="absolute left-6 top-1/2 -translate-y-1/2 flex gap-2 text-indigo-400 opacity-60">
                 <Instagram size={18} /><Youtube size={18} />
               </div>
               <input 
-                type="text" placeholder="Pega el enlace de Instagram/YouTube aquí..." value={mediaUrl}
+                type="text" placeholder="Pega el enlace aquí..." value={mediaUrl}
                 onChange={(e) => setMediaUrl(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4 pl-20 pr-6 text-slate-700 italic text-sm font-medium shadow-inner"
               />
@@ -184,7 +197,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
               status === 'done' ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600'
             }`}
           >
-            {status === 'sending' ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} className="rotate-45" /> Confirmar y Enviar</>}
+            {status === 'sending' ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} className="rotate-45" /> Publicar y Notificar</>}
           </button>
         </div>
       </div>

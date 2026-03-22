@@ -67,6 +67,8 @@ import { createClient } from "@/utils/supabase/client";
 import AuthorizedManager from "./AuthorizedManager";
 import PDFDownloadButton from "@/components/PDFDownloadButton";
 import TelegramLink from "./TelegramLink";
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
 function VideoPlayer({ url }: { url: string }) {
     if (!url) return null;
@@ -178,12 +180,58 @@ export default function DashboardClient({
     const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [hiddenAvisos, setHiddenAvisos] = useState<string[]>([]);
+    const [firestoreComunicados, setFirestoreComunicados] = useState<any[]>([]);
 
     useEffect(() => {
-        // El Service Worker se registra ahora en PushNotificationManager (RootLayout)
+        // 1. Service Worker & Push indicator
         if (typeof window !== "undefined" && "Notification" in window) {
-            // Siempre mostramos el banner ahora como indicador de estado según la nueva directiva
             setShowPushBanner(true);
+        }
+
+        // 2. Suscripción a Firestore (v3.9)
+        const getSafeConfig = () => {
+            try {
+                // @ts-ignore
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    // @ts-ignore
+                    return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+                }
+                if (process.env.NEXT_PUBLIC_FIREBASE_CONFIG) {
+                    return JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
+                }
+            } catch (e) { console.error("Config parent error:", e); }
+            return null;
+        };
+
+        const config = getSafeConfig();
+        const appId = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
+
+        if (config && config.apiKey) {
+            try {
+                const app = getApps().length > 0 ? getApp() : initializeApp(config);
+                const db = getFirestore(app);
+                const avisosRef = collection(db, 'artifacts', appId, 'public', 'data', 'avisos');
+                const q = query(avisosRef, orderBy('fecha', 'desc'), limit(10));
+
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const novelties = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        // Normalizar campos para que coincidan con el componente
+                        titulo: doc.data().titulo,
+                        contenido: doc.data().mensaje,
+                        prioridad: doc.data().prioridad,
+                        video_url: doc.data().media_url,
+                        created_at: doc.data().fecha?.toDate?.()?.toISOString() || new Date().toISOString(),
+                        isFirestore: true
+                    }));
+                    setFirestoreComunicados(novelties);
+                });
+
+                return () => unsubscribe();
+            } catch (e) {
+                console.error("Firebase subscription error:", e);
+            }
         }
     }, []);
 
@@ -363,80 +411,102 @@ export default function DashboardClient({
                 </Card>
 
                 {/* ═══ BLOQUE DE COMUNICADOS (JERARQUÍA TOTAL) ═══ */}
-                {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).length > 0 && (
-                    <div className="space-y-6 mb-10">
-                        {comunicados.filter((c) => !hiddenAvisos.includes(c.id)).slice(0, 3).map((com, idx) => {
-                            const p = com.prioridad?.toLowerCase();
-                            const isUrgent = p === 'alta' || p === 'urgente';
-                            const isWarning = p === 'media' || p === 'advertencia';
-                            
-                            return (
-                                <div 
-                                    key={com.id || idx}
-                                    className={`rounded-[40px] p-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[12px] group ${
-                                        isUrgent 
-                                            ? 'bg-[#ef4444] border-white/20' 
-                                            : isWarning
-                                                ? 'bg-[#ffcc00] border-black/10'
-                                                : 'bg-[#002147] border-white/10'
-                                    }`}
-                                >
-                                    {onDeleteComunicado ? (
-                                        <button
-                                            onClick={() => {
-                                                if (window.confirm("¿Estás seguro de que deseas borrar este aviso globalmente?")) {
-                                                    onDeleteComunicado(com.id);
-                                                }
-                                            }}
-                                            className="absolute top-4 right-4 p-3 bg-red-600 hover:bg-red-700 text-white rounded-full transition-all z-20 shadow-xl"
-                                            title="Borrar Aviso (Global)"
-                                        >
-                                            <Trash2 className="h-5 w-5" />
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={async () => {
-                                                // Optimistic: ocultar inmediatamente en UI
-                                                setHiddenAvisos(prev => [...prev, com.id]);
-                                                // Persistir en BD via server action (import estático seguro)
-                                                try {
-                                                    await marcarAvisoLeidoAction(com.id);
-                                                } catch (e) {
-                                                    console.error("Error al marcar aviso como leído:", e);
-                                                }
-                                            }}
-                                            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-20 backdrop-blur-md"
-                                            title="Marcar como leído / Ocultar"
-                                        >
-                                            <span className="text-xs font-black uppercase tracking-widest px-2">Entendido ✕</span>
-                                        </button>
-                                    )}
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <span className={`text-3xl ${isUrgent ? 'animate-bounce' : ''}`}>
-                                            {isUrgent ? '🚨' : isWarning ? '⚠️' : 'ℹ️'}
-                                        </span>
-                                        <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${
-                                            isWarning ? 'bg-black/10 text-black' : 'bg-white/20 text-white'
+                {(() => {
+                    const combined = [...firestoreComunicados, ...comunicados]
+                        .filter(c => !hiddenAvisos.includes(c.id))
+                        .sort((a, b) => {
+                            const priorityScore: Record<string, number> = { 
+                                'alta': 3, 'urgente': 3, 'URGENTE': 3,
+                                'media': 2, 'advertencia': 2, 'ADVERTENCIA': 2,
+                                'baja': 1, 'informacion': 1, 'información': 1, 'INFORMACIÓN': 1
+                            };
+                            const scoreA = priorityScore[a.prioridad] || 0;
+                            const scoreB = priorityScore[b.prioridad] || 0;
+                            if (scoreA !== scoreB) return scoreB - scoreA;
+                            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                        });
+
+                    if (combined.length === 0) return null;
+
+                    return (
+                        <div className="space-y-6 mb-10">
+                            {combined.slice(0, 5).map((com, idx) => {
+                                const p = (com.prioridad || '').toLowerCase();
+                                const isUrgent = p === 'alta' || p === 'urgente' || p === 'URGENTE';
+                                const isWarning = p === 'media' || p === 'advertencia' || p === 'ADVERTENCIA';
+                                
+                                return (
+                                    <div 
+                                        key={com.id || idx}
+                                        className={`rounded-[40px] p-8 shadow-2xl relative overflow-hidden transition-all animate-in slide-in-from-top-4 border-l-[12px] group ${
+                                            isUrgent 
+                                                ? 'bg-[#ef4444] border-white/20' 
+                                                : isWarning
+                                                    ? 'bg-[#ffcc00] border-black/10'
+                                                    : 'bg-[#002147] border-white/10'
+                                        }`}
+                                    >
+                                        {onDeleteComunicado ? (
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm("¿Estás seguro de que deseas borrar este aviso globalmente?")) {
+                                                        onDeleteComunicado(com.id);
+                                                    }
+                                                }}
+                                                className="absolute top-4 right-4 p-3 bg-red-600 hover:bg-red-700 text-white rounded-full transition-all z-20 shadow-xl"
+                                                title="Borrar Aviso (Global)"
+                                            >
+                                                <Trash2 className="h-5 w-5" />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={async () => {
+                                                    // Optimistic: ocultar inmediatamente en UI
+                                                    setHiddenAvisos(prev => [...prev, com.id]);
+                                                    if (!com.isFirestore) {
+                                                        try {
+                                                            await marcarAvisoLeidoAction(com.id);
+                                                        } catch (e) {
+                                                            console.error("Error al marcar aviso como leído:", e);
+                                                        }
+                                                    }
+                                                }}
+                                                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-20 backdrop-blur-md"
+                                                title="Marcar como leído / Ocultar"
+                                            >
+                                                <span className="text-xs font-black uppercase tracking-widest px-2">Entendido ✕</span>
+                                            </button>
+                                        )}
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <span className={`text-3xl ${isUrgent ? 'animate-bounce' : ''}`}>
+                                                {isUrgent ? '🚨' : isWarning ? '⚠️' : 'ℹ️'}
+                                            </span>
+                                            <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${
+                                                isWarning ? 'bg-black/10 text-black' : 'bg-white/20 text-white'
+                                            }`}>
+                                                {isUrgent ? 'Urgente / Crítico' : isWarning ? 'Aviso Escolar' : 'Información'}
+                                            </span>
+                                            {com.isFirestore && (
+                                                <span className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase ml-auto">Nuevo</span>
+                                            )}
+                                        </div>
+                                        <h4 className={`font-black text-2xl leading-tight drop-shadow-sm ${
+                                            isWarning ? 'text-black' : 'text-white'
                                         }`}>
-                                            {isUrgent ? 'Urgente / Crítico' : isWarning ? 'Aviso Escolar' : 'Información'}
-                                        </span>
+                                            {com.titulo}
+                                        </h4>
+                                        <p className={`text-lg font-medium mt-3 leading-relaxed max-w-4xl ${
+                                            isWarning ? 'text-black/80' : 'text-white/90'
+                                        }`}>
+                                            {com.contenido || com.mensaje}
+                                        </p>
+                                        {(com.video_url || com.media_url) && <VideoPlayer url={com.video_url || com.media_url} />}
                                     </div>
-                                    <h4 className={`font-black text-2xl leading-tight drop-shadow-sm ${
-                                        isWarning ? 'text-black' : 'text-white'
-                                    }`}>
-                                        {com.titulo}
-                                    </h4>
-                                    <p className={`text-lg font-medium mt-3 leading-relaxed max-w-4xl ${
-                                        isWarning ? 'text-black/80' : 'text-white/90'
-                                    }`}>
-                                        {com.contenido}
-                                    </p>
-                                    {com.video_url && <VideoPlayer url={com.video_url} />}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
                 
 
 

@@ -199,13 +199,6 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                     <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
                 </header>
 
-                {/* 1.5 ALERTA DE TELEGRAM CONDICIONAL */}
-                {!userProfile?.telegram_chat_id && (
-                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                        <TelegramLink userId={userProfile?.id} initialTelegramId={userProfile?.telegram_chat_id} />
-                    </div>
-                )}
-
                 {/* 2. ACCIONES RÁPIDAS - BOTONES REDONDEADOS */}
                 <div className="flex flex-wrap gap-3">
                     <Button
