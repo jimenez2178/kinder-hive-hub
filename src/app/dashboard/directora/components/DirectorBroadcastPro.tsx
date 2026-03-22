@@ -12,25 +12,31 @@ import { getAuth, signInAnonymously, onAuthStateChanged, Auth, User } from 'fire
 
 /**
  * Kinder Hive Hub - Módulo de Avisos Mágicos v3.6 (ULTRA-RESILIENT)
- * Añadidos fallbacks robustos para Firebase Config y variables de entorno.
+ * Implementa el Triple Escudo solicitado con fallbacks para variables globales y de entorno.
  */
 
-// --- ESCUDO DE CONFIGURACIÓN ---
+// --- CUÁDRUPLE ESCUDO DE CONFIGURACIÓN ---
 const getSafeConfig = () => {
   try {
-    // 1. Intento por variable global (Inyectada por el servidor en ciertos dashboards)
+    // 1. Intento por variable global (Inyectada por el servidor)
     // @ts-ignore
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
       // @ts-ignore
       const config = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
       if (config.apiKey) return config;
     }
+
+    // 2. Intento por variable de entorno JSON única (Vercel)
+    if (process.env.NEXT_PUBLIC_FIREBASE_CONFIG) {
+       const config = JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
+       if (config.apiKey) return config;
+    }
   } catch (e) {
-    console.error("Error con __firebase_config:", e);
+    console.error("Error al parsear config JSON:", e);
   }
 
-  // 2. Fallback a variables de entorno estándar de Next.js
-  const fallback = {
+  // 3. Fallback a variables de entorno individuales estándar
+  const individualFallback = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -39,14 +45,14 @@ const getSafeConfig = () => {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
   };
 
-  return fallback.apiKey ? fallback : null;
+  return individualFallback.apiKey ? individualFallback : null;
 };
 
 // Inicialización ultra-segura
 let app: FirebaseApp | undefined, auth: Auth | undefined, db: Firestore | undefined;
 const firebaseConfig = getSafeConfig();
 
-if (firebaseConfig) {
+if (firebaseConfig && firebaseConfig.apiKey) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
@@ -70,8 +76,14 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
   useEffect(() => {
     if (!auth) return;
     try {
-      signInAnonymously(auth).catch(err => console.error("Auth Error:", err));
-      const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
+      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        if (currentUser) {
+          setUser(currentUser);
+        } else {
+          // @ts-ignore
+          signInAnonymously(auth).catch(err => console.error("Anonymous Auth Fail:", err));
+        }
+      });
       return () => unsubscribe();
     } catch (e) {
       console.error("Error en el efecto de autenticación:", e);
@@ -80,7 +92,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
 
   const handleConfirmAndSave = async () => {
     if (!message.trim() || !title.trim() || !user) {
-      alert("Por favor, completa el título y el mensaje.");
+      alert("Por favor, completa el título y el mensaje antes de enviar.");
       return;
     }
     
@@ -97,7 +109,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
         body: JSON.stringify({
           tipo_evento: priority === "URGENTE" ? "AVISO URGENTE" : "AVISO ESCOLAR",
           nombre_alumno: "Toda la Comunidad",
-          mensaje: `${icon} *${title.toUpperCase()}*\n\n${message}${mediaUrl ? `\n\n🔗 Enlace: ${mediaUrl}` : ""}`,
+          mensaje: `${icon} *${title.toUpperCase()}*\n\n${message}${mediaUrl ? `\n\n🔗 Ver más: ${mediaUrl}` : ""}`,
           is_broadcast: true,
           prioridad: priority,
           timestamp: new Date().toISOString(),
@@ -109,49 +121,54 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
         setStatus('done');
         setTitle(''); setMessage(''); setMediaUrl('');
         setTimeout(() => {
-          setStatus('idle');
-          onClose(); // Auto-cerrar al terminar con éxito
+            setStatus('idle');
+            onClose(); // Auto-cerrar al terminar con éxito
         }, 3500);
       } else {
-        throw new Error("Respuesta de n8n no válida");
+        throw new Error("Error en Webhook");
       }
     } catch (error) {
       console.error("Send error:", error);
       setStatus('error');
-      alert("Error al enviar. Verifique su conexión.");
+      alert("No se pudo conectar con el sistema de notificaciones.");
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
-  // Prevenir crash si los datos no están listos
+  // Pantalla de contingencia elegante si falta la config
   if (!firebaseConfig) {
     return (
-      <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-white rounded-[2.5rem] p-10 text-center max-w-xs shadow-2xl animate-in zoom-in-95 duration-300">
-          <AlertTriangle className="mx-auto mb-4 text-amber-400" size={48} />
-          <p className="font-bold text-slate-600">Sistema en Mantenimiento</p>
-          <p className="text-sm mt-2 text-slate-400 italic leading-relaxed">La configuración del servidor no se ha detectado correctamente.</p>
+      <div className="fixed inset-0 z-[130] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 text-center">
+        <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl max-w-sm border-4 border-white animate-in zoom-in duration-300">
+          <div className="bg-amber-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-amber-500">
+            <AlertTriangle size={48} />
+          </div>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic mb-4 text-center">Sincronizando...</h2>
+          <p className="text-slate-400 text-sm leading-relaxed mb-8 font-medium">
+            Estamos conectando con el servidor de seguridad. Por favor, refresca la página en unos segundos.
+          </p>
           <button 
-            onClick={onClose} 
-            className="mt-8 w-full py-4 bg-slate-100 hover:bg-slate-200 transition-colors rounded-2xl text-slate-500 font-black uppercase tracking-widest text-[10px]"
+            onClick={() => window.location.reload()} 
+            className="w-full py-4 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-100 active:scale-95 transition-transform"
           >
-            Cerrar Panel
+            Refrescar Ahora
           </button>
+          <button onClick={onClose} className="mt-4 text-slate-300 text-[10px] font-black uppercase tracking-widest hover:text-slate-400 transition-colors">Volver</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-start justify-center p-4 pt-20 overflow-y-auto">
-      <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden border-4 border-white my-8 animate-in fade-in zoom-in duration-500 relative">
+    <div className="fixed inset-0 z-[120] bg-slate-100/50 backdrop-blur-md flex items-start justify-center p-4 md:p-8 font-sans text-slate-800 overflow-y-auto pt-16">
+      <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-white mb-20 animate-in fade-in zoom-in duration-500 relative">
         
-        {/* Header con Degradado */}
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-8 pt-12 text-white relative">
+        {/* Header con Degradado - Ajustado para visibilidad total */}
+        <div className="bg-gradient-to-r from-[#6366f1] via-[#a855f7] to-[#ec4899] p-8 pt-12 text-white relative">
           <div className="flex justify-between items-start relative z-10">
             <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md border border-white/20">
-                <Megaphone size={28} className="text-white" />
+              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-lg border border-white/20">
+                <Megaphone size={28} className="text-white drop-shadow-md" />
               </div>
               <div>
                 <h1 className="text-2xl font-black tracking-tighter uppercase italic">Publicar Aviso</h1>
@@ -160,7 +177,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
             </div>
             <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><X size={24} /></button>
           </div>
-          <div className="absolute top-2 right-12 text-white/5 rotate-12"><Sparkles size={80} /></div>
+          <div className="absolute top-2 right-12 text-white/10 rotate-12"><Sparkles size={80} /></div>
         </div>
 
         {/* Formulario */}
@@ -170,7 +187,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
             <input 
               type="text" placeholder="Ej: Suspensión de clases 🌧️" value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold shadow-inner"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4.5 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold shadow-inner"
             />
           </div>
 
@@ -179,18 +196,18 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
             <textarea 
               placeholder="Escribe el mensaje aquí..." value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] p-6 h-40 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 resize-none text-sm font-medium shadow-inner"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] p-8 h-40 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 resize-none text-sm font-medium leading-relaxed shadow-inner"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Link (Instagram/YouTube)</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Link de Media (Opcional)</label>
             <div className="relative">
               <div className="absolute left-6 top-1/2 -translate-y-1/2 flex gap-2 text-indigo-400 opacity-60">
                 <Instagram size={18} /><Youtube size={18} />
               </div>
               <input 
-                type="text" placeholder="Pega el enlace aquí..." value={mediaUrl}
+                type="text" placeholder="Pega el enlace de Instagram/YouTube aquí..." value={mediaUrl}
                 onChange={(e) => setMediaUrl(e.target.value)}
                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4 pl-20 pr-6 text-slate-700 italic text-sm font-medium shadow-inner"
               />
@@ -206,7 +223,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
               <button 
                 key={btn.id} type="button" onClick={() => setPriority(btn.id)}
                 className={`flex-1 flex flex-col items-center gap-1.5 py-4 rounded-[2rem] text-[9px] font-black uppercase transition-all border-4 ${
-                  priority === btn.id ? `${btn.color} text-white border-white shadow-xl scale-105` : 'bg-slate-50 text-slate-400 border-slate-50 hover:border-slate-100'
+                  priority === btn.id ? `${btn.color} text-white border-white shadow-xl scale-105 -translate-y-1` : 'bg-slate-50 text-slate-400 border-slate-50 hover:border-slate-100'
                 }`}
               >
                 {btn.icon}{btn.label}
@@ -217,9 +234,9 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
 
         <div className="p-10 pt-4">
           <button 
-            onClick={handleConfirmAndSave} disabled={status === 'sending'}
+            type="button" onClick={handleConfirmAndSave} disabled={status === 'sending'}
             className={`w-full py-6 rounded-full font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 text-white uppercase tracking-widest ${
-              status === 'done' ? 'bg-emerald-500' : 'bg-[#8b2ce2] hover:bg-black'
+              status === 'done' ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600'
             }`}
           >
             {status === 'sending' ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} className="rotate-45" /> Confirmar y Enviar</>}
