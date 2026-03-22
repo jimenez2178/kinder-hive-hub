@@ -69,6 +69,7 @@ import PDFDownloadButton from "@/components/PDFDownloadButton";
 import TelegramLink from "./TelegramLink";
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 // --- CONFIGURACIÓN DE INFRAESTRUCTURA (REFORZADA V3.9.4) ---
 const getSafeConfig = () => {
