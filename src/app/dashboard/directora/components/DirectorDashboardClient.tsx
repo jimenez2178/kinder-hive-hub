@@ -8,13 +8,12 @@ import { Label } from "@/components/ui/label";
 import { addPaymentAction, addEventAction, addPhotoAction, addEstudianteAction, addComunicadoAction, addAgradecimientoAction, deleteEstudianteAction, deleteAllEstudiantesAction, rejectParentAction, approveAuthorizationAction, deleteComunicadoAction, clearComunicadosAction, rejectReunionAction, finishReunionAction, deleteReunionAction, approveReunionAction } from "@/app/actions/directora";
 import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, SearchIcon, AlertTriangle, MessageCircle, Shield, Clock, UserCheck, Send } from "lucide-react";
+import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, AlertTriangle, MessageCircle, Shield, Clock, UserCheck, Send, X } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
 import { approvePaymentAction, rejectPaymentAction as rejectPaymentActionLegacy, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import SecurityExitView from "./SecurityExitView";
-import GlobalBroadcast from "./GlobalBroadcast";
 import { notifyParent } from "@/lib/notifications";
 import DirectorBroadcastPro from "./DirectorBroadcastPro";
 
@@ -37,7 +36,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
     },
     previewData: { comunicados: any[], galeria: any[], eventos: any[], agradecimientos: any[] }
 }) {
-    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | "reuniones" | "seguridad" | "broadcast" | null>(null);
+    const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | "reuniones" | "seguridad" | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [showPreview, setShowPreview] = useState(false);
     const [showReport, setShowReport] = useState(false);
@@ -206,12 +205,6 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         className="rounded-full bg-[#8A2BE2] hover:bg-[#7726c5] text-white font-black h-12 px-6 shadow-lg shadow-[#8A2BE2]/20"
                     >
                         <Megaphone className="mr-2 h-5 w-5" /> Publicar Aviso
-                    </Button>
-                    <Button
-                        onClick={() => setActiveModal("broadcast")}
-                        className="rounded-full bg-[#FF4500] hover:bg-[#e03a00] text-white font-black h-12 px-6 shadow-lg shadow-[#FF4500]/20"
-                    >
-                        <Send className="mr-2 h-5 w-5" /> Broadcast Telegram
                     </Button>
                     <Button
                         onClick={() => setActiveModal("pago")}
@@ -1397,7 +1390,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                                         <div className="relative group rounded-2xl overflow-hidden border-2 border-slate-200">
                                                             <img src={pago.url_comprobante} alt="Comprobante" className="w-full aspect-video object-cover cursor-zoom-in" onClick={() => window.open(pago.url_comprobante, '_blank')} />
                                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
-                                                                <SearchIcon className="text-white h-8 w-8" />
+                                                                <Search className="text-white h-8 w-8" />
                                                             </div>
                                                         </div>
                                                     )}
@@ -1458,14 +1451,6 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                 </div>
                             )}
 
-                        <div className={activeModal === "seguridad" ? "p-4 md:p-8" : "p-8"}>
-                            {activeModal === "seguridad" && (
-                                <SecurityExitView estudiantes={estudiantes} />
-                            )}
-                            {activeModal === "broadcast" && (
-                                <GlobalBroadcast />
-                            )}
-                        </div>
 
                             {/* --- BOTONES --- */}
                             <div className="pt-4 flex gap-3 border-t border-slate-100">
@@ -1473,11 +1458,11 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                                     type="button"
                                     variant="ghost"
                                     onClick={() => setActiveModal(null)}
-                                    className={(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones" || activeModal === "seguridad" || activeModal === "broadcast") ? "w-full h-14 rounded-2xl font-black text-slate-600 bg-slate-100 hover:bg-slate-200" : "flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"}
+                                    className={(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones") ? "w-full h-14 rounded-2xl font-black text-slate-600 bg-slate-100 hover:bg-slate-200" : "flex-1 h-14 rounded-2xl font-black text-slate-400 hover:bg-slate-100"}
                                 >
-                                    {(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones" || activeModal === "seguridad" || activeModal === "broadcast") ? "Cerrar Panel" : "Cancelar"}
+                                    {(activeModal === "pendientes" || activeModal === "revisar_pagos" || activeModal === "reuniones") ? "Cerrar Panel" : "Cancelar"}
                                 </Button>
-                                {(activeModal !== "pendientes" && activeModal !== "revisar_pagos" && activeModal !== "reuniones" && activeModal !== "seguridad" && activeModal !== "broadcast") && (
+                                {(activeModal !== "pendientes" && activeModal !== "revisar_pagos" && activeModal !== "reuniones") && (
                                     <Button
                                         type="submit"
                                         disabled={isLoading}
@@ -1511,6 +1496,21 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
             {/* Nuevo Componente de Broadcast Pro */}
             {activeModal === 'comunicado' && (
                 <DirectorBroadcastPro onClose={() => setActiveModal(null)} />
+            )}
+
+
+            {activeModal === 'seguridad' && (
+                <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 my-auto relative p-8">
+                        <button 
+                            onClick={() => setActiveModal(null)}
+                            className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-full transition-colors z-50"
+                        >
+                            <X size={24} />
+                        </button>
+                        <SecurityExitView estudiantes={estudiantes} />
+                    </div>
+                </div>
             )}
         </>
     );
