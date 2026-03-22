@@ -131,9 +131,17 @@ export default async function DirectoraPage() {
     const { data: agradecimientos } = await supabase.from("agradecimientos").select("*").order("created_at", { ascending: false }).limit(2);
 
 
+    // 4. Perfil del Usuario Actual (para Telegram y personalización)
+    const { data: userProfile } = await supabase
+        .from("perfiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
     return (
         <div className="min-h-screen bg-slate-50 pb-12">
             <DirectorDashboardClient
+                userProfile={userProfile}
                 estudiantes={estudiantes || []}
                 padres={padres || []}
                 usuariosPendientes={usuariosPendientes || []}

@@ -10,56 +10,30 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged, Auth, User } from 'firebase/auth';
 
-/**
- * Kinder Hive Hub - Módulo de Avisos Mágicos v3.6 (ULTRA-RESILIENT)
- * Implementa el Triple Escudo solicitado con fallbacks para variables globales y de entorno.
- */
-
-// --- CUÁDRUPLE ESCUDO DE CONFIGURACIÓN ---
+// --- CONFIGURACIÓN DE INFRAESTRUCTURA ---
 const getSafeConfig = () => {
   try {
-    // 1. Intento por variable global (Inyectada por el servidor)
     // @ts-ignore
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
       // @ts-ignore
-      const config = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-      if (config.apiKey) return config;
+      return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
     }
-
-    // 2. Intento por variable de entorno JSON única (Vercel)
     if (process.env.NEXT_PUBLIC_FIREBASE_CONFIG) {
-       const config = JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
-       if (config.apiKey) return config;
+      return JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
     }
-  } catch (e) {
-    console.error("Error al parsear config JSON:", e);
-  }
-
-  // 3. Fallback a variables de entorno individuales estándar
-  const individualFallback = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-  };
-
-  return individualFallback.apiKey ? individualFallback : null;
+  } catch (e) { console.error("Config Error:", e); }
+  return null;
 };
 
-// Inicialización ultra-segura
-let app: FirebaseApp | undefined, auth: Auth | undefined, db: Firestore | undefined;
 const firebaseConfig = getSafeConfig();
+let app: FirebaseApp | undefined, auth: Auth | undefined, db: Firestore | undefined;
 
 if (firebaseConfig && firebaseConfig.apiKey) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-  } catch (e) {
-    console.error("Fallo en inicialización de servicios:", e);
-  }
+  } catch (e) { console.error("Firebase Error:", e); }
 }
 
 // @ts-ignore
@@ -75,23 +49,18 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
 
   useEffect(() => {
     if (!auth) return;
-    try {
-      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        if (currentUser) {
-          setUser(currentUser);
-        } else {
-          // @ts-ignore
-          signInAnonymously(auth).catch(err => console.error("Anonymous Auth Fail:", err));
-        }
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.error("Error en el efecto de autenticación:", e);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser as User);
+      } else {
+        signInAnonymously(auth!).catch(err => console.error("Auth Fail:", err));
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleConfirmAndSave = async () => {
-    if (!message.trim() || !title.trim() || !user) {
+    if (!message.trim() || !title.trim()) {
       alert("Por favor, completa el título y el mensaje antes de enviar.");
       return;
     }
@@ -100,7 +69,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
     const icon = priority === "URGENTE" ? "🚨" : priority === "ADVERTENCIA" ? "⚠️" : "🔔";
 
     try {
-      // URL de producción verificada (Limpia)
+      // URL LIMPIA Y VERIFICADA (v3.8)
       const targetUrl = "https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder";
       
       const response = await fetch(targetUrl, {
@@ -121,8 +90,8 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
         setStatus('done');
         setTitle(''); setMessage(''); setMediaUrl('');
         setTimeout(() => {
-            setStatus('idle');
-            onClose(); // Auto-cerrar al terminar con éxito
+          setStatus('idle');
+          onClose(); // Auto-cerrar al terminar con éxito
         }, 3500);
       } else {
         throw new Error("Error en Webhook");
@@ -130,37 +99,14 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
     } catch (error) {
       console.error("Send error:", error);
       setStatus('error');
-      alert("No se pudo conectar con el sistema de notificaciones.");
+      alert("No se pudo conectar con el servidor de notificaciones.");
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
-  // Pantalla de contingencia elegante si falta la config
-  if (!firebaseConfig) {
-    return (
-      <div className="fixed inset-0 z-[130] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 text-center">
-        <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl max-w-sm border-4 border-white animate-in zoom-in duration-300">
-          <div className="bg-amber-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-amber-500">
-            <AlertTriangle size={48} />
-          </div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic mb-4 text-center">Sincronizando...</h2>
-          <p className="text-slate-400 text-sm leading-relaxed mb-8 font-medium">
-            Estamos conectando con el servidor de seguridad. Por favor, refresca la página en unos segundos.
-          </p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="w-full py-4 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-100 active:scale-95 transition-transform"
-          >
-            Refrescar Ahora
-          </button>
-          <button onClick={onClose} className="mt-4 text-slate-300 text-[10px] font-black uppercase tracking-widest hover:text-slate-400 transition-colors">Volver</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed inset-0 z-[120] bg-slate-100/50 backdrop-blur-md flex items-start justify-center p-4 md:p-8 font-sans text-slate-800 overflow-y-auto pt-16">
+      
       <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-white mb-20 animate-in fade-in zoom-in duration-500 relative">
         
         {/* Header con Degradado - Ajustado para visibilidad total */}
@@ -180,7 +126,6 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
           <div className="absolute top-2 right-12 text-white/10 rotate-12"><Sparkles size={80} /></div>
         </div>
 
-        {/* Formulario */}
         <div className="p-8 space-y-6">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Título del aviso</label>

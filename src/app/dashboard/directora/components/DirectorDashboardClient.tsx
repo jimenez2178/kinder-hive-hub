@@ -10,6 +10,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CreditCard, Image as ImageIcon, Plus, Users, Megaphone, Heart, Eye, BarChart3, Trash2, Wallet, TrendingUp, FileText, Printer, Search, CheckCircle, XCircle, AlertTriangle, MessageCircle, Shield, Clock, UserCheck, Send, X } from "lucide-react";
 import DashboardClient from "@/app/components/DashboardClient";
+import TelegramLink from "@/app/components/TelegramLink";
 import { approvePaymentAction, rejectPaymentAction as rejectPaymentActionLegacy, archivePaymentAction, deletePaymentAction } from "@/app/actions/directora";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ import SecurityExitView from "./SecurityExitView";
 import { notifyParent } from "@/lib/notifications";
 import DirectorBroadcastPro from "./DirectorBroadcastPro";
 
-export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, solicitudesReunion, metrics, previewData }: {
+export function DirectorDashboardClient({ estudiantes, padres, usuariosPendientes, pagosRevision, solicitudesReunion, metrics, previewData, userProfile }: {
     estudiantes: any[],
     padres: { id: string, nombre: string, nombre_completo: string | null }[],
     usuariosPendientes: { id: string, nombre: string, nombre_completo: string | null, created_at: string, nombre_alumno?: string | null }[],
@@ -34,7 +35,8 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
         trendData: { month: string, total: number }[],
         pendientesCriticos: { id: string, nombre: string, deuda: number, telefono: string }[]
     },
-    previewData: { comunicados: any[], galeria: any[], eventos: any[], agradecimientos: any[] }
+    previewData: { comunicados: any[], galeria: any[], eventos: any[], agradecimientos: any[] },
+    userProfile?: any
 }) {
     const [activeModal, setActiveModal] = useState<"pago" | "evento" | "foto" | "estudiante" | "comunicado" | "agradecimiento" | "pendientes" | "revisar_pagos" | "reuniones" | "seguridad" | null>(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -157,7 +159,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
 
     return (
         <>
-            <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6 pb-20">
+            <div className="container mx-auto max-w-6xl pt-8 px-4 sm:px-6 pb-20 flex flex-col gap-6">
 
                 {/* 1. HEADER REBRANDING - BANNER AZUL MARINO OXFORD (FORZADO V3) */}
                 <header 
@@ -194,12 +196,18 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                         </Badge>
                     </div>
 
-                    {/* Decoración abstracta de fondo */}
                     <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
                 </header>
 
+                {/* 1.5 ALERTA DE TELEGRAM CONDICIONAL */}
+                {!userProfile?.telegram_chat_id && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                        <TelegramLink userId={userProfile?.id} initialTelegramId={userProfile?.telegram_chat_id} />
+                    </div>
+                )}
+
                 {/* 2. ACCIONES RÁPIDAS - BOTONES REDONDEADOS */}
-                <div className="flex flex-wrap gap-3 mb-12">
+                <div className="flex flex-wrap gap-3">
                     <Button
                         onClick={() => setActiveModal("comunicado")}
                         className="rounded-full bg-[#8A2BE2] hover:bg-[#7726c5] text-white font-black h-12 px-6 shadow-lg shadow-[#8A2BE2]/20"
@@ -291,7 +299,7 @@ export function DirectorDashboardClient({ estudiantes, padres, usuariosPendiente
                 </div>
 
                 {/* 3. KPI GRID - LÓGICA FINANCIERA ACTUALIZADA */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                     {/* Tarjeta Púrpura - Estudiantes */}
                     <Card className="rounded-[40px] bg-[#8A2BE2] text-white border-0 shadow-2xl overflow-hidden relative group">
