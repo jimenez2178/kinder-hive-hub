@@ -1,14 +1,12 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { 
   X, Send, Loader2, CheckCircle2, 
   Megaphone, Sparkles, Bell, Heart, 
   Instagram, Youtube, CloudLightning, AlertTriangle 
 } from 'lucide-react';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
-import { getAuth, signInAnonymously, onAuthStateChanged, Auth, User } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // --- CONFIGURACIÓN DE INFRAESTRUCTURA ---
 const getSafeConfig = () => {
@@ -26,7 +24,7 @@ const getSafeConfig = () => {
 };
 
 const firebaseConfig = getSafeConfig();
-let app: FirebaseApp | undefined, auth: Auth | undefined, db: Firestore | undefined;
+let app: any, auth: any, db: any;
 
 if (firebaseConfig && firebaseConfig.apiKey) {
   try {
@@ -36,24 +34,23 @@ if (firebaseConfig && firebaseConfig.apiKey) {
   } catch (e) { console.error("Firebase Error:", e); }
 }
 
-// @ts-ignore
-const appId = typeof __app_id !== 'undefined' ? __app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
+const appId = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
 
-export default function DirectorBroadcastPro({ onClose }: { onClose: () => void }) {
-  const [user, setUser] = useState<User | null>(null);
+export default function DirectorBroadcastPro() {
+  const [user, setUser] = useState<any>(null);
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
   const [priority, setPriority] = useState('URGENTE'); 
-  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [status, setStatus] = useState('idle');
 
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(currentUser as User);
+        setUser(currentUser);
       } else {
-        signInAnonymously(auth!).catch(err => console.error("Auth Fail:", err));
+        signInAnonymously(auth).catch(err => console.error("Auth Fail:", err));
       }
     });
     return () => unsubscribe();
@@ -61,7 +58,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
 
   const handleConfirmAndSave = async () => {
     if (!message.trim() || !title.trim()) {
-      alert("Por favor, completa el título y el mensaje antes de enviar.");
+      alert("Por favor, completa el título y el mensaje.");
       return;
     }
     
@@ -82,15 +79,13 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
         });
       }
 
-      // --- PASO B: DISPARAR WEBHOOK (Para Telegram) ---
-      const targetUrl = "https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder";
-      
-      const response = await fetch(targetUrl, {
+      // --- PASO B: DISPARAR WEBHOOK (URL LIMPIA) ---
+      const response = await fetch("https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo_evento: priority === "URGENTE" ? "AVISO URGENTE" : "AVISO ESCOLAR",
-          nombre_alumno: "Su hijo(a)", // n8n debe reemplazar esto con el nombre real en el loop
+          nombre_alumno: "Comunidad Escolar", 
           mensaje: `${icon} *${title.toUpperCase()}*\n\n${message}${mediaUrl ? `\n\n🔗 Ver más: ${mediaUrl}` : ""}`,
           is_broadcast: true,
           prioridad: priority,
@@ -102,31 +97,26 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
       if (response.ok) {
         setStatus('done');
         setTitle(''); setMessage(''); setMediaUrl('');
-        setTimeout(() => {
-          setStatus('idle');
-          onClose(); // Auto-cerrar al terminar con éxito
-        }, 3500);
+        setTimeout(() => setStatus('idle'), 3500);
       } else {
-        throw new Error("Error en Webhook");
+        throw new Error("Error en n8n");
       }
     } catch (error) {
       console.error("Critical Send error:", error);
       setStatus('error');
-      alert("No se pudo conectar con el servidor de notificaciones.");
+      alert("Error al procesar el aviso. Revisa la consola.");
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-slate-100/50 backdrop-blur-md flex items-start justify-center p-4 md:p-8 font-sans text-slate-800 overflow-y-auto pt-16">
-      
+    <div className="min-h-screen bg-slate-100/50 flex items-start justify-center p-4 md:p-8 font-sans text-slate-800 overflow-y-auto pt-20">
       <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-white mb-20 animate-in fade-in zoom-in duration-500 relative">
         
-        {/* Header con Degradado - Sincronizado v3.9 */}
         <div className="bg-gradient-to-r from-[#6366f1] via-[#a855f7] to-[#ec4899] p-8 pt-12 text-white relative">
           <div className="flex justify-between items-start relative z-10">
             <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-lg border border-white/20">
+              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-lg border border-white/30 shadow-inner">
                 <Megaphone size={28} className="text-white drop-shadow-md" />
               </div>
               <div>
@@ -134,7 +124,6 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
                 <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mt-1">Sincronizado con Dashboard y Telegram ✨</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><X size={24} /></button>
           </div>
           <div className="absolute top-2 right-12 text-white/10 rotate-12"><Sparkles size={80} /></div>
         </div>
@@ -145,7 +134,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
             <input 
               type="text" placeholder="Ej: Suspensión de clases 🌧️" value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4.5 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold shadow-inner"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold shadow-inner"
             />
           </div>
 

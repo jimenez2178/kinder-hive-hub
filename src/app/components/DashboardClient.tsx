@@ -70,6 +70,34 @@ import TelegramLink from "./TelegramLink";
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
+// --- CONFIGURACIÓN DE INFRAESTRUCTURA (REFORZADA) ---
+const getSafeConfig = () => {
+    try {
+        // @ts-ignore
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            // @ts-ignore
+            return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+        }
+        if (process.env.NEXT_PUBLIC_FIREBASE_CONFIG) {
+            return JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
+        }
+    } catch (e) { console.error("Config parent error:", e); }
+    return null;
+};
+
+const firebaseConfig = getSafeConfig();
+const appIdGlobal = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
+
+let firestoreDB: any = null;
+if (firebaseConfig && firebaseConfig.apiKey) {
+    try {
+        const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+        firestoreDB = getFirestore(app);
+    } catch (e) {
+        console.error("Firebase Init Error (Parent):", e);
+    }
+}
+
 function VideoPlayer({ url }: { url: string }) {
     if (!url) return null;
 
@@ -188,43 +216,26 @@ export default function DashboardClient({
             setShowPushBanner(true);
         }
 
-        // 2. Suscripción a Firestore (v3.9)
-        const getSafeConfig = () => {
+        // 2. Suscripción a Firestore (v3.9.1 - Resiliente)
+        if (firestoreDB) {
             try {
-                // @ts-ignore
-                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                    // @ts-ignore
-                    return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-                }
-                if (process.env.NEXT_PUBLIC_FIREBASE_CONFIG) {
-                    return JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
-                }
-            } catch (e) { console.error("Config parent error:", e); }
-            return null;
-        };
-
-        const config = getSafeConfig();
-        const appId = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
-
-        if (config && config.apiKey) {
-            try {
-                const app = getApps().length > 0 ? getApp() : initializeApp(config);
-                const db = getFirestore(app);
-                const avisosRef = collection(db, 'artifacts', appId, 'public', 'data', 'avisos');
+                const avisosRef = collection(firestoreDB, 'artifacts', appIdGlobal, 'public', 'data', 'avisos');
                 const q = query(avisosRef, orderBy('fecha', 'desc'), limit(10));
 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const novelties = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        // Normalizar campos para que coincidan con el componente
-                        titulo: doc.data().titulo,
-                        contenido: doc.data().mensaje,
-                        prioridad: doc.data().prioridad,
-                        video_url: doc.data().media_url,
-                        created_at: doc.data().fecha?.toDate?.()?.toISOString() || new Date().toISOString(),
-                        isFirestore: true
-                    }));
+                    const novelties = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            ...data,
+                            titulo: data.titulo,
+                            contenido: data.mensaje,
+                            prioridad: data.prioridad,
+                            video_url: data.media_url,
+                            created_at: data.fecha?.toDate?.()?.toISOString() || new Date().toISOString(),
+                            isFirestore: true
+                        };
+                    });
                     setFirestoreComunicados(novelties);
                 });
 
