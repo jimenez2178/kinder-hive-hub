@@ -11,23 +11,35 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged, Auth, User } from 'firebase/auth';
 
 /**
- * Kinder Hive Hub - Módulo de Avisos Mágicos v3.5 (BRINDADO/RE-FIXED)
- * Incluye validaciones try/catch ultra-seguras para evitar excepciones de cliente.
+ * Kinder Hive Hub - Módulo de Avisos Mágicos v3.6 (ULTRA-RESILIENT)
+ * Añadidos fallbacks robustos para Firebase Config y variables de entorno.
  */
 
 // --- ESCUDO DE CONFIGURACIÓN ---
 const getSafeConfig = () => {
   try {
+    // 1. Intento por variable global (Inyectada por el servidor en ciertos dashboards)
     // @ts-ignore
     if (typeof __firebase_config !== 'undefined' && __firebase_config) {
       // @ts-ignore
       const config = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-      return config.apiKey ? config : null;
+      if (config.apiKey) return config;
     }
   } catch (e) {
-    console.error("Error crítico al leer configuración:", e);
+    console.error("Error con __firebase_config:", e);
   }
-  return null;
+
+  // 2. Fallback a variables de entorno estándar de Next.js
+  const fallback = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  };
+
+  return fallback.apiKey ? fallback : null;
 };
 
 // Inicialización ultra-segura
@@ -45,7 +57,7 @@ if (firebaseConfig) {
 }
 
 // @ts-ignore
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const appId = typeof __app_id !== 'undefined' ? __app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
 
 export default function DirectorBroadcastPro({ onClose }: { onClose: () => void }) {
   const [user, setUser] = useState<User | null>(null);
@@ -115,11 +127,16 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
   if (!firebaseConfig) {
     return (
       <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-white rounded-[2.5rem] p-10 text-center max-w-xs shadow-2xl">
+        <div className="bg-white rounded-[2.5rem] p-10 text-center max-w-xs shadow-2xl animate-in zoom-in-95 duration-300">
           <AlertTriangle className="mx-auto mb-4 text-amber-400" size={48} />
           <p className="font-bold text-slate-600">Sistema en Mantenimiento</p>
-          <p className="text-sm mt-2 text-slate-400 italic">La configuración del servidor no se ha detectado correctamente.</p>
-          <button onClick={onClose} className="mt-6 px-6 py-2 bg-slate-100 rounded-full text-slate-500 font-bold">Cerrar</button>
+          <p className="text-sm mt-2 text-slate-400 italic leading-relaxed">La configuración del servidor no se ha detectado correctamente.</p>
+          <button 
+            onClick={onClose} 
+            className="mt-8 w-full py-4 bg-slate-100 hover:bg-slate-200 transition-colors rounded-2xl text-slate-500 font-black uppercase tracking-widest text-[10px]"
+          >
+            Cerrar Panel
+          </button>
         </div>
       </div>
     );
@@ -153,7 +170,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
             <input 
               type="text" placeholder="Ej: Suspensión de clases 🌧️" value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold shadow-inner"
             />
           </div>
 
@@ -162,7 +179,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
             <textarea 
               placeholder="Escribe el mensaje aquí..." value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] p-6 h-40 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 resize-none text-sm font-medium"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] p-6 h-40 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 resize-none text-sm font-medium shadow-inner"
             />
           </div>
 
@@ -202,7 +219,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose: () => void 
           <button 
             onClick={handleConfirmAndSave} disabled={status === 'sending'}
             className={`w-full py-6 rounded-full font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 text-white uppercase tracking-widest ${
-              status === 'done' ? 'bg-emerald-500' : 'bg-[#8b2ce2]'
+              status === 'done' ? 'bg-emerald-500' : 'bg-[#8b2ce2] hover:bg-black'
             }`}
           >
             {status === 'sending' ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} className="rotate-45" /> Confirmar y Enviar</>}
