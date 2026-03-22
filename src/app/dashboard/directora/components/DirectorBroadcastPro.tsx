@@ -66,7 +66,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void
     const icon = priority === "URGENTE" ? "🚨" : priority === "ADVERTENCIA" ? "⚠️" : "🔔";
 
     try {
-      // --- PASO A: GUARDAR EN FIRESTORE (Para el Dashboard del Padre) ---
+      // 1. PERSISTENCIA EN FIRESTORE (Para Dashboard del Padre)
       if (db) {
         const avisosRef = collection(db, 'artifacts', appId, 'public', 'data', 'avisos');
         await addDoc(avisosRef, {
@@ -79,7 +79,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void
         });
       }
 
-      // --- PASO B: DISPARAR WEBHOOK (URL LIMPIA) ---
+      // 2. DISPARO A WEBHOOK (Telegram)
       const response = await fetch("https://curso-n8n-n8n.sjia2i.easypanel.host/webhook/alertas-kinder", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,22 +97,28 @@ export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void
       if (response.ok) {
         setStatus('done');
         setTitle(''); setMessage(''); setMediaUrl('');
-        setTimeout(() => setStatus('idle'), 3500);
+        setTimeout(() => {
+          setStatus('idle');
+          if (onClose) onClose();
+        }, 2000);
       } else {
         throw new Error("Error en n8n");
       }
     } catch (error) {
       console.error("Critical Send error:", error);
       setStatus('error');
-      alert("Error al procesar el aviso. Revisa la consola.");
+      alert("Hubo un problema al procesar el aviso.");
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100/50 flex items-start justify-center p-4 md:p-8 font-sans text-slate-800 overflow-y-auto pt-20">
-      <div className="bg-white w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-white mb-20 animate-in fade-in zoom-in duration-500 relative">
+    /* EL FIX: Contenedor fixed con z-index alto para evitar renderizado al final del dashboard */
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-slate-900/70 backdrop-blur-sm p-4 pt-10 md:pt-20 animate-in fade-in duration-300">
+      
+      <div className="relative w-full max-w-lg bg-white rounded-[3.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] overflow-hidden border-4 border-white mb-20 animate-in zoom-in duration-500">
         
+        {/* Header con Cierre */}
         <div className="bg-gradient-to-r from-[#6366f1] via-[#a855f7] to-[#ec4899] p-8 pt-12 text-white relative">
           <div className="flex justify-between items-start relative z-10">
             <div className="flex items-center gap-4">
@@ -120,30 +126,30 @@ export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void
                 <Megaphone size={28} className="text-white drop-shadow-md" />
               </div>
               <div>
-                <h1 className="text-2xl font-black tracking-tighter uppercase italic">Publicar Aviso</h1>
-                <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mt-1">Sincronizado con Dashboard y Telegram ✨</p>
+                <h1 className="text-2xl font-black tracking-tighter uppercase italic leading-tight">Publicar Aviso</h1>
+                <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mt-1 italic">Sincronización Total ✨</p>
               </div>
             </div>
-            
             {onClose && (
               <button 
                 onClick={onClose}
-                className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors backdrop-blur-md"
+                className="bg-white/10 p-2.5 rounded-full hover:bg-white/20 transition-all border border-white/20 active:scale-90"
               >
-                <X size={24} className="text-white" />
+                <X size={24} />
               </button>
             )}
           </div>
           <div className="absolute top-2 right-12 text-white/10 rotate-12"><Sparkles size={80} /></div>
         </div>
 
+        {/* Formulario */}
         <div className="p-8 space-y-6">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Título del aviso</label>
             <input 
               type="text" placeholder="Ej: Suspensión de clases 🌧️" value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold shadow-inner"
+              className="w-full bg-slate-50 border-2 border-slate-100 rounded-full py-4.5 px-8 text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 font-bold shadow-inner"
             />
           </div>
 
@@ -157,7 +163,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Link de Media (Instagram/YouTube)</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Link (Instagram/YouTube)</label>
             <div className="relative">
               <div className="absolute left-6 top-1/2 -translate-y-1/2 flex gap-2 text-indigo-400 opacity-60">
                 <Instagram size={18} /><Youtube size={18} />
@@ -179,7 +185,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void
               <button 
                 key={btn.id} type="button" onClick={() => setPriority(btn.id)}
                 className={`flex-1 flex flex-col items-center gap-1.5 py-4 rounded-[2rem] text-[9px] font-black uppercase transition-all border-4 ${
-                  priority === btn.id ? `${btn.color} text-white border-white shadow-xl scale-105 -translate-y-1` : 'bg-slate-50 text-slate-400 border-slate-50 hover:border-slate-100'
+                  priority === btn.id ? `${btn.color} text-white border-white shadow-xl scale-105 -translate-y-1` : 'bg-slate-50 text-slate-400 border-slate-50'
                 }`}
               >
                 {btn.icon}{btn.label}
@@ -195,7 +201,7 @@ export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void
               status === 'done' ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-600 to-purple-600'
             }`}
           >
-            {status === 'sending' ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} className="rotate-45" /> Publicar y Notificar</>}
+            {status === 'sending' ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} className="rotate-45" /> Publicar Aviso</>}
           </button>
         </div>
       </div>
