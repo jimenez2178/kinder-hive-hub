@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { Textarea } from "@/components/ui/textarea";
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 /**
