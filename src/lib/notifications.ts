@@ -23,11 +23,16 @@ export async function notifyParent(tipo: string, mensaje: string, perfilPadre: {
     tipo_evento: tipo,
     nombre_alumno: perfilPadre.hijo_nombre,
     mensaje: mensaje,
-    telegram_chat_id: perfilPadre.telegram_chat_id,
+    telegram_chat_id: String(perfilPadre.telegram_chat_id),
     timestamp: new Date().toISOString()
   };
 
   console.log("[AUDITORÍA N8N] Payload:", JSON.stringify(payload, null, 2));
+
+  // Alerta solicitada por el usuario para confirmar ejecución en cliente
+  if (typeof window !== 'undefined') {
+    alert("🚀 Disparando señal al webhook de n8n...");
+  }
 
   try {
     const response = await fetch(url, {

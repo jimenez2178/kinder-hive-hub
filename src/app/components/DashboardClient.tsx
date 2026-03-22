@@ -1005,10 +1005,26 @@ export default function DashboardClient({
                                             <p className="font-black uppercase text-[13px] sm:text-sm">{selectedRecibo.metodo}</p>
                                         </div>
                                         <div className="text-left sm:text-right w-full sm:w-auto">
-                                            <p className="text-[9px] font-bold uppercase opacity-80">Monto Total</p>
+                                            <p className="text-[9px] font-bold uppercase opacity-80">Monto Bruto</p>
                                             <p className="font-black uppercase text-base sm:text-lg font-mono break-all sm:break-normal">RD$ {selectedRecibo.monto?.toLocaleString()}</p>
                                         </div>
                                     </div>
+                                    
+                                    {/* Desglose de comisión solo para Tarjeta de Crédito */}
+                                    {(selectedRecibo.metodo?.toLowerCase().includes('tarjeta') && selectedRecibo.monto_neto && selectedRecibo.monto_neto < selectedRecibo.monto) && (
+                                        <div className="flex justify-between items-center pt-2 border-t border-white/10 text-[10px] font-bold opacity-80 italic">
+                                            <span>Comisión por Procesamiento (3.5%):</span>
+                                            <span className="text-rose-300">- RD$ {(selectedRecibo.monto - selectedRecibo.monto_neto).toLocaleString()}</span>
+                                        </div>
+                                    )}
+
+                                    {selectedRecibo.monto_neto && (
+                                        <div className="flex justify-between items-center text-xs font-black pt-1">
+                                            <span className="uppercase tracking-widest opacity-70 italic text-[9px]">Ingreso Neto Institucional:</span>
+                                            <span className="text-emerald-400 font-mono">RD$ {selectedRecibo.monto_neto.toLocaleString()}</span>
+                                        </div>
+                                    )}
+
                                     {selectedRecibo.concepto && (
                                         <div className="bg-white/15 rounded-xl px-4 py-3 text-xs font-bold text-white/90 text-center border border-white/20">
                                             📋 {selectedRecibo.concepto}
@@ -1026,7 +1042,7 @@ export default function DashboardClient({
             {selectedStudentForFile && (() => {
                 const studentPayments = recibos.filter((r: any) => r.estudiante_id === selectedStudentForFile.id);
                 const isUpToDate = currentSaldo <= 0;
-                const totalPagado = studentPayments.reduce((sum: number, p: any) => sum + (p.monto || 0), 0);
+                const totalPagado = studentPayments.reduce((sum: number, p: any) => sum + (p.monto_neto || p.monto || 0), 0);
                 const today = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'numeric', year: 'numeric' });
                 const getConcepto = (p: any) => {
                     if (p.concepto) return p.concepto;

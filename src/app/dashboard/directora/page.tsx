@@ -68,7 +68,7 @@ export default async function DirectoraPage() {
     // Fetch all payments for the 3-month range at once to be even more efficient
     const { data: allRecentPagos } = await supabase
         .from("pagos")
-        .select("monto, fecha, estado, estudiante_id")
+        .select("monto, monto_neto, fecha, estado, estudiante_id")
         .gte("fecha", month2.start)
         .lte("fecha", month0.end);
 
@@ -80,9 +80,9 @@ export default async function DirectoraPage() {
     const pagosM1 = filterPagosByRange(allRecentPagos || [], month1.start, month1.end);
     const pagosM2 = filterPagosByRange(allRecentPagos || [], month2.start, month2.end);
 
-    const ingresosDelMes = pagosM0.reduce((acc, p) => acc + (p.monto || 0), 0);
-    const ingresosMes1 = pagosM1.reduce((acc, p) => acc + (p.monto || 0), 0);
-    const ingresosMes2 = pagosM2.reduce((acc, p) => acc + (p.monto || 0), 0);
+    const ingresosDelMes = pagosM0.reduce((acc, p) => acc + (p.monto_neto || p.monto || 0), 0);
+    const ingresosMes1 = pagosM1.reduce((acc, p) => acc + (p.monto_neto || p.monto || 0), 0);
+    const ingresosMes2 = pagosM2.reduce((acc, p) => acc + (p.monto_neto || p.monto || 0), 0);
 
     const trendData = [
         { month: month2.name, total: ingresosMes2 },
@@ -102,7 +102,7 @@ export default async function DirectoraPage() {
 
             // Pagos de este estudiante en el mes 0
             const pagosEstM0 = pagosM0.filter(p => p.estudiante_id === est.id);
-            const totalPagado = pagosEstM0.reduce((acc, p) => acc + (p.monto || 0), 0);
+            const totalPagado = pagosEstM0.reduce((acc, p) => acc + (p.monto_neto || p.monto || 0), 0);
 
             if (totalPagado < cuota) {
                 countPendientes++;
@@ -153,7 +153,7 @@ export default async function DirectoraPage() {
                             .map(est => {
                                 const cuota = est.cuota_mensual || 11000;
                                 const pagosEstM0 = pagosM0.filter((p: any) => p.estudiante_id === est.id);
-                                const totalPagado = pagosEstM0.reduce((acc: number, p: any) => acc + (p.monto || 0), 0);
+                                const totalPagado = pagosEstM0.reduce((acc: number, p: any) => acc + (p.monto_neto || p.monto || 0), 0);
                                 return {
                                     id: est.id,
                                     nombre: est.nombre,

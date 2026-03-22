@@ -9,6 +9,9 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { Send, FileEdit, Trash2, Clock, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AttendanceModule } from "./AttendanceModule";
+import SecurityModule from "./SecurityModule";
+import BroadcastModule from "./BroadcastModule";
+import { ShieldCheck, Megaphone } from "lucide-react";
 
 export interface Calificacion {
     id: string;
@@ -53,7 +56,7 @@ export function TeacherDashboardClient({
     const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: "", visible: false });
     const [isLoading, setIsLoading] = useState(false);
     const [search, setSearch] = useState("");
-    const [activeTab, setActiveTab] = useState<"notas" | "calificaciones" | "progreso" | "asistencia">("asistencia");
+    const [activeTab, setActiveTab] = useState<"notas" | "calificaciones" | "progreso" | "asistencia" | "seguridad" | "avisos">("asistencia");
     
     // No necesitamos useActionState para delete, llamamos la acción directamente.
 
@@ -116,7 +119,9 @@ export function TeacherDashboardClient({
                 </header>
 
                 <div className="flex flex-wrap gap-3 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 max-w-fit mx-auto">
-                    <button onClick={() => setActiveTab("asistencia")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'asistencia' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Asistencia (Pase Lista)</button>
+                    <button onClick={() => setActiveTab("asistencia")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'asistencia' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Asistencia</button>
+                    <button onClick={() => setActiveTab("seguridad")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'seguridad' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Seguridad (Salidas)</button>
+                    <button onClick={() => setActiveTab("avisos")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'avisos' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Avisos (Broadcast)</button>
                     <button onClick={() => setActiveTab("calificaciones")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'calificaciones' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Calificaciones</button>
                     <button onClick={() => setActiveTab("progreso")} className={`px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs transition-all ${activeTab === 'progreso' ? 'bg-[#002147] text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Progreso Académico</button>
                     {/* Evaluación General se unificó en Progreso Académico para evitar redundancia y errores */}
@@ -128,12 +133,28 @@ export function TeacherDashboardClient({
                         <Card className="rounded-[40px] border-0 shadow-2xl bg-white sticky top-8">
                             <CardHeader className="pb-4 pt-8 px-8 border-b border-slate-50 mb-4">
                                 <CardTitle className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                                    <FileEdit className="text-slate-800" /> {activeTab === "calificaciones" ? "Nuevas Calificaciones" : "Progreso Académico"}
+                                    {activeTab === "asistencia" && <Clock className="text-slate-800" />}
+                                    {activeTab === "seguridad" && <ShieldCheck className="text-slate-800" />}
+                                    {activeTab === "avisos" && <Megaphone className="text-slate-800" />}
+                                    {activeTab === "calificaciones" && <FileEdit className="text-slate-800" />}
+                                    {activeTab === "progreso" && <FileEdit className="text-slate-800" />}
+                                    {activeTab === "calificaciones" ? "Nuevas Calificaciones" : 
+                                     activeTab === "seguridad" ? "Seguridad de Salida" :
+                                     activeTab === "avisos" ? "Broadcast del Maestro" :
+                                     activeTab === "asistencia" ? "Pase de Lista" : "Progreso Académico"}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-8 pb-8 pt-4">
                                 {activeTab === "asistencia" && (
                                     <AttendanceModule />
+                                )}
+
+                                {activeTab === "seguridad" && (
+                                    <SecurityModule estudiantes={estudiantes} />
+                                )}
+
+                                {activeTab === "avisos" && (
+                                    <BroadcastModule estudiantes={estudiantes} curso="Kínder A" />
                                 )}
 
                                 {activeTab === "notas" && (

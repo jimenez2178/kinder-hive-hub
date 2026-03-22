@@ -102,7 +102,7 @@ export default function GlobalBroadcast() {
                             placeholder="Escribe aquí el mensaje para los padres..."
                             className="min-h-[150px] rounded-[32px] border-2 border-slate-100 bg-slate-50 p-6 font-bold text-slate-800 focus:border-[#002147] focus:bg-white transition-all resize-none shadow-inner"
                             value={mensaje}
-                            onChange={(e) => setMensaje(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMensaje(e.target.value)}
                         />
                     </div>
 

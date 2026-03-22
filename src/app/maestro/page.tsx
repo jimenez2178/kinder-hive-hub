@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { TeacherDashboardClient } from "./components/TeacherDashboardClient";
+import CompactTeacherDashboard from "./components/CompactTeacherDashboard";
 
 export default async function MaestroPage() {
     const supabase = await createClient();
@@ -11,9 +11,6 @@ export default async function MaestroPage() {
     if (!user) {
         redirect("/login");
     }
-
-    // Fetch student list for the dropdown
-    const { data: estudiantes, error } = await supabase.from("estudiantes").select("*");
 
     // Fetch the teacher profile
     const { data: profile } = await supabase
@@ -24,28 +21,10 @@ export default async function MaestroPage() {
         
     const maestroNombre = profile?.nombre_completo || "Maestro(a)";
 
-    // Fetch comments left by this teacher
-    const { data: evaluaciones } = await supabase
-        .from("evaluaciones")
-        .select("*, estudiantes(nombre), perfiles!evaluaciones_maestro_id_fkey(nombre_completo)")
-        .eq("maestro_id", user.id)
-        .order("created_at", { ascending: false });
-
-    // Fetch grades left by this teacher
-    const { data: calificaciones } = await supabase
-        .from("calificaciones")
-        .select("*, estudiantes(nombre), perfiles(nombre_completo)")
-        .eq("maestro_id", user.id)
-        .order("created_at", { ascending: false });
-
     return (
-        <div className="min-h-screen bg-slate-50 pb-12">
-            <TeacherDashboardClient
-                estudiantes={estudiantes || []}
-                evaluaciones={evaluaciones || []}
-                calificaciones={calificaciones || []}
-                maestroNombre={maestroNombre}
-            />
-        </div>
+        <CompactTeacherDashboard
+            maestroNombre={maestroNombre}
+        />
     );
 }
+

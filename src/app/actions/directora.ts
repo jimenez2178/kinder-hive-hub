@@ -20,6 +20,27 @@ async function getColegioId(supabase: any) {
     return perfil?.colegio_id;
 }
 
+// Lógica de cálculo de monto neto corregida
+const calcularMontoNeto = (montoBruto: number, metodo: string) => {
+    const metodoNormalizado = metodo.toLowerCase().trim();
+    // Las transferencias y el efectivo NO llevan comisión
+    if (metodoNormalizado === 'transferencia' || metodoNormalizado === 'efectivo') {
+        return montoBruto;
+    }
+
+    // Solo aplicamos comisión si es Tarjeta de Crédito (ej. 3.5%)
+    // Nota: El sistema usa 'transferencia', 'efectivo' y 'tarjeta de crédito'
+    if (metodoNormalizado === 'tarjeta de crédito' || metodoNormalizado === 'tarjeta') {
+        const comisionTarjeta = 0.035;
+        return montoBruto - (montoBruto * comisionTarjeta);
+    }
+
+    // Por defecto, si no es una de las anteriores, podríamos asumir sin comisión 
+    // o aplicar la de tarjeta si es un método electrónico desconocido. 
+    // Siguiendo la instrucción estricta:
+    return montoBruto;
+};
+
 export async function addPaymentAction(prevState: unknown, formData: FormData) {
     const supabase = await createClient();
     const estudiante_id = formData.get("estudiante_id") as string;
@@ -72,6 +93,7 @@ export async function addPaymentAction(prevState: unknown, formData: FormData) {
     const { error } = await supabase.from("pagos").insert({
         estudiante_id,
         monto: montoTotal,
+        monto_neto: calcularMontoNeto(montoTotal, metodo_pago),
         metodo: metodo_pago,
         estado,
         fecha,
@@ -320,7 +342,7 @@ export async function deleteAllEstudiantesAction(prevState: unknown, formData: F
     return { success: true, timestamp: Date.now() };
 }
 
-export async function approveParentAction(prevState: unknown, formData: FormData) {
+export async function approveAuthorizationAction(prevState: unknown, formData: FormData) {
     const supabase = await createClient();
     
     // Check security: only director
@@ -427,10 +449,34 @@ export async function approveParentAction(prevState: unknown, formData: FormData
         }
     }
 
+    // 4. Preparar datos para notificación en CLIENTE (para visibilidad en Network)
+    let notificationData = null;
+    if (perfilData) {
+        const { data: approvedProfile } = await supabase
+            .from("perfiles")
+            .select("nombre_completo, telegram_chat_id")
+            .eq("id", parentId)
+            .single();
+
+        if (approvedProfile?.telegram_chat_id) {
+            notificationData = {
+                tipo: "SEGURIDAD",
+                mensaje: `🔔 *SISTEMA*: Hola ${approvedProfile.nombre_completo}, tu acceso al Kinder Hive Hub ha sido aprobado. Ya puedes ver el progreso de tu hijo(a).`,
+                hijo_nombre: perfilData.nombre_alumno || "General",
+                telegram_chat_id: approvedProfile.telegram_chat_id
+            };
+        }
+    }
+
     revalidatePath("/dashboard/directora");
     revalidatePath("/dashboard/padre");
     revalidatePath("/espera");
-    return { success: true, timestamp: Date.now() };
+    
+    return { 
+        success: true, 
+        timestamp: Date.now(),
+        notification: notificationData 
+    };
 }
 
 export async function rejectParentAction(prevState: unknown, formData: FormData) {
@@ -477,14 +523,19 @@ export async function approvePaymentAction(pagoId: string) {
     // 1. Obtener datos del pago para la notificación
     const { data: pago } = await supabase
         .from("pagos")
-        .select("monto, estudiante_id, estudiantes(nombre, padre_id)")
+        .select("monto, metodo, estudiante_id, estudiantes(nombre, padre_id)")
         .eq("id", pagoId)
         .single();
 
-    // 2. Actualizar estado a 'saldado' (Unificación de contabilidad)
+    if (!pago) return { error: "Pago no encontrado" };
+
+    // 2. Actualizar estado a 'saldado' (Unificación de contabilidad) y calcular monto_neto
     const { error } = await supabase
         .from("pagos")
-        .update({ estado: 'saldado' }) 
+        .update({ 
+            estado: 'saldado',
+            monto_neto: calcularMontoNeto(Number(pago.monto), pago.metodo)
+        }) 
         .eq('id', pagoId);
 
 
@@ -663,7 +714,7 @@ export async function approveReunionAction(id: string, fecha_cita: string, comen
     return { success: true };
 }
 
-export async function recordExitAction(estudianteId: string) {
+export async function recordExitAction(estudianteId: string, nombreSustituto?: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "No autorizado" };
@@ -716,7 +767,9 @@ export async function recordExitAction(estudianteId: string) {
                 .single();
 
             if (parentProfile?.telegram_chat_id) {
-                const mensaje = `¡Hola ${parentProfile.nombre}! Te informamos que ${studentData.nombre} ha sido entregado(a) correctamente. ¡Feliz resto del día! 🏠✨`;
+                const quienRetira = nombreSustituto || "una persona autorizada";
+                const mensaje = `🔔 *SEGURIDAD KINDER*: ¡Hola ${parentProfile.nombre}! Te informamos que ${studentData.nombre} ha sido entregado(a) correctamente a ${quienRetira} a las ${hora_salida}. ¡Feliz resto del día! 🏠✨`;
+                
                 await notifyParent("Salida", mensaje, {
                     hijo_nombre: studentData.nombre,
                     telegram_chat_id: parentProfile.telegram_chat_id
@@ -725,11 +778,49 @@ export async function recordExitAction(estudianteId: string) {
         }
     } catch (notifyErr) {
         console.error("[recordExitAction] Error enviando notificación:", notifyErr);
-        // No bloqueamos el éxito del registro por un error de notificación
     }
 
     revalidatePath("/dashboard/directora");
     return { success: true };
+}
+
+export async function sendGlobalBroadcastAction(mensaje: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "No autorizado" };
+
+    // Verificamos que sea directora
+    const { data: profile } = await supabase.from("perfiles").select("rol, colegio_id").eq("id", user.id).single();
+    if (profile?.rol !== 'directora') return { error: "Solo la directora puede enviar broadcasts" };
+
+    // Obtenemos todos los padres vinculados del colegio
+    const { data: padres, error: padresError } = await supabase
+        .from("perfiles")
+        .select("id, telegram_chat_id, nombre, nombre_completo")
+        .eq("rol", "padre")
+        .eq("colegio_id", profile.colegio_id);
+
+    if (padresError) return { error: padresError.message };
+    if (!padres || padres.length === 0) return { error: "No hay padres en el sistema para este colegio" };
+
+    // Enviar notificaciones vía CLIENTE (para visibilidad en Network)
+    const destinatarios = padres
+        .filter(p => !!p.telegram_chat_id)
+        .map(p => ({
+            nombre: p.nombre_completo || p.nombre,
+            telegram_chat_id: String(p.telegram_chat_id)
+        }));
+
+    const omitidos = padres.length - destinatarios.length;
+    
+    console.log(`[BROADCAST] Preparados ${destinatarios.length} destinatarios, ${omitidos} omitidos.`);
+    
+    return { 
+        success: true, 
+        destinatarios, 
+        mensaje, 
+        skipped: omitidos 
+    };
 }
 
 
