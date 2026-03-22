@@ -36,7 +36,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {
 
 const appId = typeof window !== 'undefined' && (window as any).__app_id ? (window as any).__app_id : (process.env.NEXT_PUBLIC_APP_ID || 'default-app-id');
 
-export default function DirectorBroadcastPro() {
+export default function DirectorBroadcastPro({ onClose }: { onClose?: () => void }) {
   const [user, setUser] = useState<any>(null);
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
@@ -124,6 +124,15 @@ export default function DirectorBroadcastPro() {
                 <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mt-1">Sincronizado con Dashboard y Telegram ✨</p>
               </div>
             </div>
+            
+            {onClose && (
+              <button 
+                onClick={onClose}
+                className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors backdrop-blur-md"
+              >
+                <X size={24} className="text-white" />
+              </button>
+            )}
           </div>
           <div className="absolute top-2 right-12 text-white/10 rotate-12"><Sparkles size={80} /></div>
         </div>
