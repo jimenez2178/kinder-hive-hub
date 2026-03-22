@@ -45,7 +45,7 @@ interface DirectorBroadcastProProps {
 }
 
 export default function DirectorBroadcastPro({ onClose }: DirectorBroadcastProProps) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<unknown>(null);
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
